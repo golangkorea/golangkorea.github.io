@@ -1,23 +1,13 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Posts on Golang Korean Community</title>
-    <link>https://golangkorea.github.io/post/</link>
-    <description>Recent content in Posts on Golang Korean Community</description>
+    <title>Unittest on Golang Korean Community</title>
+    <link>https://golangkorea.github.io/categories/unittest/</link>
+    <description>Recent content in Unittest on Golang Korean Community</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 19 Aug 2016 23:35:49 -0400</lastBuildDate>
-    <atom:link href="https://golangkorea.github.io/post/index.xml" rel="self" type="application/rss+xml" />
-    
-    <item>
-      <title>readme first</title>
-      <link>https://golangkorea.github.io/post/readme-first/</link>
-      <pubDate>Fri, 19 Aug 2016 23:35:49 -0400</pubDate>
-      
-      <guid>https://golangkorea.github.io/post/readme-first/</guid>
-      <description>&lt;p&gt;Hello World!&lt;/p&gt;
-</description>
-    </item>
+    <lastBuildDate>Sat, 20 Aug 2016 12:15:44 +0900</lastBuildDate>
+    <atom:link href="https://golangkorea.github.io/categories/unittest/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
       <title>Golang 프로젝트에 TDD 도입하기</title>
