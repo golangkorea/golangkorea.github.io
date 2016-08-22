@@ -1,0 +1,25 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Authors on Golang Korean Community</title>
+    <link>https://golangkorea.github.io/author/</link>
+    <description>Recent content in Authors on Golang Korean Community</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Sun, 21 Aug 2016 23:05:02 -0400</lastBuildDate>
+    <atom:link href="https://golangkorea.github.io/author/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>jhongheepark</title>
+      <link>https://golangkorea.github.io/author/jhongheepark/</link>
+      <pubDate>Sun, 21 Aug 2016 23:05:02 -0400</pubDate>
+      
+      <guid>https://golangkorea.github.io/author/jhongheepark/</guid>
+      <description>
+
+&lt;h1 id=&#34;introduction-to-jhonghee-park&#34;&gt;Introduction to Jhonghee Park&lt;/h1&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
