@@ -6,20 +6,8 @@
     <description>Recent content on Golang Korean Community</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 21 Aug 2016 23:05:02 -0400</lastBuildDate>
+    <lastBuildDate>Fri, 19 Aug 2016 23:35:49 -0400</lastBuildDate>
     <atom:link href="https://golangkorea.github.io/index.xml" rel="self" type="application/rss+xml" />
-    
-    <item>
-      <title>jhongheepark</title>
-      <link>https://golangkorea.github.io/author/jhongheepark/</link>
-      <pubDate>Sun, 21 Aug 2016 23:05:02 -0400</pubDate>
-      
-      <guid>https://golangkorea.github.io/author/jhongheepark/</guid>
-      <description>
-
-&lt;h1 id=&#34;introduction-to-jhonghee-park&#34;&gt;Introduction to Jhonghee Park&lt;/h1&gt;
-</description>
-    </item>
     
     <item>
       <title>ReadMe First</title>
