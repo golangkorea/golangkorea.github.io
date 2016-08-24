@@ -4,6 +4,7 @@
   <url>
     <loc>https://golangkorea.github.io/</loc>
     <lastmod>2016-08-22T23:39:23-04:00</lastmod>
+    <priority>0</priority>
   </url>
   
   <url>
@@ -14,6 +15,11 @@
   <url>
     <loc>https://golangkorea.github.io/author/jhonghee-park/</loc>
     <lastmod>2016-08-22T22:09:34-04:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://golangkorea.github.io/post/vim-go/</loc>
+    <lastmod>2016-08-22T22:57:14+09:00</lastmod>
   </url>
   
   <url>
