@@ -6,8 +6,120 @@
     <description>Recent content on Golang Korean Community</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Tue, 23 Aug 2016 23:24:55 -0400</lastBuildDate>
+    <lastBuildDate>Fri, 26 Aug 2016 15:10:07 +0830</lastBuildDate>
     <atom:link href="https://golangkorea.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Go언어 시작하기</title>
+      <link>https://golangkorea.github.io/post/go-start/getting-start/</link>
+      <pubDate>Fri, 26 Aug 2016 15:10:07 +0830</pubDate>
+      
+      <guid>https://golangkorea.github.io/post/go-start/getting-start/</guid>
+      <description>
+
+&lt;h2 id=&#34;go-언어에-대해서&#34;&gt;Go 언어에 대해서&lt;/h2&gt;
+
+&lt;p&gt;구글이 2009년에 만든 비교적 새로운 프로그래밍 언어다. 2009년이면 거의 7년 이상된 구닥다리 언어아닌가? 라고 생각 할 수 있겠으나, Ruby(1996년) 나 python(1991년) 과 비교해보면 느낌이 올 것이다. V8 자바스크립트 엔진 개발에 참여했던 Robert Griesemer, 켄 톰슨과 UTF-8을 만든 &lt;strong&gt;Rob Pike&lt;/strong&gt;, 초창기 유닉스 운영체제를 설계했으며 B언어(C언어의 전신)를 개발한 &lt;strong&gt;Ken Thompson&lt;/strong&gt;등 쟁쟁한 개발자들이 만든 언어다. 구글이 개발 했다는 프리미엄과 함께 &lt;strong&gt;도커(Docker)&lt;/strong&gt;의 개발 언어라는게 알려지면서 유명세를 타게 됐다.&lt;/p&gt;
+
+&lt;p&gt;Python이나 Java와 같은 범용 프로그래밍 언어로 시스템 프로그래밍과 네트워크 프로그램의 개발을 목표로 만들어진 언어다. 비교적 최근에 만들어진 언어답게 C++, Java, Python 언어들의 장점을 상당 부분 수용했다. 이렇게 보면 최신 프로그래밍 언어들의 트랜드를 따를 것 같지만 코드는 &lt;strong&gt;C 언어&lt;/strong&gt;와 매우 비슷한 느낌을 준다.&lt;/p&gt;
+
+&lt;p&gt;C 언어 처럼 컴파일이 되며, 컴파일 시간에 타입을 체크하는 정적 타입 언어다. 그리고 C 언어처럼 단순하다. 약 25개 정도의 키워드만이 제공되는데, 실제 코드를 만들다 보면 10개 내외의 키워드 만으로 프로그래밍이 가능하다. 아래 go 언어가 제공하는 키워드들이다.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;break        default      func         interface    select
+case         defer        go           map          struct
+chan         else         goto         package      switch
+const        fallthrough  if           range        type
+continue     for          import       return       var
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;프로그래밍 언어에 대한 경험이 있다면 chan, defer, fallthrough 등을 제외한 키워드들의 이름과 용도를 미루어 짐작할 수 있을 것이다.&lt;/p&gt;
+
+&lt;p&gt;키워드가 적은 만큼 복잡한 준비작업 없이 쉽게 시작 할 수 있으며, 몇 개의 키워드로 반복 사용 함으로써 프로그래밍 숙련도를 빠르게 높일 수 있다는 것도 큰 장점이다.&lt;/p&gt;
+
+&lt;p&gt;Go 언어는 &lt;strong&gt;동시성(concurrency)&lt;/strong&gt;를 잘 지원하는 것으로 유명하다. Go는 고루틴(goroutine)라는 경량스레드(lightweight thread)를 제공하는데, 고루틴간 메시지를 주고 받을 수 있는 채널(channel)을 이용하면, 아주 쉽게(정말 쉽다) 동시성 프로그램을 개발 할 수 있다. 고루틴은 얼랑(Erlang)의 경량 쓰레드와 매우 유사한데, &lt;strong&gt;2k&lt;/strong&gt; 정도로 그 크기가 매우 작다. 많은 수의 고루틴을 시스템 부담을 최소화 하면서 만들 수 있다.&lt;/p&gt;
+
+&lt;p&gt;Go 언어를 사용하다보면, 웹 애플리케이션을 만들기가 매우 편하다는 느낌을 받게 된다. 특히 &lt;strong&gt;MSA(Microservice Architecture)&lt;/strong&gt;와 &lt;strong&gt;REST(Representational State Transfer)&lt;/strong&gt; 모델의 애플리케이션을 쉽게 만들 수 있다. 루비나 파이선 같은 언어의 경우 다양한 &lt;strong&gt;웹 프레임워크&lt;/strong&gt;중에서 선택을 고민하게 마련인데, Go 언어는 기본으로 제공하는 &lt;strong&gt;net/http&lt;/strong&gt; 패키지로 충분하다. 물론 Go 언어도 다양한 마이크로 프레임워크와 풀 프레임워크를 제공하긴 하지만 이런 프레임워크를 쓰면, &amp;ldquo;왜 프레임워크를 쓰세요 ? 그냥 기본(net/http) 패키지 쓰세요&amp;rdquo;라는 말을 들을 정도다.&lt;/p&gt;
+
+&lt;p&gt;대규모의 분산 시스템을 유지해야 하는 구글의 요구를 위해서 웹 개발 관련 패키지가 강력해진 것 같다.&lt;/p&gt;
+
+&lt;h2 id=&#34;go-시작하기&#34;&gt;Go 시작하기&lt;/h2&gt;
+
+&lt;h3 id=&#34;go-설치&#34;&gt;Go 설치&lt;/h3&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://golang.org/dl/&#34;&gt;golang.org&lt;/a&gt;에서 운영체제별로 Go 언어를 다운로드 할 수 있다. 2016년 8월 현재 최신 버전은 1.7이다. 압축을 푼 다음 &lt;strong&gt;/usr/local&lt;/strong&gt; 디렉토리로 복사했다.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# wget https://storage.googleapis.com/golang/go1.7.linux-amd64.tar.gz
+# tar -xvzf go1.7.linux-amd64.tar.gz
+# mv go /usr/local
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;go 실행을 위해서 환경 변수를 설정했다.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# export PATH=$PATH:/usr/local/go/bin
+# echo $PATH
+/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;go를 실행해보자.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# go version
+go version go1.7 linux/amd64
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;이제 작업 디렉토리 &amp;ldquo;&amp;lsquo;workspace&amp;rdquo;&amp;lsquo;를 만들었다. Go언어에게 작업 디렉토리를 알려주기 위해서 환경변수 &lt;strong&gt;GOPATH&lt;/strong&gt;도 설정했다.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;# mkdir $HOME/workspace
+# export GOPATH:$HOME/workspace
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;이것으로 go 언어 개발 환경을 마쳤다. 이제 Hello World 프로그램을 만들어보고 Go 프로그램의 기본적인 특징들을 살펴보자.&lt;/p&gt;
+
+&lt;h3 id=&#34;패키지-관리-시스템&#34;&gt;패키지 관리 시스템&lt;/h3&gt;
+
+&lt;p&gt;Hello World 프로그램을 만들기 전에 Go 언어의 패키지 관리 시스템을 사펴봐야 할 것같다. 앞서 나는 workspace 라는 작업 디렉토리를 만들었다. 다른 프로그램이라면 workspace 디렉토리 밑에 프로젝트 파일을 만드는 것으로 개발을 시작할 것이다. 예컨데 mkdir workspace/helloworld 디렉토리를 먼저 만들 것이다.&lt;/p&gt;
+
+&lt;p&gt;go 언어는 다르다. 우선 go 언어는 &lt;strong&gt;인터넷&lt;/strong&gt;을 기본 개발 환경으로 한다. Go로 원할히 개발하기 위해서는 컴퓨터가 인터넷에 연결되어 있어야 하며, 코드를 저장하고 읽기 위한 github, bitbucket 혹은 직접 구성한 git 서버가 있어야 한다. 즉 go 언어에서 패키지는 프로젝트 저장소 단위로 관리가 된다.&lt;/p&gt;
+
+&lt;p&gt;예를 들어 &lt;strong&gt;sqlite3&lt;/strong&gt;을 사용하는 애플리케이션을 개발한다고 가정해 보자. 이를 위해서 sqlite3 패키지를 go get으로 다운로드 해야 하는데 git 으로 부터 다운로드 한다.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;go get github.com/mattn/go-sqlite3 
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;거의 모든 패키지가 이처럼 인터넷 상에 있는 git으로 관리 되고 있다. workspace를 살펴보자.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;.
+├── pkg
+│   └── linux_amd64
+│       └── github.com
+│           └── mattn
+│               └── go-sqlite3.a
+└── src
+    └── github.com
+        └── mattn
+            └── go-sqlite3
+                ├── backup.go
+                ├── backup_test.go
+                ├── callback.go
+                ├── callback_test.go
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;패키지의 경로가 github 경로인 것을 확인 할 수 있다. 물론 인터넷에 연결하지 않고도 프로젝트를 수행 할 수는 있지만 제대로 go 프로그래밍을 하려면 인터넷과 github 계정이 필요하다.&lt;/p&gt;
+
+&lt;p&gt;아래에서 다룰 Hello World 프로젝트도 github 기반으로 진행 할 것이다. github 계정이 없다면 지금 계정을 만들자. 내가 사용하고 있는 github 계정은 &lt;strong&gt;yundream&lt;/strong&gt; 이다.&lt;/p&gt;
+
+&lt;h3 id=&#34;hello-world&#34;&gt;Hello World&lt;/h3&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Kookheon Kwon</title>
+      <link>https://golangkorea.github.io/author/kucuny/</link>
+      <pubDate>Fri, 26 Aug 2016 10:08:10 +0900</pubDate>
+      
+      <guid>https://golangkorea.github.io/author/kucuny/</guid>
+      <description>&lt;p&gt;This is a placeholder for personal profile of Kookheon Kwon&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>시리즈 #1 - Hugo 시작하기</title>
@@ -23,7 +135,7 @@
 
 &lt;h2 id=&#34;package-manager로-설치하기&#34;&gt;Package Manager로 설치하기&lt;/h2&gt;
 
-&lt;p&gt;MacOS를 쓰시는 분들은 brew를 이용해 쉽게 설치하실 수 있습니다.&lt;/p&gt;
+&lt;p&gt;MacOS를 쓰시는 분들은 Homebrew를 이용해 쉽게 설치하실 수 있습니다.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;brew update &amp;amp;&amp;amp; brew install hugo
 &lt;/code&gt;&lt;/pre&gt;
@@ -194,7 +306,7 @@ $ cd ..
       <pubDate>Tue, 23 Aug 2016 22:35:57 -0400</pubDate>
       
       <guid>https://golangkorea.github.io/post/hugo-intro/overview/</guid>
-      <description>&lt;p&gt;Hugo는 상존하는 가장 빠른 정적 사이트 제너레이터(Static Site Generator)로 알려져 있습니다. 기능적인 측면에서도 여타 동적 사이트 제너레이터(Static Site Generator)에 비해 손색이 없을 뿐더러 설치가 간편하고 Go언어에 친숙한 개발자들에게는 최고의 컨텐츠 제작 환경을 제공한다고 생각합니다. &lt;a href=&#34;https://golangkorea.github.io&#34;&gt;Golang Korean Community&lt;/a&gt; 사이트도 Hugo로 제작되고 있습니다. &lt;strong&gt;Hugo 입문&lt;/strong&gt; 시리즈를 통해 이 사이트에 기여하시고자 하는 분들에게 가이드라인을 제공할 뿐만 아니라 자신만의 블로그 사이트를 쉽게 제작하고자 하는 분들에게도 도움이 되길 기원하는 마음으로 시리즈를 준비했습니다.&lt;/p&gt;
+      <description>&lt;p&gt;Hugo는 현존하는 가장 빠른 정적 사이트 제너레이터(Static Site Generator)로 알려져 있습니다. 기능적인 측면에서도 여타 동적 사이트 제너레이터(Static Site Generator)에 비해 손색이 없을 뿐더러 설치가 간편하고 Go언어에 친숙한 개발자들에게는 최고의 컨텐츠 제작 환경을 제공한다고 생각합니다. &lt;a href=&#34;https://golangkorea.github.io&#34;&gt;Golang Korean Community&lt;/a&gt; 사이트도 Hugo로 제작되고 있습니다. &lt;strong&gt;Hugo 입문&lt;/strong&gt; 시리즈를 통해 이 사이트에 기여하시고자 하는 분들에게 가이드라인을 제공할 뿐만 아니라 자신만의 블로그 사이트를 쉽게 제작하고자 하는 분들에게도 도움이 되길 바라는 마음으로 시리즈를 준비했습니다.&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/getting-started/&#34;&gt;Hugo 시작하기&lt;/a&gt;&lt;/li&gt;
