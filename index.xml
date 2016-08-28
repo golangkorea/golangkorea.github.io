@@ -122,6 +122,183 @@ go version go1.7 linux/amd64
     </item>
     
     <item>
+      <title>시리즈 #3 - 사이트 테마 개발하기</title>
+      <link>https://golangkorea.github.io/post/hugo-intro/theme-customizing/</link>
+      <pubDate>Tue, 23 Aug 2016 23:25:30 -0400</pubDate>
+      
+      <guid>https://golangkorea.github.io/post/hugo-intro/theme-customizing/</guid>
+      <description>
+
+&lt;h1 id=&#34;사이트-테마-개발하기&#34;&gt;사이트 테마 개발하기&lt;/h1&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/getting-started&#34;&gt;시리즈 1&lt;/a&gt; 마지막에 &lt;a href=&#34;http://themes.gohugo.io/hugo-octopress/&#34;&gt;hugo-octopress&lt;/a&gt; 테마를 사용하여 처음으로 사이트를 구축한 기억을 하실 겁니다. 사이트를 구축하기 전에 Hugo에서 사용할 수 있는 테마가 어떤것 있는지 한번 살펴보고 생각하고 있는 사이트와 잘 맞는 테마를 선택하는 일도 중요합니다. Hugo의 테마 쇼케이스에서 한번 감상하시길 바랍니다.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;http://themes.gohugo.io/&#34;&gt;Hugo 테마 쇼케이스&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;자신만의 테마를 개발하기 위한 첫걸음은 남이 개발해 놓은 테마를 사용하는 것에서 부터 시작합니다.&lt;/p&gt;
+
+&lt;h1 id=&#34;테마-설치하는-법&#34;&gt;테마 설치하는 법&lt;/h1&gt;
+
+&lt;p&gt;테마의 사용법은 대단히 간단합니다. &lt;code&gt;hugo new site&lt;/code&gt;명령으로 사이트 프로젝트를 초기화하면 &lt;code&gt;themes&lt;/code&gt; 폴더가 생기는 것을 이미 아실 것입니다. 사용하고자 하는 테마를 선택하고 난 뒤 &lt;code&gt;themes&lt;/code&gt; 폴더 밑에 다운로드 받은 테마 패키지를 설치해 주면 됩니다.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;테마의 깃헙주소를 아는 경우&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ cd themes
+$ git clone https://github.com/parsiya/Hugo-Octopress.git
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;테마 쇼케이스의 모든 테마를 설치하는 경우&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ git clone --recursive https://github.com/spf13/hugoThemes.git themes
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h1 id=&#34;테마-사용법&#34;&gt;테마 사용법&lt;/h1&gt;
+
+&lt;p&gt;테마를 &lt;code&gt;themes&lt;/code&gt;에 설치하고 난 뒤 다음과 같이 선택한 테마로 사이트를 구축할 수 있습니다.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ hugo -t ThemeName
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;ThemeName은 &lt;code&gt;themes&lt;/code&gt; 폴더내 설치된 테마의 디렉토리 이름과 일치하여야 합니다.&lt;/p&gt;
+
+&lt;h1 id=&#34;테마-커스터마이징&#34;&gt;테마 커스터마이징&lt;/h1&gt;
+
+&lt;p&gt;설치된 테마를 사용하다 보면 맘에 들지 않는 부분이 생기거나 부족한 부분을 발견할 지도 모릅니다. &lt;strong&gt;&lt;em&gt;어떤 경우가 생기더라도 &lt;code&gt;themes&lt;/code&gt;밑에 설치된 테마에 속한 파일들을 직접 편집하지 마십시요&lt;/em&gt;&lt;/strong&gt;. Hugo는 이러한 경우가 생길때 보충하거나 기존의 템플릿을 오버라이드할 수 있도록 허락합니다. 설치된 테마의 구조를 살펴보시면 힌트를 얻을 수 있습니다.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;.
+└── Hugo-Octopress
+    ├── LICENSE.md
+    ├── README.md
+    ├── images
+    │   ├── Thumbs.db
+    │   ├── codecaption1.png
+    │   ├── screenshot.png
+    │   └── tn.png
+    ├── layouts
+    │   ├── 404.html
+    │   ├── _default
+    │   │   ├── list.html
+    │   │   ├── single.html
+    │   │   └── terms.html
+    │   ├── index.html
+    │   ├── indexes
+    │   │   ├── category.html
+    │   │   └── tag.html
+    │   ├── license
+    │   │   └── single.html
+    │   ├── partials
+    │   │   ├── disqus.html
+    │   │   ├── footer.html
+    │   │   ├── header.html
+    │   │   ├── navigation.html
+    │   │   ├── octo-header.html
+    │   │   ├── pagination.html
+    │   │   ├── post_footer.html
+    │   │   ├── post_header.html
+    │   │   └── sidebar.html
+    │   ├── post
+    │   │   └── single.html
+    │   └── shortcodes
+    │       ├── codecaption.html
+    │       └── imgcap.html
+    ├── sample-config.toml
+    ├── static
+    │   ├── css
+    │   │   └── hugo-octopress.css
+    │   └── favicon.png
+    └── theme.toml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;지금 개발하고 있는 사이트 프로젝트 폴더 밑으로 &lt;code&gt;layouts&lt;/code&gt;, &lt;code&gt;static&lt;/code&gt;, &lt;code&gt;archetypes&lt;/code&gt;가 있듯이 테마도 같은 구조를 가지고 있습니다.&lt;/p&gt;
+
+&lt;h2 id=&#34;정적-리소스를-교체하는-법&#34;&gt;정적 리소스를 교체하는 법&lt;/h2&gt;
+
+&lt;p&gt;테마에 따라온 jQuery버전이 맘에 안 드시나요? 교체하는 법은 기존의 것은 그대로 두고 새로운 jQuery버전을 다운로드 받아 테마에 위치한 장소와 같은 상대적 경로에 배치하면 Hugo는 테마의 jQuery를 사용하지 않고 프로젝트에 배치된 것을 사용해서 사이트를 구축합니다.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;테마 밑&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;/themes/themename/static/js/jquery.min.js
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;프로젝트 Root&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;/static/js/jquery.min.js
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;템플릿-교체하는-법&#34;&gt;템플릿 교체하는 법&lt;/h2&gt;
+
+&lt;p&gt;Hugo는 탬플릿을 찾을 때 항상 프로젝트 밑 &lt;code&gt;layouts&lt;/code&gt;폴더를 먼저 검색하고 없으면 테마의 &lt;code&gt;layouts&lt;/code&gt;을 찾아봅니다. 이런 Hugo의 특성을 이용하여 테마의 템프렛을 수정해야 할 필요가 생길 때 &lt;code&gt;layouts&lt;/code&gt;폴더 밑으로 같은 경로와 이름의 템플릿으로 교체하면 됩니다.&lt;/p&gt;
+
+&lt;p&gt;&lt;strong&gt;테마 밑&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;/themes/themename/layouts/_default/single.html
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;&lt;strong&gt;프로젝트 Root&lt;/strong&gt;&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;/layouts/_default/single.html
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;특히 부분 템플릿(partial template)을 잘 활용한 테마의 경우 이런 교체법은 사이트의 보수유지를 최소화하고 미래에도 호환성을 보장하게 해 주는 장점을 가지고 있습니다.&lt;/p&gt;
+
+&lt;h2 id=&#34;archetype-교체하는-법&#34;&gt;archetype 교체하는 법&lt;/h2&gt;
+
+&lt;p&gt;Archetype을 제공하는 테마의 경우 &lt;code&gt;archetypes&lt;/code&gt;폴더로 교체하고자 하는 archetype 파일을 복사한 다음 필요에 맞게 수정하면 됩니다.&lt;/p&gt;
+
+&lt;h2 id=&#34;default-템플릿-사용-주의&#34;&gt;Default 템플릿 사용 주의&lt;/h2&gt;
+
+&lt;p&gt;&lt;code&gt;layouts/_default&lt;/code&gt;폴더내의 템플릿들은 테마에 비슷한 파일들을 가리지 않고 교체하는 효과가 있어 사용을 자제해야 합니다. 항상 default 템플릿을 사용하기 보다는 특정한 템플릿 교체가 더 낫다는 사실을 명심하십시요.&lt;/p&gt;
+
+&lt;h1 id=&#34;새-테마-만들기&#34;&gt;새 테마 만들기&lt;/h1&gt;
+
+&lt;p&gt;새로 테마를 만들기 위한 명령어는 다음과 같습니다.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ hugo new theme golangkorea
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;이 명령은 &lt;code&gt;themes&lt;/code&gt;폴더 안에 다음과 같이 테마구조를 발생시킵니다.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;golangkorea
+├── LICENSE.md
+├── archetypes
+│   └── default.md
+├── layouts
+│   ├── 404.html
+│   ├── _default
+│   │   ├── list.html
+│   │   └── single.html
+│   ├── index.html
+│   └── partials
+│       ├── footer.html
+│       └── header.html
+├── static
+│   ├── css
+│   └── js
+└── theme.toml
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;템플릿은 Go의 템플릿 언어로 만들어 집니다. &lt;a href=&#34;https://gohugo.io/layout/go-templates/&#34;&gt;Go template primer&lt;/a&gt;은 Go 템플릿 언어를 숙지하기 위한 좋은 출발점입니다.&lt;/p&gt;
+
+&lt;h2 id=&#34;테마-콤퍼넌트&#34;&gt;테마 콤퍼넌트&lt;/h2&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;strong&gt;Layouts&lt;/strong&gt; 근본적으로 웹사이트는 두가지 형식의 페이지를 통해 컨텐트를 제공합니다: 컨텐트 자체가 하나의 페이지인 경우와 여러 항목을 나열해 놓은 페이지. Hugo의 테마는 이 두가지 페이지를 처리하는 기본(default) 템플릿에서 시작해서 컨텐트 타입(type)과 section을 통해 추가로 layout을 제공하는 템플릿을 준비합니다.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Single Content&lt;/strong&gt; 기본 템플릿은 &lt;code&gt;layouts/_default/single.html&lt;/code&gt;에 위치합니다.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;List of Contents&lt;/strong&gt; 기본 템플릿은 &lt;code&gt;layouts/_default/list.html&lt;/code&gt;에 위치합니다.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Partial Templates&lt;/strong&gt; 부분 템플릿은 테마 제작에 있어 매우 중요한 요소입니다. 부분 템플릿을 통해 코드 재사용이 가능하고 아주 작은 부분만 교체하거나 삽입할 수 있게 해 주는 메카니즘이어서 테마의 유지보수가 간단해 지고 미래의 호환성을 보장해 줍니다.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Static&lt;/strong&gt; 테마내 정정 리소스의 구조는 전적으로 개발자에게 달려 있습니다. 보통은 &lt;code&gt;/css&lt;/code&gt;, &lt;code&gt;js&lt;/code&gt;, &lt;code&gt;img&lt;/code&gt;와 같은 폴더를 이용해 정적 자원을 관리합니다.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Archetypes&lt;/strong&gt; 특정한 컨텐트 타입의 정면 변수를 정의하는 archetype을 테마에 포함시킬 수 있습니다. 자세한 내용은 &lt;a href=&#34;https://gohugo.io/content/archetypes/&#34;&gt;Archetype Guideline&lt;/a&gt;을 확인할 수 있습니다.&lt;/li&gt;
+&lt;li&gt;&lt;strong&gt;Generator meta tag&lt;/strong&gt; 테마 개발자들에게 HTML의 &lt;code&gt;&amp;lt;head&amp;gt;&lt;/code&gt;에 Generator meta tag, &lt;code&gt;.Hugo.Generator&lt;/code&gt;을 포함시킬 것을 권유합니다. Hugo의 사용과 인기도를 가늠하는데 도움을 줍니다.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;&lt;br/&gt;
+&lt;br/&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
       <title>시리즈 #2 - 컨텐츠 제작 기초</title>
       <link>https://golangkorea.github.io/post/hugo-intro/content-basic/</link>
       <pubDate>Tue, 23 Aug 2016 23:25:04 -0400</pubDate>
@@ -135,7 +312,7 @@ go version go1.7 linux/amd64
 
 &lt;h1 id=&#34;컨텐츠의-조직적인-관리-organization&#34;&gt;컨텐츠의 조직적인 관리 (Organization)&lt;/h1&gt;
 
-&lt;p&gt;사이트가 많은 양의 컨텐츠를 보유하게 되면서 조직적인 관리가 필요할 때 Hugo가 어떻게 도와주는지 알아 봅시다. &lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/getting-started/&#34;&gt;시리즈 1&lt;/a&gt;에서 보았 듯이 Hugo의 &lt;code&gt;configuration&lt;/code&gt;&lt;sup&gt;1&lt;/sup&gt;에 특별한 세팅이 없는 한 모든 컨텐츠는 &lt;code&gt;content&lt;/code&gt; 폴더 안에 위치하게 됩니다. Hugo를 통해 만들어질 사이트의 URL은 &lt;code&gt;content&lt;/code&gt;내의 폴더 구조와 매우 밀접한 관계가 있습니다. 우선 &lt;code&gt;content&lt;/code&gt; 바로 아래 위치하는 폴더는 &lt;code&gt;section&lt;/code&gt;이라고 부르는데 매우 중요한 역활을 합니다. 다음의 예는 &lt;code&gt;section&lt;/code&gt;이 사이트 URL과 어떤 상관이 있는지 암시합니다. 만들어진 사이트의 URL경로는 거울을 보듯이 컨텐츠 소스의 경로을 반영합니다.&lt;/p&gt;
+&lt;p&gt;사이트가 많은 양의 컨텐츠를 보유하게 되면서 조직적인 관리가 필요할 때 Hugo가 어떻게 도와주는지 알아 봅시다. &lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/getting-started/&#34;&gt;시리즈 1&lt;/a&gt;에서 보았 듯이 Hugo의 &lt;code&gt;configuration&lt;/code&gt;&lt;a href=&#34;#footnote-1&#34;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;에 특별한 세팅이 없는 한 모든 컨텐츠는 &lt;code&gt;content&lt;/code&gt; 폴더 안에 위치하게 됩니다. Hugo를 통해 만들어질 사이트의 URL은 &lt;code&gt;content&lt;/code&gt;내의 폴더 구조와 매우 밀접한 관계가 있습니다. 우선 &lt;code&gt;content&lt;/code&gt; 바로 아래 위치하는 폴더는 &lt;code&gt;section&lt;/code&gt;이라고 부르는데 매우 중요한 역활을 합니다. 다음의 예는 &lt;code&gt;section&lt;/code&gt;이 사이트 URL과 어떤 상관이 있는지 암시합니다. 만들어진 사이트의 URL경로는 거울을 보듯이 컨텐츠 소스의 경로을 반영합니다.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-ascii&#34;&gt;.
 |- content
@@ -242,7 +419,7 @@ toc = true
 +++
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;&lt;code&gt;Front Matter&lt;/code&gt;로 정의될 수 있는 변수에 특별한 제약사항은 없습니다. 어떤 변수라도 템플렛안에서 &lt;code&gt;.Params.varname&lt;/code&gt;형식으로 접근할 수 있습니다. 템플릿 안에서 변수이름은 항상 소문자로 표현됩니다. 예를 들어 &lt;code&gt;camelCase = true&lt;/code&gt;라고 정의된 변수는 템플릿안에서는 &lt;code&gt;.Params.camelcase&lt;/code&gt;&lt;sup&gt;2&lt;/sup&gt;로 값을 출력할 수 있습니다. 다음은 컨텐트 제작에 필수적인 변수들입니다.&lt;/p&gt;
+&lt;p&gt;&lt;code&gt;Front Matter&lt;/code&gt;로 정의될 수 있는 변수에 특별한 제약사항은 없습니다. 어떤 변수라도 템플렛안에서 &lt;code&gt;.Params.varname&lt;/code&gt;형식으로 접근할 수 있습니다. 템플릿 안에서 변수이름은 항상 소문자로 표현됩니다. 예를 들어 &lt;code&gt;camelCase = true&lt;/code&gt;라고 정의된 변수는 템플릿안에서는 &lt;code&gt;.Params.camelcase&lt;/code&gt;&lt;a href=&#34;#footnote-2&#34;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt;로 값을 출력할 수 있습니다. 다음은 컨텐트 제작에 필수적인 변수들입니다.&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;title&lt;/strong&gt; 컨텐트의 제목&lt;/li&gt;
@@ -322,8 +499,8 @@ genre = &amp;quot;&amp;quot;
 
 &lt;p&gt;&lt;br/&gt;
   &lt;ol&gt;
-    &lt;li&gt;Hugo의 configuration은 특별한 조치가 없는 경우 프로젝트 폴더내 config.toml에 정의됩니다. TOML외 YAML과 JSON 포맷이 지원됩니다.&lt;/li&gt;
-    &lt;li&gt;Hugo는 여러 템플릿 엔진을 지원합니다. 이 글에서는 Go언어의 자체적 &lt;code&gt;text/template&lt;/code&gt;을 사용하는 것을 전제합니다.&lt;/li&gt;
+    &lt;li&gt;&lt;a id=&#34;footnote-1&#34;&gt;&lt;/a&gt;Hugo의 configuration은 특별한 조치가 없는 경우 프로젝트 폴더내 config.toml에 정의됩니다. TOML외 YAML과 JSON 포맷이 지원됩니다.&lt;/li&gt;
+    &lt;li&gt;&lt;a id=&#34;footnote-2&#34;&gt;&lt;/a&gt;Hugo는 여러 템플릿 엔진을 지원합니다. 이 글에서는 Go언어의 자체적 &lt;code&gt;text/template&lt;/code&gt;을 사용하는 것을 전제합니다.&lt;/li&gt;
   &lt;/ol&gt;
 &lt;br/&gt;
 &lt;br/&gt;&lt;/p&gt;
@@ -403,7 +580,7 @@ Hugo Static Site Generator v0.17-DEV BuildDate: 2016-08-21T19:44:40-04:00
 &lt;pre&gt;&lt;code&gt;$ hugo new site golangkorea-hugo
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Hugo의 모든 명령은 &lt;code&gt;hugo&lt;/code&gt;로 시작하고 보조 명령어가 뒤를 따릅니다. 여기서 &lt;code&gt;new&lt;/code&gt;는 보조 명령어로서 &lt;code&gt;site&lt;/code&gt; 보조 명령어와 함께 프로젝트를 초기화합니다. 초기화된 프로젝트의 폴더 구조는 다음과 같습니다.&lt;/p&gt;
+&lt;p&gt;Hugo의 모든 명령&lt;a href=&#34;#footnote-1&#34;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt;은 &lt;code&gt;hugo&lt;/code&gt;로 시작하고 보조 명령어가 뒤를 따릅니다. 여기서 &lt;code&gt;new&lt;/code&gt;는 보조 명령어로서 &lt;code&gt;site&lt;/code&gt; 보조 명령어와 함께 프로젝트를 초기화합니다. 초기화된 프로젝트의 폴더 구조는 다음과 같습니다.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;$ cd golangkorea-hugo
 $ tree -a
@@ -422,7 +599,7 @@ $ tree -a
 &lt;p&gt;초기화된 프로젝트에는 텅빈 폴더 6개와 &lt;code&gt;config.toml&lt;/code&gt; 파일 하나가 만들어 집니다. 각 폴더의 용도를 간단히 나열하면 다음과 같습니다.&lt;/p&gt;
 
 &lt;ul&gt;
-&lt;li&gt;archetypes: &lt;code&gt;hugo new&lt;/code&gt;명령으로 컨텐트 생성시 &lt;a href=&#34;https://gohugo.io/content/front-matter/&#34;&gt;Front Matter&lt;/a&gt;&lt;sup&gt;1&lt;/sup&gt; 에 컨텐트 타입에 따른 기본 값들을 어떻게 정해줄 것인가를 결정하는 파일들을 저장합니다.&lt;/li&gt;
+&lt;li&gt;archetypes: &lt;code&gt;hugo new&lt;/code&gt;명령으로 컨텐트 생성시 &lt;a href=&#34;https://gohugo.io/content/front-matter/&#34;&gt;Front Matter&lt;/a&gt;&lt;a href=&#34;#footnote-2&#34;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt; 에 컨텐트 타입에 따른 기본 값들을 어떻게 정해줄 것인가를 결정하는 파일들을 저장합니다.&lt;/li&gt;
 &lt;li&gt;content: 컨텐츠가 저장됩니다.&lt;/li&gt;
 &lt;li&gt;data: 템플랫으로 불러쓸 수 있는 데이터 파일을 저장하는 공간입니다. 데이터의 타입은 toml, yaml, 과 json이 지원됩니다.&lt;/li&gt;
 &lt;li&gt;layouts: 테마를 커스터마이징할 때 기존의 테마내 탬플릿의 내용을 수정하거나 덧씌우기를 하는 템플릿을 저장하는 공간입니다.&lt;/li&gt;
@@ -502,7 +679,10 @@ $ cd ..
 
 &lt;hr/&gt;
 
-&lt;p&gt;&lt;code&gt;1. 컨텐트 인스턴스의 메타데이터로 템플릿에서 호출해 쓸 수 있습니다.&lt;/code&gt;
+&lt;p&gt;&lt;ol&gt;
+  &lt;li&gt;&lt;a id=&#34;footnote-1&#34;&gt;&lt;/a&gt;&lt;a href=&#34;https://gohugo.io/commands/&#34;&gt;Hugo의 모든 명령&lt;/a&gt;&lt;/li&gt;
+  &lt;li&gt;&lt;a id=&#34;footnote-2&#34;&gt;&lt;/a&gt;컨텐트 인스턴스의 메타데이터로 템플릿에서 호출해 쓸 수 있습니다.&lt;/li&gt;
+&lt;/ol&gt;
 &lt;br/&gt;
 &lt;br/&gt;
 &lt;br/&gt;&lt;/p&gt;
@@ -520,7 +700,7 @@ $ cd ..
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/getting-started/&#34;&gt;Hugo 시작하기&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/content-basic/&#34;&gt;컨텐츠 제작 기초&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/theme-customizing/&#34;&gt;사이트 테마 커스터마이징 하기&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/theme-customizing/&#34;&gt;사이트 테마 개발하기&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/taxonomy-basic/&#34;&gt;분류(Taxonomy)기능 사용하기&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/how-to-contribute-content/&#34;&gt;사이트에 블로그 올리는 방법&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;

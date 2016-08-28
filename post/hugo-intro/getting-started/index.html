@@ -230,7 +230,7 @@ Hugo Static Site Generator v0.17-DEV BuildDate: 2016-08-21T19:44:40-04:00
 <pre><code>$ hugo new site golangkorea-hugo
 </code></pre>
 
-<p>Hugo의 모든 명령은 <code>hugo</code>로 시작하고 보조 명령어가 뒤를 따릅니다. 여기서 <code>new</code>는 보조 명령어로서 <code>site</code> 보조 명령어와 함께 프로젝트를 초기화합니다. 초기화된 프로젝트의 폴더 구조는 다음과 같습니다.</p>
+<p>Hugo의 모든 명령<a href="#footnote-1"><sup>1</sup></a>은 <code>hugo</code>로 시작하고 보조 명령어가 뒤를 따릅니다. 여기서 <code>new</code>는 보조 명령어로서 <code>site</code> 보조 명령어와 함께 프로젝트를 초기화합니다. 초기화된 프로젝트의 폴더 구조는 다음과 같습니다.</p>
 
 <pre><code>$ cd golangkorea-hugo
 $ tree -a
@@ -249,7 +249,7 @@ $ tree -a
 <p>초기화된 프로젝트에는 텅빈 폴더 6개와 <code>config.toml</code> 파일 하나가 만들어 집니다. 각 폴더의 용도를 간단히 나열하면 다음과 같습니다.</p>
 
 <ul>
-<li>archetypes: <code>hugo new</code>명령으로 컨텐트 생성시 <a href="https://gohugo.io/content/front-matter/">Front Matter</a><sup>1</sup> 에 컨텐트 타입에 따른 기본 값들을 어떻게 정해줄 것인가를 결정하는 파일들을 저장합니다.</li>
+<li>archetypes: <code>hugo new</code>명령으로 컨텐트 생성시 <a href="https://gohugo.io/content/front-matter/">Front Matter</a><a href="#footnote-2"><sup>2</sup></a> 에 컨텐트 타입에 따른 기본 값들을 어떻게 정해줄 것인가를 결정하는 파일들을 저장합니다.</li>
 <li>content: 컨텐츠가 저장됩니다.</li>
 <li>data: 템플랫으로 불러쓸 수 있는 데이터 파일을 저장하는 공간입니다. 데이터의 타입은 toml, yaml, 과 json이 지원됩니다.</li>
 <li>layouts: 테마를 커스터마이징할 때 기존의 테마내 탬플릿의 내용을 수정하거나 덧씌우기를 하는 템플릿을 저장하는 공간입니다.</li>
@@ -329,7 +329,10 @@ $ cd ..
 
 <hr/>
 
-<p><code>1. 컨텐트 인스턴스의 메타데이터로 템플릿에서 호출해 쓸 수 있습니다.</code>
+<p><ol>
+  <li><a id="footnote-1"></a><a href="https://gohugo.io/commands/">Hugo의 모든 명령</a></li>
+  <li><a id="footnote-2"></a>컨텐트 인스턴스의 메타데이터로 템플릿에서 호출해 쓸 수 있습니다.</li>
+</ol>
 <br/>
 <br/>
 <br/></p>
@@ -469,15 +472,15 @@ $ cd ..
             </li>
           
             <li class="post">
+              <a href="https://golangkorea.github.io/post/hugo-intro/theme-customizing/">시리즈 #3 - 사이트 테마 개발하기</a>
+            </li>
+          
+            <li class="post">
               <a href="https://golangkorea.github.io/post/hugo-intro/content-basic/">시리즈 #2 - 컨텐츠 제작 기초</a>
             </li>
           
             <li class="post">
               <a href="https://golangkorea.github.io/post/hugo-intro/getting-started/">시리즈 #1 - Hugo 시작하기</a>
-            </li>
-          
-            <li class="post">
-              <a href="https://golangkorea.github.io/post/hugo-intro/overview/">Hugo 입문 - 개요</a>
             </li>
           
         </ul>
