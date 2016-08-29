@@ -16,7 +16,7 @@
   
 
   
-  <title>Jhonghee Park</title>
+  <title>시리즈 #5 - 사이트에 블로그 올리는 방법</title>
 
   
   
@@ -119,19 +119,27 @@
 
 <header>
     <h1 class="entry-title">
-         Jhonghee Park 
+         시리즈 #5 - 사이트에 블로그 올리는 방법 
     </h1>
-    <p class="meta">Aug 22, 2016
-         - 1 minute read 
-         - <a href="https://golangkorea.github.io/author/jhonghee-park/#disqus_thread">Comments</a>
+    <p class="meta">Aug 23, 2016
+         - 2 minute read 
+         - <a href="https://golangkorea.github.io/post/hugo-intro/how-to-contribute-content/#disqus_thread">Comments</a>
 
         
+        
+        
+            - <a class="label" href="https://golangkorea.github.io/categories/how-to/">How to</a>
+        
     </p>
-    <p>
+    <p>Posted by 
+    
+        <a href="https://golangkorea.github.io/authors/jhonghee-park">Jhonghee Park</a>
     
     </p>
     <p>
     <ul id="series">
+  
+    <li>Series: <a href="https://golangkorea.github.io/series/hugo-%EC%9E%85%EB%AC%B8%ED%95%98%EA%B8%B0">Hugo 입문하기</a> </li>
   
 </ul>
     </p>    
@@ -142,18 +150,135 @@
           
           
           
-          <p>This is a placeholder for personal profile of Jhonghee Park</p>
+          
+
+<h1 id="사이트에-블로그-올리는-방법">사이트에 블로그 올리는 방법</h1>
+
+<p><a href="https://golangkorea.github.io">Golang Korean Community 사이트</a>는 깃헙의 <a href="https://github.com/golangkorea">golangkorea</a> Organization의 웹사이트로 <a href="https://pages.github.com/">GitHub Pages</a>를 이용해 제작되고 있습니다. 현존하는 Static Site Generator중 가장 빠른 Hugo를 엔진으로 사용하고 주로 Go언어에 관련된 포스트와 글로벌 기술 동향및 최신의 개발 기법등을 소개하는 포스트를 다루고 있습니다.</p>
+
+<h1 id="참여자격">참여자격</h1>
+
+<p>깃헙에 계정이 있는 개발자라면 누구나 제작에 참여하실 수 있습니다.</p>
+
+<h1 id="fork-it">Fork it!</h1>
+
+<p><a href="https://golangkorea.github.io">Golang Korean Community 사이트</a>는 다음과 같이 두개의 Repo를 가지고 개발됩니다.</p>
+
+<ul>
+<li><strong><a href="https://github.com/golangkorea/golangkorea-hugo">golangkorea-hugo</a></strong> Hugo로 제작하는 golangkorea.github.io의 소스 프로젝트입니다.</li>
+<li><strong><a href="https://github.com/golangkorea/golangkorea.github.io">golangkorea.github.io</a></strong> golangkorea-hugo의 submodule로 Hugo로 빌드된 웹사이트입니다. 직접 이 repo에서 작업하지는 않습니다.</li>
+</ul>
+
+<p>포스트를 하기 위해서 우선 githubkorea-hugo를 fork하신다음 본인의 repo를 clone하십시요.</p>
+
+<pre><code>$ git clone https://github.com/myaccount/golangkorea-hugo.git
+</code></pre>
+
+<h1 id="clone-hugo-octopress">clone hugo-octopress</h1>
+
+<p>미래에는 어떻게 바뀔지 모르겠지만 현재 golangkorea.github.io는 <a href="https://github.com/parsiya/Hugo-Octopress">hugo-octopress</a> 테마를 사용하고 있습니다. <code>themes</code> 폴더에 clone하십시요.</p>
+
+<pre><code>$ cd themes
+$ git clone https://github.com/parsiya/Hugo-Octopress.git
+$ cd ..
+</code></pre>
+
+<h1 id="start-hugo">Start Hugo</h1>
+
+<p>이제 로컬에서 사이트를 열어볼 차례입니다. 다음 명령을 사용해서 Hugo의 웹서버를 시작하십시요.</p>
+
+<pre><code>$ hugo server
+</code></pre>
+
+<p><a href="http://localhost:1313">http://localhost:1313</a>를 브라우저에 열어서 사이트가 뜨는 걸 확인하십시요.</p>
+
+<h1 id="첫번째-포스트">첫번째 포스트</h1>
+
+<p><code>hugo new</code>명령을 사용해서 포스트의 작성을 시작하십시요.</p>
+
+<pre><code>$ hugo new post/my-frist-blog.md
+</code></pre>
+
+<p>golangkorea.github.io는 <code>authors</code> taxonomy를 지원합니다. 포스트의 Front Matter에 다름과 같이 저자의 영어 이름을 입력해 주십시요.</p>
+
+<pre><code>+++
+date = &quot;2016-08-28T23:01:25-04:00&quot;
+draft = true
+title = &quot;my first post&quot;
+
+authors = [&quot;Your Name&quot;]
++++
+</code></pre>
+
+<p>golangkorea.github.io는 저자의 소개 페이지를 지원합니다. 다름과 같이 본인의 이름을 hyphenated, lower-cased된 형태로 만들어 주십시요.</p>
+
+<pre><code>$ hugo new author/your-name.md
+</code></pre>
+
+<h1 id="pull-request하기">Pull Request하기</h1>
+
+<p>포스트의 작성이 끝나면 다음 과정을 거쳐 Pull Request해 주십시요.</p>
+
+<pre><code>$ git add -A
+...
+$ git commit -m&quot;My first post&quot;
+...
+$ git push
+</code></pre>
+
+<p>Pull Request에 대한 자세한 내용은 <a href="https://help.github.com/articles/about-pull-requests/">GitHub의 도움말</a>을 참조 하세요.</p>
+
+<h1 id="최신의-golankorea-hugo-repo와-싱크하기">최신의 golankorea-hugo repo와 싱크하기</h1>
+
+<p>포스트를 한 지 좀 시간이 지나다 보면 그 사이에 사이트에 많은 변화가 있을 수 있습니다. 그때는 본인의 로컬 repo를 최신의 golangkorea-hugo와 싱크 시킬 필요가 생깁니다. 새로운 포스트를 시작하기 전에 우선 로컬의 repo에 golangkorea-hugo를 upstream remote repo로 만드시고 나머지 단계를 따라 싱크 시키십시요.</p>
+
+<pre><code># Add the remote, call it &quot;upstream&quot;:
+
+git remote add upstream https://github.com/golangkorea/golangkorea.git
+
+# Fetch all the branches of that remote into remote-tracking branches,
+# such as upstream/master:
+
+git fetch upstream
+
+# Make sure that you're on your master branch:
+
+git checkout master
+
+# Rewrite your master branch so that any commits of yours that
+# aren't already in upstream/master are replayed on top of that
+# other branch:
+
+git rebase upstream/master
+</code></pre>
+
+<p>일단 싱크되면 본인의 forked repo에 다시 푸쉬하십시요.</p>
+
+<pre><code>git push -f origin master
+</code></pre>
+
+<p>이제 새로운 포스트를 작성하십시요.</p>
+
+<p><br/>
+<br/></p>
 
         </div>
         
 
 <footer>
   <p class="meta">
-    <span class="byline author vcard"><span class="fn">
+    <span class="byline author vcard">Posted by <span class="fn">
+    
+        <a href="https://golangkorea.github.io/authors/jhonghee-park">Jhonghee Park</a>
     
     </span></span>
     
-    <time>Aug 22, 2016</time>
+    <time>Aug 23, 2016</time>
+    
+      <span class="categories">
+        Tags:
+        
+          <a class="category" href="https://golangkorea.github.io/tags/blog">Blog</a>  <a class="category" href="https://golangkorea.github.io/tags/hugo">Hugo</a>  
     
     </span>
   </p>
@@ -165,9 +290,11 @@
 
   <p class="meta">
     
+        <a class="basic-alignment left" href="https://golangkorea.github.io/post/hugo-intro/taxonomy-basic/" title="시리즈 #4 - 분류(Taxonomy)기능 사용하기">시리즈 #4 - 분류(Taxonomy)기능 사용하기</a>
+    
 
     
-      <a class="basic-alignment right" href="https://golangkorea.github.io/author/sangbae-yun/" title="Sangbae Yun">Sangbae Yun</a>
+      <a class="basic-alignment right" href="https://golangkorea.github.io/post/go-start/getting-start/" title="Go언어 시작하기">Go언어 시작하기</a>
     
   </p>
   
