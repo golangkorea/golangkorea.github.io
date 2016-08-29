@@ -1168,7 +1168,7 @@ map &amp;lt;F4&amp;gt; :TagbarToggle&amp;lt;CR&amp;gt;
 
 &lt;p&gt;GosudaWeb은 &lt;a href=&#34;https://pages.github.com/&#34;&gt;Github Page&lt;/a&gt;로 제작되고 모든 소스와 제작과정이 공개로 이루어 집니다: &lt;a href=&#34;https://github.com/golangkorea&#34;&gt;https://github.com/golangkorea&lt;/a&gt;.&lt;/p&gt;
 
-&lt;p&gt;사이트에 포스트하기를 원하시는 분들은 &lt;a href=&#34;http://localhost:1313/post/hugo-intro/how-to-contribute-content/&#34;&gt;사이트에 블로그 올리는 방법&lt;/a&gt;을 참조하시길 바랍니다.&lt;/p&gt;
+&lt;p&gt;사이트에 포스트하기를 원하시는 분들은 &lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/how-to-contribute-content/&#34;&gt;사이트에 블로그 올리는 방법&lt;/a&gt;을 참조하시길 바랍니다.&lt;/p&gt;
 
 &lt;p&gt;Hugo를 이용해 사이트 개발에 참여하거나 golangkorea Organization에 오픈소스 프로젝트를 시작하시고 싶으신 분들은 멤버 신청을 하실 수 있습니다. 멤버 신청은 &lt;a href=&#34;mailto:golanginkorea@gmail.com&#34;&gt;golanginkorea@gmail.com&lt;/a&gt; 이나 &lt;a href=&#34;https://gitter.im/golang-korean-community/Lobby?utm_source=share-link&amp;amp;utm_medium=link&amp;amp;utm_campaign=share-link&#34;&gt;Golang Korean Community / Lobby&lt;/a&gt;로 해 주시면 됩니다. 일단 멤버로 등록되면 &lt;a href=&#34;https://github.com/orgs/golangkorea/teams/golangkorea-website&#34;&gt;golangkorea-website team&lt;/a&gt;을 통해 개발에 참여하실 수 있습니다.&lt;/p&gt;
 
