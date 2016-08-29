@@ -82,7 +82,7 @@ go version go1.7 linux/amd64
 
 &lt;p&gt;예를 들어 &lt;strong&gt;sqlite3&lt;/strong&gt;을 사용하는 애플리케이션을 개발한다고 가정해 보자. 이를 위해서 sqlite3 패키지를 go get으로 다운로드 해야 하는데 git 으로 부터 다운로드 한다.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code&gt;go get github.com/mattn/go-sqlite3 
+&lt;pre&gt;&lt;code&gt;go get github.com/mattn/go-sqlite3
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;거의 모든 패키지가 이처럼 인터넷 상에 있는 git으로 관리 되고 있다. workspace를 살펴보자.&lt;/p&gt;
