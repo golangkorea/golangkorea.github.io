@@ -99,7 +99,7 @@ $ git push
 
 &lt;pre&gt;&lt;code&gt;# Add the remote, call it &amp;quot;upstream&amp;quot;:
 
-git remote add upstream https://github.com/golangkorea/golangkorea.git
+git remote add upstream https://github.com/golangkorea/golangkorea-hugo.git
 
 # Fetch all the branches of that remote into remote-tracking branches,
 # such as upstream/master:
