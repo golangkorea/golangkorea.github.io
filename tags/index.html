@@ -1,3 +1,6 @@
+
+
+
 <!DOCTYPE html>
 <html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
 <head>
@@ -16,7 +19,7 @@
   
 
   
-  <title>Kookheon Kwon</title>
+  <title>Tags</title>
 
   
   
@@ -39,7 +42,7 @@
   
   
 
-  
+  <link href="https://golangkorea.github.io/tags/index.xml" rel="alternate" type="application/rss+xml" title="Golang Korean Community" />
 
   <meta name="description" content="">
   <meta name="keywords" content="">
@@ -117,90 +120,16 @@
 <div id="main">
   <div id="content">
     <div>
-      <article class="hentry" role="article">
+      <section>
+        <div>
+          <h1 id="title">Tags</h1>
 
-        
-        
-
-<header>
-    <h1 class="entry-title">
-         Kookheon Kwon 
-    </h1>
-    <p class="meta">Aug 26, 2016
-         - 1 minute read 
-         - <a href="https://golangkorea.github.io/author/kucuny/#disqus_thread">Comments</a>
-
-        
-    </p>
-    <p>
-    
-    </p>
-    <p>
-    <ul id="series">
-  
-</ul>
-    </p>    
-</header>
-
-
-        <div class="entry-content">
-          
-          
-          
-          <p>This is a placeholder for personal profile of Kookheon Kwon</p>
+          <div id="words"></div>
 
         </div>
-        
-
-<footer>
-  <p class="meta">
-    <span class="byline author vcard"><span class="fn">
-    
-    </span></span>
-    
-    <time>Aug 26, 2016</time>
-    
-    </span>
-  </p>
-
-  
-  
-
-  
-
-  <p class="meta">
-    
-        <a class="basic-alignment left" href="https://golangkorea.github.io/author/sangbae-yun/" title="Sangbae Yun">Sangbae Yun</a>
-    
-
-    
-  </p>
-  
-    
-      <div id="disqus_thread"></div>
-<script type="text/javascript">
-
-(function() {
-    
-    
-    
-    
-
-    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    var disqus_shortname = 'UA-82835198-1';
-    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
-
-    
-  
-</footer>
-
-      </article>
+      </section>
     </div>
+
     
 
 <aside class="sidebar thirds">
@@ -295,6 +224,40 @@
 
   </div>
 </div>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+  var words = [
+    
+    
+      { text: "beginning", weight:  1 , link: "/tags/beginning" },
+    
+      { text: "blog", weight:  7 , link: "/tags/blog" },
+    
+      { text: "community", weight:  1 , link: "/tags/community" },
+    
+      { text: "development", weight:  2 , link: "/tags/development" },
+    
+      { text: "hugo", weight:  7 , link: "/tags/hugo" },
+    
+      { text: "install", weight:  1 , link: "/tags/install" },
+    
+      { text: "tdd", weight:  1 , link: "/tags/tdd" },
+    
+      { text: "unittest", weight:  1 , link: "/tags/unittest" },
+    
+      { text: "vim", weight:  1 , link: "/tags/vim" },
+    
+  ];
+  $('#words').jQCloud(words, {
+      width: 500,
+      height: 350
+    });
+});
+
+</script>
+
 
 <footer role="contentinfo">
   <p>Copyright &copy; 2016  - <a href="https://golangkorea.github.io/license/">License</a> -
