@@ -152,7 +152,7 @@ title = &amp;quot;시리즈 #4 - 분류(Taxonomy)기능 사용하기&amp;quot;
 
 tags = [&amp;quot;Blog&amp;quot;, &amp;quot;Hugo&amp;quot;]
 categories = [&amp;quot;How-to&amp;quot;]
-series = [&amp;quot;Hugo 입문하기&amp;quot;]
+series = [&amp;quot;Hugo Introduction&amp;quot;]
 authors = [&amp;quot;Jhonghee Park&amp;quot;]
 
 toc = true
@@ -540,7 +540,7 @@ description = &amp;quot;Hugo 입문 두번째 시리즈로 컨텐츠 제작과 �
 
 tags = [&amp;quot;Blog&amp;quot;, &amp;quot;Hugo&amp;quot;]
 categories = [&amp;quot;How-to&amp;quot;]
-series = [&amp;quot;Hugo 입문하기&amp;quot;]
+series = [&amp;quot;Hugo Introduction&amp;quot;]
 authors = [&amp;quot;Jhonghee Park&amp;quot;]
 
 toc = true
