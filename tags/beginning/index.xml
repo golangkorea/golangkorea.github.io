@@ -17,7 +17,7 @@
       <guid>https://golangkorea.github.io/post/go-start/getting-start/</guid>
       <description>
 
-&lt;h2 id=&#34;go-언어에-대해서&#34;&gt;Go 언어에 대해서&lt;/h2&gt;
+&lt;h2 id=&#34;go-언어에-대해서:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;Go 언어에 대해서&lt;/h2&gt;
 
 &lt;p&gt;구글이 2009년에 만든 비교적 새로운 프로그래밍 언어다. 2009년이면 거의 7년 이상된 구닥다리 언어아닌가? 라고 생각 할 수 있겠으나, Ruby(1996년) 나 python(1991년) 과 비교해보면 느낌이 올 것이다. V8 자바스크립트 엔진 개발에 참여했던 Robert Griesemer, UTF-8을 만든 &lt;strong&gt;Rob Pike&lt;/strong&gt;, 초창기 유닉스 운영체제를 설계했으며 B언어(C언어의 전신)를 개발한 &lt;strong&gt;Ken Thompson&lt;/strong&gt;등 쟁쟁한 개발자들이 만든 언어다. 구글이 개발 했다는 프리미엄과 함께 &lt;strong&gt;도커(Docker)&lt;/strong&gt;의 개발 언어라는게 알려지면서 유명세를 타게 됐다.&lt;/p&gt;
 
@@ -42,9 +42,9 @@ continue     for          import       return       var
 
 &lt;p&gt;대규모의 분산 시스템을 유지해야 하는 구글의 요구를 위해서 웹 개발 관련 패키지가 강력해진 것 같다.&lt;/p&gt;
 
-&lt;h2 id=&#34;go-시작하기&#34;&gt;Go 시작하기&lt;/h2&gt;
+&lt;h2 id=&#34;go-시작하기:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;Go 시작하기&lt;/h2&gt;
 
-&lt;h3 id=&#34;go-설치&#34;&gt;Go 설치&lt;/h3&gt;
+&lt;h3 id=&#34;go-설치:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;Go 설치&lt;/h3&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://golang.org/dl/&#34;&gt;golang.org&lt;/a&gt;에서 운영체제별로 Go 언어를 다운로드 할 수 있다. 2016년 8월 현재 최신 버전은 1.7이다. 압축을 푼 다음 &lt;strong&gt;/usr/local&lt;/strong&gt; 디렉토리로 복사했다.&lt;/p&gt;
 
@@ -74,7 +74,7 @@ go version go1.7 linux/amd64
 
 &lt;p&gt;이것으로 go 언어 개발 환경을 마쳤다. 이제 Hello World 프로그램을 만들어보고 Go 프로그램의 기본적인 특징들을 살펴보자.&lt;/p&gt;
 
-&lt;h3 id=&#34;패키지-관리-시스템&#34;&gt;패키지 관리 시스템&lt;/h3&gt;
+&lt;h3 id=&#34;패키지-관리-시스템:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;패키지 관리 시스템&lt;/h3&gt;
 
 &lt;p&gt;Hello World 프로그램을 만들기 전에 Go 언어의 패키지 관리 시스템을 사펴봐야 할 것같다. 앞서 나는 workspace 라는 작업 디렉토리를 만들었다. 다른 프로그램이라면 workspace 디렉토리 밑에 프로젝트 파일을 만드는 것으로 개발을 시작할 것이다. 예컨데 mkdir workspace/helloworld 디렉토리를 먼저 만들 것이다.&lt;/p&gt;
 
@@ -111,7 +111,11 @@ go version go1.7 linux/amd64
 
 &lt;p&gt;아래에서 다룰 Hello World 프로젝트도 github 기반으로 진행 할 것이다. github 계정이 없다면 지금 계정을 만들자. 내가 사용하고 있는 github 계정은 &lt;strong&gt;yundream&lt;/strong&gt; 이다.&lt;/p&gt;
 
+<<<<<<< HEAD
 &lt;h3 id=&#34;hello-world를-만들어보자&#34;&gt;Hello World를 만들어보자.&lt;/h3&gt;
+=======
+&lt;h3 id=&#34;hello-world를-만들어보자:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;Hello World를 만들어보자.&lt;/h3&gt;
+>>>>>>> 6b28be1c3d28fd66546ca90586e6f1c82443d021
 
 &lt;p&gt;Hello World 프로젝트를 시작하기 위해서 github 계정에 helloworld 프로젝트를 만들었다. 프로젝트를 만들 때 &lt;strong&gt;Initialize this repository with a README&lt;/strong&gt; 옵션을 체크하자. 이제 go get 명령을 이용해서 패키지를 다운로드 한다.&lt;/p&gt;
 
@@ -186,7 +190,11 @@ Hello World
 
 &lt;p&gt;만약 패키지를 지우고 싶다면 $GOPATH/src로 이동해서 패키지 디렉토리를(이 경우 $GOPATH/src/github.com/yundream/helloworld) 지워주기만 하면 된다.&lt;/p&gt;
 
+<<<<<<< HEAD
 &lt;h3 id=&#34;첫-번째-패키지-개발&#34;&gt;첫 번째 패키지 개발&lt;/h3&gt;
+=======
+&lt;h3 id=&#34;첫-번째-패키지-개발:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;첫 번째 패키지 개발&lt;/h3&gt;
+>>>>>>> 6b28be1c3d28fd66546ca90586e6f1c82443d021
 
 &lt;p&gt;이제 라이브러리 타입의 패키지를 만들어 보자. 패키지의 이름은 &lt;strong&gt;stringutil&lt;/strong&gt;로 문자열 조작과 관련된 함수들을 만들 것이다.&lt;/p&gt;
 
@@ -242,7 +250,11 @@ Hello World !!
 FEDCBA
 &lt;/code&gt;&lt;/pre&gt;
 
+<<<<<<< HEAD
 &lt;h3 id=&#34;one-파일-배포&#34;&gt;One 파일 배포&lt;/h3&gt;
+=======
+&lt;h3 id=&#34;one-파일-배포:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;One 파일 배포&lt;/h3&gt;
+>>>>>>> 6b28be1c3d28fd66546ca90586e6f1c82443d021
 
 &lt;p&gt;기본적으로 Go 언어에서 라이브러리 타입의 패키지들은 빌드가 되면 모두 &lt;strong&gt;.a(정적 라이브러리)&lt;/strong&gt; 형태로 만들어진다. &lt;strong&gt;공유 라이브러리(Shared Library - 리눅스는 .so파일 윈도우즈는 dll)&lt;/strong&gt;를 지원하기는 하지만 운영체제에 따라 제한 적일 수 있다. 대게의 경우 정적 라이브러리를 코드내에 포함해서 &lt;strong&gt;하나의 실행 파일로 배포&lt;/strong&gt;하는 방법을 사용한다.&lt;/p&gt;
 
