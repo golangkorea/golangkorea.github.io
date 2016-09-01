@@ -47,7 +47,7 @@
   <meta name="author" content="">
 
   
-  <meta name="generator" content="Hugo 0.16-DEV" />
+  <meta name="generator" content="Hugo 0.17-DEV" />
 
   
   
@@ -157,7 +157,7 @@
           
           
 
-<h2 id="go-언어에-대해서:0f09cbcaf27085f48751820d2b07b3a9">Go 언어에 대해서</h2>
+<h2 id="go-언어에-대해서">Go 언어에 대해서</h2>
 
 <p>구글이 2009년에 만든 비교적 새로운 프로그래밍 언어다. 2009년이면 거의 7년 이상된 구닥다리 언어잖아? 라고 생각 할 수 있겠으나, Ruby(1996년) 나 python(1991년) 과 비교해보면 느낌이 다를 것이다. V8 자바스크립트 엔진 개발에 참여했던 <strong>Robert Griesemer</strong>, UTF-8을 만든 <strong>Rob Pike</strong>, 초창기 유닉스 운영체제를 설계했으며 B언어(C언어의 전신)를 개발한 <strong>Ken Thompson</strong>등 쟁쟁한 개발자들이 만든 언어다. 구글이 개발 했다는 프리미엄과 함께 <strong>도커(Docker)</strong>의 개발 언어라는게 알려지면서 유명세를 타게 됐다.</p>
 
@@ -182,9 +182,9 @@ continue     for          import       return       var
 
 <p>대규모의 분산 시스템을 유지해야 하는 구글의 요구를 위해서 웹 개발 관련 패키지가 강력해진 것 같다.</p>
 
-<h2 id="go-시작하기:0f09cbcaf27085f48751820d2b07b3a9">Go 시작하기</h2>
+<h2 id="go-시작하기">Go 시작하기</h2>
 
-<h3 id="go-설치:0f09cbcaf27085f48751820d2b07b3a9">Go 설치</h3>
+<h3 id="go-설치">Go 설치</h3>
 
 <p><a href="https://golang.org/dl/">golang.org</a>에서 운영체제별로 Go 언어를 다운로드 할 수 있다. 2016년 8월 현재 최신 버전은 1.7이다. 압축을 푼 다음 <strong>/usr/local</strong> 디렉토리로 복사했다.</p>
 
@@ -216,7 +216,7 @@ go version go1.7 linux/amd64
 
 <p>이것으로 go 언어 개발 환경을 마쳤다. 이제 Hello World 프로그램을 만들면서 Go 프로그램의 기본적인 특징들을 살펴보자.</p>
 
-<h3 id="패키지-관리-시스템:0f09cbcaf27085f48751820d2b07b3a9">패키지 관리 시스템</h3>
+<h3 id="패키지-관리-시스템">패키지 관리 시스템</h3>
 
 <p>Hello World 프로그램을 만들기 전에 Go 언어의 패키지 관리 시스템을 살펴봐야 할 것같다. 앞서 나는 workspace 라는 작업 디렉토리를 만들었다. 다른 프로그램이라면 workspace 디렉토리 밑에 프로젝트 파일을 만드는 것으로 개발을 시작할 것이다. 예컨데 mkdir workspace/helloworld 로 디렉토리를 먼저 만들 것이다.</p>
 
@@ -256,7 +256,7 @@ go version go1.7 linux/amd64
 
 <p>아래에서 다룰 Hello World 프로젝트도 github 기반으로 진행 할 것이다. github 계정이 없다면 지금 계정을 만들자. 내가 사용하고 있는 github 계정은 <strong>yundream</strong> 이다.</p>
 
-<h3 id="hello-world를-만들어보자:0f09cbcaf27085f48751820d2b07b3a9">Hello World를 만들어보자.</h3>
+<h3 id="hello-world를-만들어보자">Hello World를 만들어보자.</h3>
 
 <p>Hello World 프로젝트를 시작하기 위해서 내가 사용하는 github 계정에 helloworld 프로젝트를 만들었다. 프로젝트를 만들 때 <strong>Initialize this repository with a README</strong> 옵션을 체크하자. 이제 go get 명령을 이용해서 패키지를 다운로드 한다.</p>
 
@@ -331,7 +331,7 @@ Hello World
 
 <p>만약 패키지를 지우고 싶다면 $GOPATH/src로 이동해서 패키지 디렉토리를(이 경우 $GOPATH/src/github.com/yundream/helloworld) 지워주기만 하면 된다.</p>
 
-<h3 id="첫-번째-패키지-개발:0f09cbcaf27085f48751820d2b07b3a9">첫 번째 패키지 개발</h3>
+<h3 id="첫-번째-패키지-개발">첫 번째 패키지 개발</h3>
 
 <p>이제 라이브러리 타입의 패키지를 만들어 보자. 패키지의 이름은 <strong>stringutil</strong>로 문자열 조작과 관련된 함수들을 만들 것이다.</p>
 
@@ -387,7 +387,7 @@ Hello World !!
 FEDCBA
 </code></pre>
 
-<h3 id="one-파일-배포:0f09cbcaf27085f48751820d2b07b3a9">One 파일 배포</h3>
+<h3 id="one-파일-배포">One 파일 배포</h3>
 
 <p>기본적으로 Go 언어에서 라이브러리 타입의 패키지들은 빌드가 되면 모두 <strong>.a(정적 라이브러리)</strong> 형태로 만들어진다. <strong>공유 라이브러리(Shared Library - 리눅스는 .so파일 윈도우즈는 dll)</strong>를 지원하기는 하지만 운영체제에 따라 제한 적일 수 있다. 대게의 경우 정적 라이브러리를 코드내에 포함해서 <strong>하나의 실행 파일로 배포</strong>하는 방법을 사용한다.</p>
 
@@ -397,7 +397,7 @@ FEDCBA
 
 <p>클라우드와 같은 분산된 환경에서는 go 언어의 방식이 더 나을 수 있다.</p>
 
-<h2 id="마치며:0f09cbcaf27085f48751820d2b07b3a9">마치며</h2>
+<h2 id="마치며">마치며</h2>
 
 <p>테스트에 사용한 코드들은 아래 github에서 찾을 수 있다.</p>
 
@@ -470,6 +470,7 @@ FEDCBA
       </article>
     </div>
     
+
 
 <aside class="sidebar thirds">
   <section class="first odd">
@@ -559,7 +560,46 @@ FEDCBA
     
   
 
+  <section class="odd">
+      <h1>Tags</h1>
+      <ul id="tags">
+          <div id="tags-cloud"></div>
+      </ul>
+  </section>
+
 </aside>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+  var words = [
+    
+      { text: "beginning", weight:  1 , link: "/tags/beginning" },
+    
+      { text: "blog", weight:  7 , link: "/tags/blog" },
+    
+      { text: "community", weight:  1 , link: "/tags/community" },
+    
+      { text: "development", weight:  2 , link: "/tags/development" },
+    
+      { text: "hugo", weight:  7 , link: "/tags/hugo" },
+    
+      { text: "install", weight:  1 , link: "/tags/install" },
+    
+      { text: "tdd", weight:  1 , link: "/tags/tdd" },
+    
+      { text: "unittest", weight:  1 , link: "/tags/unittest" },
+    
+      { text: "vim", weight:  1 , link: "/tags/vim" },
+    
+  ];
+  $('#tags-cloud').jQCloud(words, {
+      width: 280,
+      height: 300
+    });
+});
+
+</script>
 
   </div>
 </div>

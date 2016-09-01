@@ -17,7 +17,7 @@
       <guid>https://golangkorea.github.io/post/go-start/getting-start/</guid>
       <description>
 
-&lt;h2 id=&#34;go-언어에-대해서:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;Go 언어에 대해서&lt;/h2&gt;
+&lt;h2 id=&#34;go-언어에-대해서&#34;&gt;Go 언어에 대해서&lt;/h2&gt;
 
 &lt;p&gt;구글이 2009년에 만든 비교적 새로운 프로그래밍 언어다. 2009년이면 거의 7년 이상된 구닥다리 언어잖아? 라고 생각 할 수 있겠으나, Ruby(1996년) 나 python(1991년) 과 비교해보면 느낌이 다를 것이다. V8 자바스크립트 엔진 개발에 참여했던 &lt;strong&gt;Robert Griesemer&lt;/strong&gt;, UTF-8을 만든 &lt;strong&gt;Rob Pike&lt;/strong&gt;, 초창기 유닉스 운영체제를 설계했으며 B언어(C언어의 전신)를 개발한 &lt;strong&gt;Ken Thompson&lt;/strong&gt;등 쟁쟁한 개발자들이 만든 언어다. 구글이 개발 했다는 프리미엄과 함께 &lt;strong&gt;도커(Docker)&lt;/strong&gt;의 개발 언어라는게 알려지면서 유명세를 타게 됐다.&lt;/p&gt;
 
@@ -42,9 +42,9 @@ continue     for          import       return       var
 
 &lt;p&gt;대규모의 분산 시스템을 유지해야 하는 구글의 요구를 위해서 웹 개발 관련 패키지가 강력해진 것 같다.&lt;/p&gt;
 
-&lt;h2 id=&#34;go-시작하기:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;Go 시작하기&lt;/h2&gt;
+&lt;h2 id=&#34;go-시작하기&#34;&gt;Go 시작하기&lt;/h2&gt;
 
-&lt;h3 id=&#34;go-설치:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;Go 설치&lt;/h3&gt;
+&lt;h3 id=&#34;go-설치&#34;&gt;Go 설치&lt;/h3&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://golang.org/dl/&#34;&gt;golang.org&lt;/a&gt;에서 운영체제별로 Go 언어를 다운로드 할 수 있다. 2016년 8월 현재 최신 버전은 1.7이다. 압축을 푼 다음 &lt;strong&gt;/usr/local&lt;/strong&gt; 디렉토리로 복사했다.&lt;/p&gt;
 
@@ -76,7 +76,7 @@ go version go1.7 linux/amd64
 
 &lt;p&gt;이것으로 go 언어 개발 환경을 마쳤다. 이제 Hello World 프로그램을 만들면서 Go 프로그램의 기본적인 특징들을 살펴보자.&lt;/p&gt;
 
-&lt;h3 id=&#34;패키지-관리-시스템:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;패키지 관리 시스템&lt;/h3&gt;
+&lt;h3 id=&#34;패키지-관리-시스템&#34;&gt;패키지 관리 시스템&lt;/h3&gt;
 
 &lt;p&gt;Hello World 프로그램을 만들기 전에 Go 언어의 패키지 관리 시스템을 살펴봐야 할 것같다. 앞서 나는 workspace 라는 작업 디렉토리를 만들었다. 다른 프로그램이라면 workspace 디렉토리 밑에 프로젝트 파일을 만드는 것으로 개발을 시작할 것이다. 예컨데 mkdir workspace/helloworld 로 디렉토리를 먼저 만들 것이다.&lt;/p&gt;
 
@@ -116,7 +116,7 @@ go version go1.7 linux/amd64
 
 &lt;p&gt;아래에서 다룰 Hello World 프로젝트도 github 기반으로 진행 할 것이다. github 계정이 없다면 지금 계정을 만들자. 내가 사용하고 있는 github 계정은 &lt;strong&gt;yundream&lt;/strong&gt; 이다.&lt;/p&gt;
 
-&lt;h3 id=&#34;hello-world를-만들어보자:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;Hello World를 만들어보자.&lt;/h3&gt;
+&lt;h3 id=&#34;hello-world를-만들어보자&#34;&gt;Hello World를 만들어보자.&lt;/h3&gt;
 
 &lt;p&gt;Hello World 프로젝트를 시작하기 위해서 내가 사용하는 github 계정에 helloworld 프로젝트를 만들었다. 프로젝트를 만들 때 &lt;strong&gt;Initialize this repository with a README&lt;/strong&gt; 옵션을 체크하자. 이제 go get 명령을 이용해서 패키지를 다운로드 한다.&lt;/p&gt;
 
@@ -191,7 +191,7 @@ Hello World
 
 &lt;p&gt;만약 패키지를 지우고 싶다면 $GOPATH/src로 이동해서 패키지 디렉토리를(이 경우 $GOPATH/src/github.com/yundream/helloworld) 지워주기만 하면 된다.&lt;/p&gt;
 
-&lt;h3 id=&#34;첫-번째-패키지-개발:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;첫 번째 패키지 개발&lt;/h3&gt;
+&lt;h3 id=&#34;첫-번째-패키지-개발&#34;&gt;첫 번째 패키지 개발&lt;/h3&gt;
 
 &lt;p&gt;이제 라이브러리 타입의 패키지를 만들어 보자. 패키지의 이름은 &lt;strong&gt;stringutil&lt;/strong&gt;로 문자열 조작과 관련된 함수들을 만들 것이다.&lt;/p&gt;
 
@@ -247,7 +247,7 @@ Hello World !!
 FEDCBA
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h3 id=&#34;one-파일-배포:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;One 파일 배포&lt;/h3&gt;
+&lt;h3 id=&#34;one-파일-배포&#34;&gt;One 파일 배포&lt;/h3&gt;
 
 &lt;p&gt;기본적으로 Go 언어에서 라이브러리 타입의 패키지들은 빌드가 되면 모두 &lt;strong&gt;.a(정적 라이브러리)&lt;/strong&gt; 형태로 만들어진다. &lt;strong&gt;공유 라이브러리(Shared Library - 리눅스는 .so파일 윈도우즈는 dll)&lt;/strong&gt;를 지원하기는 하지만 운영체제에 따라 제한 적일 수 있다. 대게의 경우 정적 라이브러리를 코드내에 포함해서 &lt;strong&gt;하나의 실행 파일로 배포&lt;/strong&gt;하는 방법을 사용한다.&lt;/p&gt;
 
@@ -257,7 +257,7 @@ FEDCBA
 
 &lt;p&gt;클라우드와 같은 분산된 환경에서는 go 언어의 방식이 더 나을 수 있다.&lt;/p&gt;
 
-&lt;h2 id=&#34;마치며:0f09cbcaf27085f48751820d2b07b3a9&#34;&gt;마치며&lt;/h2&gt;
+&lt;h2 id=&#34;마치며&#34;&gt;마치며&lt;/h2&gt;
 
 &lt;p&gt;테스트에 사용한 코드들은 아래 github에서 찾을 수 있다.&lt;/p&gt;
 
@@ -280,15 +280,15 @@ FEDCBA
       <guid>https://golangkorea.github.io/post/hugo-intro/how-to-contribute-content/</guid>
       <description>
 
-&lt;h1 id=&#34;사이트에-블로그-올리는-방법:36cb8478bb3456ef3fc9c72c1eb454b3&#34;&gt;사이트에 블로그 올리는 방법&lt;/h1&gt;
+&lt;h1 id=&#34;사이트에-블로그-올리는-방법&#34;&gt;사이트에 블로그 올리는 방법&lt;/h1&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://golangkorea.github.io&#34;&gt;Golang Korean Community 사이트&lt;/a&gt;는 깃헙의 &lt;a href=&#34;https://github.com/golangkorea&#34;&gt;golangkorea&lt;/a&gt; Organization의 웹사이트로 &lt;a href=&#34;https://pages.github.com/&#34;&gt;GitHub Pages&lt;/a&gt;를 이용해 제작되고 있습니다. 현존하는 Static Site Generator중 가장 빠른 Hugo를 엔진으로 사용하고 주로 Go언어에 관련된 포스트와 글로벌 기술 동향및 최신의 개발 기법등을 소개하는 포스트를 다루고 있습니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;참여자격:36cb8478bb3456ef3fc9c72c1eb454b3&#34;&gt;참여자격&lt;/h1&gt;
+&lt;h1 id=&#34;참여자격&#34;&gt;참여자격&lt;/h1&gt;
 
 &lt;p&gt;깃헙에 계정이 있는 개발자라면 누구나 제작에 참여하실 수 있습니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;fork-it:36cb8478bb3456ef3fc9c72c1eb454b3&#34;&gt;Fork it!&lt;/h1&gt;
+&lt;h1 id=&#34;fork-it&#34;&gt;Fork it!&lt;/h1&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://golangkorea.github.io&#34;&gt;Golang Korean Community 사이트&lt;/a&gt;는 다음과 같이 두개의 Repo를 가지고 개발됩니다.&lt;/p&gt;
 
@@ -302,7 +302,7 @@ FEDCBA
 &lt;pre&gt;&lt;code&gt;$ git clone https://github.com/myaccount/golangkorea-hugo.git
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h1 id=&#34;clone-hugo-octopress:36cb8478bb3456ef3fc9c72c1eb454b3&#34;&gt;clone hugo-octopress&lt;/h1&gt;
+&lt;h1 id=&#34;clone-hugo-octopress&#34;&gt;clone hugo-octopress&lt;/h1&gt;
 
 &lt;p&gt;미래에는 어떻게 바뀔지 모르겠지만 현재 golangkorea.github.io는 &lt;a href=&#34;https://github.com/parsiya/Hugo-Octopress&#34;&gt;hugo-octopress&lt;/a&gt; 테마를 사용하고 있습니다. &lt;code&gt;themes&lt;/code&gt; 폴더에 clone하십시요.&lt;/p&gt;
 
@@ -311,7 +311,7 @@ $ git clone https://github.com/parsiya/Hugo-Octopress.git
 $ cd ..
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h1 id=&#34;start-hugo:36cb8478bb3456ef3fc9c72c1eb454b3&#34;&gt;Start Hugo&lt;/h1&gt;
+&lt;h1 id=&#34;start-hugo&#34;&gt;Start Hugo&lt;/h1&gt;
 
 &lt;p&gt;이제 로컬에서 사이트를 열어볼 차례입니다. 다음 명령을 사용해서 Hugo의 웹서버를 시작하십시요.&lt;/p&gt;
 
@@ -320,7 +320,7 @@ $ cd ..
 
 &lt;p&gt;&lt;a href=&#34;http://localhost:1313&#34;&gt;http://localhost:1313&lt;/a&gt;를 브라우저에 열어서 사이트가 뜨는 걸 확인하십시요.&lt;/p&gt;
 
-&lt;h1 id=&#34;첫번째-포스트:36cb8478bb3456ef3fc9c72c1eb454b3&#34;&gt;첫번째 포스트&lt;/h1&gt;
+&lt;h1 id=&#34;첫번째-포스트&#34;&gt;첫번째 포스트&lt;/h1&gt;
 
 &lt;p&gt;&lt;code&gt;hugo new&lt;/code&gt;명령을 사용해서 포스트의 작성을 시작하십시요.&lt;/p&gt;
 
@@ -343,7 +343,7 @@ authors = [&amp;quot;Your Name&amp;quot;]
 &lt;pre&gt;&lt;code&gt;$ hugo new author/your-name.md
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h1 id=&#34;pull-request하기:36cb8478bb3456ef3fc9c72c1eb454b3&#34;&gt;Pull Request하기&lt;/h1&gt;
+&lt;h1 id=&#34;pull-request하기&#34;&gt;Pull Request하기&lt;/h1&gt;
 
 &lt;p&gt;포스트의 작성이 끝나면 다음 과정을 거쳐 Pull Request해 주십시요.&lt;/p&gt;
 
@@ -356,7 +356,7 @@ $ git push
 
 &lt;p&gt;Pull Request에 대한 자세한 내용은 &lt;a href=&#34;https://help.github.com/articles/about-pull-requests/&#34;&gt;GitHub의 도움말&lt;/a&gt;을 참조 하세요.&lt;/p&gt;
 
-&lt;h1 id=&#34;최신의-golankorea-hugo-repo와-싱크하기:36cb8478bb3456ef3fc9c72c1eb454b3&#34;&gt;최신의 golankorea-hugo repo와 싱크하기&lt;/h1&gt;
+&lt;h1 id=&#34;최신의-golankorea-hugo-repo와-싱크하기&#34;&gt;최신의 golankorea-hugo repo와 싱크하기&lt;/h1&gt;
 
 &lt;p&gt;포스트를 한 지 좀 시간이 지나다 보면 그 사이에 사이트에 많은 변화가 있을 수 있습니다. 그때는 본인의 로컬 repo를 최신의 golangkorea-hugo와 싱크 시킬 필요가 생깁니다. 새로운 포스트를 시작하기 전에 우선 로컬의 repo에 golangkorea-hugo를 upstream remote repo로 만드시고 나머지 단계를 따라 싱크 시키십시요.&lt;/p&gt;
 
@@ -402,7 +402,7 @@ git rebase upstream/master
       <guid>https://golangkorea.github.io/post/hugo-intro/taxonomy-basic/</guid>
       <description>
 
-&lt;h1 id=&#34;분류-taxonomy-기능-사용하기:17700138f87e9ff8307cff469397f8f0&#34;&gt;분류(Taxonomy)기능 사용하기&lt;/h1&gt;
+&lt;h1 id=&#34;분류-taxonomy-기능-사용하기&#34;&gt;분류(Taxonomy)기능 사용하기&lt;/h1&gt;
 
 &lt;p&gt;사이트에 컨텐트가 많아 질 수록 고민이 생깁니다. 비숫한 주제의 컨텐트를 한 곳에 나열해 주는 페이지를 만들수는 없는가? 순진한 저자는 자기가 포스트한 내용을 모두 한 포스트에 링크할 지도 모릅니다. 주제 별로 나열해 주는 포스트를 만들어 새로운 포스트가 올라올 때 마다 링크를 걸어 줄 수도 있겠죠. 손이 많이 가고 더군다나 다른 저자들의 비슷한 포스트는 포함되지 못하는 일도 허다할 겁니다.&lt;/p&gt;
 
@@ -424,7 +424,7 @@ toc = true
 
 &lt;p&gt;예를 들어 &lt;code&gt;How-to&lt;/code&gt; category의 경우 Hugo는 모든 컨텐트를 스캔하면서 해당 컨텐트들을 &lt;code&gt;/categories/how-to/index.html&lt;/code&gt;로 나열해 줍니다. 다시 말하면 taxonomy기능이 컨텐트내에 사용되면 taxonomy에 지정된 template을 이용해 Hugo는 모든 taxonomy페이지를 자동으로 만들고 사용된 term과 각 term을 사용한 컨텐트를 나열합니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;taxonomy-용어-정리:17700138f87e9ff8307cff469397f8f0&#34;&gt;Taxonomy 용어 정리&lt;/h1&gt;
+&lt;h1 id=&#34;taxonomy-용어-정리&#34;&gt;Taxonomy 용어 정리&lt;/h1&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;Taxonomy&lt;/strong&gt; 같은 카테고리의 컨텐트를 분류하는 방식 (예: tag, category, author 등)&lt;/li&gt;
@@ -432,7 +432,7 @@ toc = true
 &lt;li&gt;&lt;strong&gt;Value&lt;/strong&gt; term이 사용된 컨텐트의 내용&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h1 id=&#34;taxonomy-organization:17700138f87e9ff8307cff469397f8f0&#34;&gt;Taxonomy Organization&lt;/h1&gt;
+&lt;h1 id=&#34;taxonomy-organization&#34;&gt;Taxonomy Organization&lt;/h1&gt;
 
 &lt;p&gt;Taxonomy의 관점에서 본 Organization은 다음과 같습니다.&lt;/p&gt;
 
@@ -463,7 +463,7 @@ Go언어 시작하기                &amp;lt;-- Content
         Go 시작하기            &amp;lt;-- Term
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h1 id=&#34;분류변수-taxonomies-의-정의:17700138f87e9ff8307cff469397f8f0&#34;&gt;분류변수(taxonomies)의 정의&lt;/h1&gt;
+&lt;h1 id=&#34;분류변수-taxonomies-의-정의&#34;&gt;분류변수(taxonomies)의 정의&lt;/h1&gt;
 
 &lt;p&gt;분류변수는 사용하기 전에 사이트 configuration에 정의되어야 만 합니다. 단수형과 복수형을 사용해 다음과 같이 정의합니다.&lt;/p&gt;
 
@@ -474,11 +474,11 @@ tag = &amp;quot;tags&amp;quot;
 series = &amp;quot;series&amp;quot;
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h1 id=&#34;컨텐트에-분류변수-지정하기:17700138f87e9ff8307cff469397f8f0&#34;&gt;컨텐트에 분류변수 지정하기&lt;/h1&gt;
+&lt;h1 id=&#34;컨텐트에-분류변수-지정하기&#34;&gt;컨텐트에 분류변수 지정하기&lt;/h1&gt;
 
 &lt;p&gt;일단 분류변수가 사이트 레벨에 정의된 후에는 컨텐트 타입과 &lt;code&gt;section&lt;/code&gt;을 막론하고 어떤 컨텐트에도 사용 가능합니다. Front Matter에 복수형의 taxonomies를 써서 원하는 모든 Term을 나열하면 됩니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;taxonomy-템플릿:17700138f87e9ff8307cff469397f8f0&#34;&gt;Taxonomy 템플릿&lt;/h1&gt;
+&lt;h1 id=&#34;taxonomy-템플릿&#34;&gt;Taxonomy 템플릿&lt;/h1&gt;
 
 &lt;p&gt;Hugo는 일정한 규칙에 따라 Taxonomy 리스트 페이지를 만들어 냅니다. 주어진 Term의 모든 Taxonomy Value 리스트는 다음과 같은 URL 형식을 따릅니다.&lt;/p&gt;
 
@@ -520,7 +520,7 @@ series = &amp;quot;series&amp;quot;
       <guid>https://golangkorea.github.io/post/hugo-intro/theme-customizing/</guid>
       <description>
 
-&lt;h1 id=&#34;사이트-테마-개발하기:c896dabb81c6911cc1229cb4760a4f61&#34;&gt;사이트 테마 개발하기&lt;/h1&gt;
+&lt;h1 id=&#34;사이트-테마-개발하기&#34;&gt;사이트 테마 개발하기&lt;/h1&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/getting-started&#34;&gt;시리즈 1&lt;/a&gt; 마지막에 &lt;a href=&#34;http://themes.gohugo.io/hugo-octopress/&#34;&gt;hugo-octopress&lt;/a&gt; 테마를 사용하여 처음으로 사이트를 구축한 기억을 하실 겁니다. 사이트를 구축하기 전에 Hugo에서 사용할 수 있는 테마가 어떤것 있는지 한번 살펴보고 생각하고 있는 사이트와 잘 맞는 테마를 선택하는 일도 중요합니다. Hugo의 테마 쇼케이스에서 한번 감상하시길 바랍니다.&lt;/p&gt;
 
@@ -530,7 +530,7 @@ series = &amp;quot;series&amp;quot;
 
 &lt;p&gt;자신만의 테마를 개발하기 위한 첫걸음은 남이 개발해 놓은 테마를 사용하는 것에서 부터 시작합니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;테마-설치하는-법:c896dabb81c6911cc1229cb4760a4f61&#34;&gt;테마 설치하는 법&lt;/h1&gt;
+&lt;h1 id=&#34;테마-설치하는-법&#34;&gt;테마 설치하는 법&lt;/h1&gt;
 
 &lt;p&gt;테마의 사용법은 대단히 간단합니다. &lt;code&gt;hugo new site&lt;/code&gt;명령으로 사이트 프로젝트를 초기화하면 &lt;code&gt;themes&lt;/code&gt; 폴더가 생기는 것을 이미 아실 것입니다. 사용하고자 하는 테마를 선택하고 난 뒤 &lt;code&gt;themes&lt;/code&gt; 폴더 밑에 다운로드 받은 테마 패키지를 설치해 주면 됩니다.&lt;/p&gt;
 
@@ -545,7 +545,7 @@ $ git clone https://github.com/parsiya/Hugo-Octopress.git
 &lt;pre&gt;&lt;code&gt;$ git clone --recursive https://github.com/spf13/hugoThemes.git themes
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h1 id=&#34;테마-사용법:c896dabb81c6911cc1229cb4760a4f61&#34;&gt;테마 사용법&lt;/h1&gt;
+&lt;h1 id=&#34;테마-사용법&#34;&gt;테마 사용법&lt;/h1&gt;
 
 &lt;p&gt;테마를 &lt;code&gt;themes&lt;/code&gt;에 설치하고 난 뒤 다음과 같이 선택한 테마로 사이트를 구축할 수 있습니다.&lt;/p&gt;
 
@@ -554,7 +554,7 @@ $ git clone https://github.com/parsiya/Hugo-Octopress.git
 
 &lt;p&gt;ThemeName은 &lt;code&gt;themes&lt;/code&gt; 폴더내 설치된 테마의 디렉토리 이름과 일치하여야 합니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;테마-커스터마이징:c896dabb81c6911cc1229cb4760a4f61&#34;&gt;테마 커스터마이징&lt;/h1&gt;
+&lt;h1 id=&#34;테마-커스터마이징&#34;&gt;테마 커스터마이징&lt;/h1&gt;
 
 &lt;p&gt;설치된 테마를 사용하다 보면 맘에 들지 않는 부분이 생기거나 부족한 부분을 발견할 지도 모릅니다. &lt;strong&gt;&lt;em&gt;어떤 경우가 생기더라도 &lt;code&gt;themes&lt;/code&gt;밑에 설치된 테마에 속한 파일들을 직접 편집하지 마십시요&lt;/em&gt;&lt;/strong&gt;. Hugo는 이러한 경우가 생길때 보충하거나 기존의 템플릿을 오버라이드할 수 있도록 허락합니다. 설치된 테마의 구조를 살펴보시면 힌트를 얻을 수 있습니다.&lt;/p&gt;
 
@@ -604,7 +604,7 @@ $ git clone https://github.com/parsiya/Hugo-Octopress.git
 
 &lt;p&gt;지금 개발하고 있는 사이트 프로젝트 폴더 밑으로 &lt;code&gt;layouts&lt;/code&gt;, &lt;code&gt;static&lt;/code&gt;, &lt;code&gt;archetypes&lt;/code&gt;가 있듯이 테마도 같은 구조를 가지고 있습니다.&lt;/p&gt;
 
-&lt;h2 id=&#34;정적-리소스를-교체하는-법:c896dabb81c6911cc1229cb4760a4f61&#34;&gt;정적 리소스를 교체하는 법&lt;/h2&gt;
+&lt;h2 id=&#34;정적-리소스를-교체하는-법&#34;&gt;정적 리소스를 교체하는 법&lt;/h2&gt;
 
 &lt;p&gt;테마에 따라온 jQuery버전이 맘에 안 드시나요? 교체하는 법은 기존의 것은 그대로 두고 새로운 jQuery버전을 다운로드 받아 테마에 위치한 장소와 같은 상대적 경로에 배치하면 Hugo는 테마의 jQuery를 사용하지 않고 프로젝트에 배치된 것을 사용해서 사이트를 구축합니다.&lt;/p&gt;
 
@@ -618,7 +618,7 @@ $ git clone https://github.com/parsiya/Hugo-Octopress.git
 &lt;pre&gt;&lt;code&gt;/static/js/jquery.min.js
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h2 id=&#34;템플릿-교체하는-법:c896dabb81c6911cc1229cb4760a4f61&#34;&gt;템플릿 교체하는 법&lt;/h2&gt;
+&lt;h2 id=&#34;템플릿-교체하는-법&#34;&gt;템플릿 교체하는 법&lt;/h2&gt;
 
 &lt;p&gt;Hugo는 탬플릿을 찾을 때 항상 프로젝트 밑 &lt;code&gt;layouts&lt;/code&gt;폴더를 먼저 검색하고 없으면 테마의 &lt;code&gt;layouts&lt;/code&gt;을 찾아봅니다. 이런 Hugo의 특성을 이용하여 테마의 템프렛을 수정해야 할 필요가 생길 때 &lt;code&gt;layouts&lt;/code&gt;폴더 밑으로 같은 경로와 이름의 템플릿으로 교체하면 됩니다.&lt;/p&gt;
 
@@ -634,15 +634,15 @@ $ git clone https://github.com/parsiya/Hugo-Octopress.git
 
 &lt;p&gt;특히 부분 템플릿(partial template)을 잘 활용한 테마의 경우 이런 교체법은 사이트의 보수유지를 최소화하고 미래에도 호환성을 보장하게 해 주는 장점을 가지고 있습니다.&lt;/p&gt;
 
-&lt;h2 id=&#34;archetype-교체하는-법:c896dabb81c6911cc1229cb4760a4f61&#34;&gt;archetype 교체하는 법&lt;/h2&gt;
+&lt;h2 id=&#34;archetype-교체하는-법&#34;&gt;archetype 교체하는 법&lt;/h2&gt;
 
 &lt;p&gt;Archetype을 제공하는 테마의 경우 &lt;code&gt;archetypes&lt;/code&gt;폴더로 교체하고자 하는 archetype 파일을 복사한 다음 필요에 맞게 수정하면 됩니다.&lt;/p&gt;
 
-&lt;h2 id=&#34;default-템플릿-사용-주의:c896dabb81c6911cc1229cb4760a4f61&#34;&gt;Default 템플릿 사용 주의&lt;/h2&gt;
+&lt;h2 id=&#34;default-템플릿-사용-주의&#34;&gt;Default 템플릿 사용 주의&lt;/h2&gt;
 
 &lt;p&gt;&lt;code&gt;layouts/_default&lt;/code&gt;폴더내의 템플릿들은 테마에 비슷한 파일들을 가리지 않고 교체하는 효과가 있어 사용을 자제해야 합니다. 항상 default 템플릿을 사용하기 보다는 특정한 템플릿 교체가 더 낫다는 사실을 명심하십시요.&lt;/p&gt;
 
-&lt;h1 id=&#34;새-테마-만들기:c896dabb81c6911cc1229cb4760a4f61&#34;&gt;새 테마 만들기&lt;/h1&gt;
+&lt;h1 id=&#34;새-테마-만들기&#34;&gt;새 테마 만들기&lt;/h1&gt;
 
 &lt;p&gt;새로 테마를 만들기 위한 명령어는 다음과 같습니다.&lt;/p&gt;
 
@@ -672,7 +672,7 @@ $ git clone https://github.com/parsiya/Hugo-Octopress.git
 
 &lt;p&gt;템플릿은 Go의 템플릿 언어로 만들어 집니다. &lt;a href=&#34;https://gohugo.io/layout/go-templates/&#34;&gt;Go template primer&lt;/a&gt;은 Go 템플릿 언어를 숙지하기 위한 좋은 출발점입니다.&lt;/p&gt;
 
-&lt;h2 id=&#34;테마-콤퍼넌트:c896dabb81c6911cc1229cb4760a4f61&#34;&gt;테마 콤퍼넌트&lt;/h2&gt;
+&lt;h2 id=&#34;테마-콤퍼넌트&#34;&gt;테마 콤퍼넌트&lt;/h2&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;strong&gt;Layouts&lt;/strong&gt; 근본적으로 웹사이트는 두가지 형식의 페이지를 통해 컨텐트를 제공합니다: 컨텐트 자체가 하나의 페이지인 경우와 여러 항목을 나열해 놓은 페이지. Hugo의 테마는 이 두가지 페이지를 처리하는 기본(default) 템플릿에서 시작해서 컨텐트 타입(type)과 section을 통해 추가로 layout을 제공하는 템플릿을 준비합니다.&lt;/li&gt;
@@ -697,11 +697,11 @@ $ git clone https://github.com/parsiya/Hugo-Octopress.git
       <guid>https://golangkorea.github.io/post/hugo-intro/content-basic/</guid>
       <description>
 
-&lt;h1 id=&#34;컨텐츠-제작-기초:87e917a9f02355061a990abda27cc32e&#34;&gt;컨텐츠 제작 기초&lt;/h1&gt;
+&lt;h1 id=&#34;컨텐츠-제작-기초&#34;&gt;컨텐츠 제작 기초&lt;/h1&gt;
 
 &lt;p&gt;컨텐츠를 제작하면서 꼭 알아야 할 몇가지 개념을 정리하겠습니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;컨텐츠의-조직적인-관리-organization:87e917a9f02355061a990abda27cc32e&#34;&gt;컨텐츠의 조직적인 관리 (Organization)&lt;/h1&gt;
+&lt;h1 id=&#34;컨텐츠의-조직적인-관리-organization&#34;&gt;컨텐츠의 조직적인 관리 (Organization)&lt;/h1&gt;
 
 &lt;p&gt;사이트가 많은 양의 컨텐츠를 보유하게 되면서 조직적인 관리가 필요할 때 Hugo가 어떻게 도와주는지 알아 봅시다. &lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/getting-started/&#34;&gt;시리즈 1&lt;/a&gt;에서 보았 듯이 Hugo의 &lt;code&gt;configuration&lt;/code&gt;&lt;sup&gt;1&lt;/sup&gt;에 특별한 세팅이 없는 한 모든 컨텐츠는 &lt;code&gt;content&lt;/code&gt; 폴더 안에 위치하게 됩니다. Hugo를 통해 만들어질 사이트의 URL은 &lt;code&gt;content&lt;/code&gt;내의 폴더 구조와 매우 밀접한 관계가 있습니다. 우선 &lt;code&gt;content&lt;/code&gt; 바로 아래 위치하는 폴더는 &lt;code&gt;section&lt;/code&gt;이라고 부르는데 매우 중요한 역활을 합니다. 다음의 예는 &lt;code&gt;section&lt;/code&gt;이 사이트 URL과 어떤 상관이 있는지 암시합니다. 만들어진 사이트의 URL경로는 거울을 보듯이 컨텐츠 소스의 경로을 반영합니다.&lt;/p&gt;
 
@@ -728,7 +728,7 @@ $ git clone https://github.com/parsiya/Hugo-Octopress.git
 
 &lt;p&gt;이런 질문들에 대한 답을 얻기 위해서 다음의 개념들을 이해할 필요가 있습니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;컨텐트-경로-destination:87e917a9f02355061a990abda27cc32e&#34;&gt;컨텐트 경로 (Destination)&lt;/h1&gt;
+&lt;h1 id=&#34;컨텐트-경로-destination&#34;&gt;컨텐트 경로 (Destination)&lt;/h1&gt;
 
 &lt;p&gt;이미 살펴본 바와 같이 특별한 변수가 없다면 Hugo를 통해 생성된 컨텐트의 경로는 소스파일의 경로에 의해 결정됩니다. 하지만 컨텐트의 경로는 앞으로 살펴볼 정면 변수들(Front Matter)을 통해 다양한 형태로 조정될 수 있습니다. 그럼 Hugo는 컨텐트의 경로를 어떻게 조립하는 것일까요? 우선 몇가지 경로의 부분을 지칭하는 이름을 소개하겠습니다.&lt;/p&gt;
 
@@ -783,7 +783,7 @@ http://spf13.com/extras/indexes/example
 
 &lt;p&gt;&lt;code&gt;slug&lt;/code&gt;나 &lt;code&gt;url&lt;/code&gt; 정면변수들을 통해 컨텐트의 목적지 경로(Destination)를 부분적으로 수정하거나 전면적으로 교체할 수 있다는 걸 알 수 있습니다. 이제 목적지 경로 변경 기능외에 컨텐트 처리와 HTML변환시 정면 변수들이 어떤 역활을 하는지 알아봅시다.&lt;/p&gt;
 
-&lt;h1 id=&#34;정면-변수들-front-matter:87e917a9f02355061a990abda27cc32e&#34;&gt;정면 변수들(Front Matter)&lt;/h1&gt;
+&lt;h1 id=&#34;정면-변수들-front-matter&#34;&gt;정면 변수들(Front Matter)&lt;/h1&gt;
 
 &lt;p&gt;&lt;code&gt;Front Matter&lt;/code&gt;는 컨텐트의 메타 데이터라고 할 수 있습니다. 컨텐트보다 먼저 나타난다는 의미로 &lt;code&gt;front matter&lt;/code&gt;라는 이름을 지었을 것으로 추측해 봅니다. 시작과 끝을 나타내는 문자열에 따라 여러가지 포맷이 지원됩니다.&lt;/p&gt;
 
@@ -835,7 +835,7 @@ toc = true
 
 &lt;p&gt;사이트 개발자의 입장에서 사이트의 기능을 확장하고 컨텐트 제작자에게 그 기능을 조종할 수 있는 인터페이스를 제공하려고 할 때 정면 변수를 유용하게 사용할 수 있습니다. 위에 정면변수 예를 보면, 렌더링된 컨텐트의 상단에 목차를 구현하고 그 기능을 컨텐트 제작시 &lt;code&gt;toc = true&lt;/code&gt;를 이용해 나타나게 하는 예가 있습니다. 또 다른 예는 &lt;code&gt;authors&lt;/code&gt;를 분류변수(taxonomies)로 등록하고 테마를 통해 구현한 뒤 정면변수의 하나로 컨텐트 제작자에게 자신의 이름을 입력할 수 있게 합니다. 컨텐츠 제작자는 항상 동일한 이름을 사용함으로서 사이트가 제공하는 컨텐츠 목록의 자동 발생을 사용할 수 있습니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;지원되는-컨텐트의-포맷:87e917a9f02355061a990abda27cc32e&#34;&gt;지원되는 컨텐트의 포맷&lt;/h1&gt;
+&lt;h1 id=&#34;지원되는-컨텐트의-포맷&#34;&gt;지원되는 컨텐트의 포맷&lt;/h1&gt;
 
 &lt;p&gt;컨텐트 상단에 정면변수들의 정의되고 그 뒤로 컨텐트의 내용이 따라옵니다. Hugo의 컨텐트는 다양한 포맷으로 제작될 수 있습니다. &lt;a href=&#34;http://www.methods.co.nz/asciidoc/&#34;&gt;asciidoc&lt;/a&gt;, &lt;a href=&#34;http://docutils.sourceforge.net/rst.html&#34;&gt;reStructuredText&lt;/a&gt;는 외부 프로그램의 도움을 얻어 지원되는 포맷들입니다. 외부 툴에 의존하지 않고 Hugo 자체적으로 컨텐트를 제작할 수 있는 포맷은 &lt;a href=&#34;https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet&#34;&gt;Markdown&lt;/a&gt;입니다. Markdown을 이용해 새로운 컨텐트를 제작하고 싶으면 &lt;code&gt;hugo new&lt;/code&gt;명령에 &lt;code&gt;md&lt;/code&gt;확장자를 가지는 파일이름을 사용해 시작할 수 있습니다.&lt;/p&gt;
 
@@ -844,7 +844,7 @@ toc = true
 
 &lt;p&gt;이 명령이 실행되면 Markdown 파일이 만들어 지고 기본적인 정면변수들의 셑업이 이루어 집니다. 이 Scaffolding 과정에서 Hugo는 post라는 archetype을 찾기 위해 테마의 archetypes 폴더나 프로젝트 내 archetypes 폴더안을 검색하고 정면변수들의 기본 셑업을 진행합니다. 만약에 post archetype이 정의되어 있지 않을 때는 Hugo의 기본 값들을 사용합니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;컨텐트-타입과-전형-content-types-and-archetypes:87e917a9f02355061a990abda27cc32e&#34;&gt;컨텐트 타입과 전형 (Content Types and archetypes)&lt;/h1&gt;
+&lt;h1 id=&#34;컨텐트-타입과-전형-content-types-and-archetypes&#34;&gt;컨텐트 타입과 전형 (Content Types and archetypes)&lt;/h1&gt;
 
 &lt;p&gt;컨텐트 타입은 기본적으로 소스의 위치가 어디에 있느냐에 따라 결정 됩니다. &lt;code&gt;post/my-first-blog.md&lt;/code&gt;에 작성된 컨텐트는 정면변수 &lt;code&gt;type&lt;/code&gt;이 존재하지 않는 한 post 컨텐트 타입으로 간주되어 타입에 맞는 렌더링이 이루어 집니다. 만약에 전혀 새로운 컨텐트 타입을 도입하고자 하면 어떻게 해야 할까요? 예를 들어 musician이라는 컨텐트 타입을 통해 유명한 음악가들의 소개를 하고자 하는 가정을 합시다. &lt;code&gt;hugo new musician/bach.md&lt;/code&gt;로 컨텐트를 초기화 했을때 Hugo의 입장에서는 musician이라는 컨텐트 타입으로 bach.md의 HTML을 렌더링하려고 할 것입니다. musician 컨텐트에 특화된 렌더링을 제공하려면 다음과 같이 새로운 탬플릿을 layouts에 추가해야 합니다.&lt;/p&gt;
 
@@ -906,11 +906,11 @@ genre = &amp;quot;&amp;quot;
       <guid>https://golangkorea.github.io/post/hugo-intro/getting-started/</guid>
       <description>
 
-&lt;h1 id=&#34;hugo-시작하기:b6885e1f85551f51a4707c402f8200a3&#34;&gt;Hugo 시작하기&lt;/h1&gt;
+&lt;h1 id=&#34;hugo-시작하기&#34;&gt;Hugo 시작하기&lt;/h1&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://gohugo.io&#34;&gt;Hugo&lt;/a&gt;는 Go로 제작되고 하나의 실행파일로 배포됩니다. 다양한 설치 방법이 있지만 우선 Package Manager를 쓰시는 분들을 중심으로 살펴보겠습니다.&lt;/p&gt;
 
-&lt;h2 id=&#34;package-manager로-설치하기:b6885e1f85551f51a4707c402f8200a3&#34;&gt;Package Manager로 설치하기&lt;/h2&gt;
+&lt;h2 id=&#34;package-manager로-설치하기&#34;&gt;Package Manager로 설치하기&lt;/h2&gt;
 
 &lt;p&gt;MacOS를 쓰시는 분들은 Homebrew를 이용해 쉽게 설치하실 수 있습니다.&lt;/p&gt;
 
@@ -927,7 +927,7 @@ genre = &amp;quot;&amp;quot;
 &lt;pre&gt;&lt;code&gt;sudo dpkg -i hugo*.deb
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h2 id=&#34;소스로-직접-빌드해-쓰는-방법:b6885e1f85551f51a4707c402f8200a3&#34;&gt;소스로 직접 빌드해 쓰는 방법&lt;/h2&gt;
+&lt;h2 id=&#34;소스로-직접-빌드해-쓰는-방법&#34;&gt;소스로 직접 빌드해 쓰는 방법&lt;/h2&gt;
 
 &lt;p&gt;이미 Go로 개발 환경을 갖추고 계신 분들은 직접 소스를 빌드해 쓰시는 방법이 가장 편합니다. 간단히 &lt;code&gt;go get&lt;/code&gt;툴을 이용해 설치하실 수 있습니다.&lt;/p&gt;
 
@@ -940,7 +940,7 @@ genre = &amp;quot;&amp;quot;
 Hugo Static Site Generator v0.17-DEV BuildDate: 2016-08-21T19:44:40-04:00
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h1 id=&#34;프로젝트-폴더-만들기:b6885e1f85551f51a4707c402f8200a3&#34;&gt;프로젝트 폴더 만들기&lt;/h1&gt;
+&lt;h1 id=&#34;프로젝트-폴더-만들기&#34;&gt;프로젝트 폴더 만들기&lt;/h1&gt;
 
 &lt;p&gt;정적 사이트 제너레이터를 처음 접하시는 분들을 위해 Hugo를 간단하게 설명하자면, Hugo는 소스 폴더 아래 존재하는 파일과 컨텐츠 템플릿을 입력으로 사용해서 웹사이트 전체를 출력하는 시스템입니다. 보통 소스는 &lt;a href=&#34;https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet&#34;&gt;Markdown&lt;/a&gt;을 이용한 컨텐츠이거나 템플릿 언어로 작성된 HTML에 자바스크립과 CSS스타일로 구성되어 웹 개발자에게 매우 친숙한 환경이라 할 수 있습니다.&lt;/p&gt;
 
@@ -1007,7 +1007,7 @@ title = &amp;quot;My New Hugo Site&amp;quot;
 
 &lt;p&gt;&lt;code&gt;baseurl&lt;/code&gt;은 말 그대로 사이트내 모든 리소스의 URL의 베이스를 형성합니다. 예를 들어 &lt;code&gt;content/post/my-first-blog.md&lt;/code&gt;라는 컨텐트가 있으면 Full URL은 &lt;code&gt;http://replace-this-with-your-hugo-site.com/post/my-first-blog&lt;/code&gt;이 됩니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;첫번째-컨텐트-만들기:b6885e1f85551f51a4707c402f8200a3&#34;&gt;첫번째 컨텐트 만들기&lt;/h1&gt;
+&lt;h1 id=&#34;첫번째-컨텐트-만들기&#34;&gt;첫번째 컨텐트 만들기&lt;/h1&gt;
 
 &lt;p&gt;그럼, 다음 Scaffolding 명령을 써서 첫번째 블로그 포스트를 만들어 보도록 합니다.&lt;/p&gt;
 
@@ -1044,7 +1044,7 @@ title = &amp;quot;my first blog&amp;quot;
 
 &lt;p&gt;첫번째 포스트가 이제 보이십니까?&lt;/p&gt;
 
-&lt;h1 id=&#34;이렇게-힘들게-만들어야-하나:b6885e1f85551f51a4707c402f8200a3&#34;&gt;이렇게 힘들게 만들어야 하나?&lt;/h1&gt;
+&lt;h1 id=&#34;이렇게-힘들게-만들어야-하나&#34;&gt;이렇게 힘들게 만들어야 하나?&lt;/h1&gt;
 
 &lt;p&gt;이런 질문이 당연히 생기실 겁니다. 사이트의 구조와 컨텐츠의 템플릿을 하나씩 만들어 나가야 한다면 사이트 발생기라고 부를 이유가 없겠죠. 누군가 그런 힘든 노동을 통해 &lt;code&gt;layouts&lt;/code&gt;의 구조와 템플랫을 모두 작성했다면 공유할 수 있는 메카니즘이 필요합니다. 그런 공유의 매카니즘을 &lt;code&gt;테마(theme)&lt;/code&gt;이라고 부릅니다.&lt;/p&gt;
 
@@ -1086,12 +1086,12 @@ $ cd ..
       <pubDate>Tue, 23 Aug 2016 22:35:57 -0400</pubDate>
       
       <guid>https://golangkorea.github.io/post/hugo-intro/overview/</guid>
-      <description>&lt;p&gt;Hugo는 현존하는 가장 빠른 정적 사이트 제너레이터(Static Site Generator)로 알려져 있습니다. 기능적인 측면에서도 여타 동적 사이트 제너레이터(Static Site Generator)에 비해 손색이 없을 뿐더러 설치가 간편하고 Go언어에 친숙한 개발자들에게는 최고의 컨텐츠 제작 환경을 제공한다고 생각합니다. &lt;a href=&#34;https://golangkorea.github.io&#34;&gt;Golang Korean Community&lt;/a&gt; 사이트도 Hugo로 제작되고 있습니다. &lt;strong&gt;Hugo 입문&lt;/strong&gt; 시리즈를 통해 이 사이트에 기여하시고자 하는 분들에게 가이드라인을 제공할 뿐만 아니라 자신만의 블로그 사이트를 쉽게 제작하고자 하는 분들에게도 도움이 되길 바라는 마음으로 시리즈를 준비했습니다.&lt;/p&gt;
+      <description>&lt;p&gt;Hugo는 현존하는 가장 빠른 정적 사이트 제너레이터(Static Site Generator)로 알려져 있습니다. 기능적인 측면에서도 여타 동적 사이트 제너레이터(Static Site Generator)에 비해 손색이 없을 뿐더러 설치가 간편하고 Go언어에 친숙한 개발자들에게는 최고의 컨텐츠 제작 환경을 제공한다고 생각합니다. &lt;a href=&#34;https://golangkorea.github.io&#34;&gt;Golang Korean Community&lt;/a&gt; 사이트도 Hugo로 제작되고 있습니다. &lt;strong&gt;Hugo 입문&lt;/strong&gt; 시리즈를 통해 이 사이트에 기여하시고자 하는 분들에게 가이드라인을 제공할 뿐만 아니라 자신만의 블로그 사이트를 쉽게 제작하고자 하는 분들에게도 도움이 되길 기원하는 마음으로 시리즈를 준비했습니다.&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/getting-started/&#34;&gt;Hugo 시작하기&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/content-basic/&#34;&gt;컨텐츠 제작 기초&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/theme-customizing/&#34;&gt;사이트 테마 개발하기&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/theme-customizing/&#34;&gt;사이트 테마 커스터마이징 하기&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/taxonomy-basic/&#34;&gt;분류(Taxonomy)기능 사용하기&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/how-to-contribute-content/&#34;&gt;사이트에 블로그 올리는 방법&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;
@@ -1106,7 +1106,7 @@ $ cd ..
       <guid>https://golangkorea.github.io/post/vim-go/</guid>
       <description>
 
-&lt;h2 id=&#34;vim:d6ac5b2eecfc12afd25350cc0802f0f4&#34;&gt;Vim&lt;/h2&gt;
+&lt;h2 id=&#34;vim&#34;&gt;Vim&lt;/h2&gt;
 
 &lt;p&gt;&lt;strong&gt;Vim&lt;/strong&gt;은 Emacs와 함께 (적어도 리눅스에서는) 가장 널리 사용하는 에디터일 것이다. 가볍고 빠르며, 어디에서나 실행되기 때문에 그 단순함에도 불구하고 여전히 사랑받고 있다. GUI 환경에서 사용하는 IDE에 익숙한 개발자라면 &amp;ldquo;요즘 같은 시대에 왠 구닥다리 터미널 기반 에디터냐&amp;rdquo;라고 생각할 지도 모르겠다. 아래 그래프를 보자.&lt;/p&gt;
 
@@ -1114,7 +1114,7 @@ $ cd ..
 
 &lt;p&gt;Go언어를 대상으로 조사한 결과인데, Vim이 거의 40% 정도를 차지하고 있다. Emacs까지 하면 터미널 기반 에디터를 사용하는 개발자가 절반이 넘는다. 물론 Go 언어가 시스템과 네트워크 분야의  백앤드 프로그램의 개발에 특화된 측면을 고려해야 겠지만 말이다.&lt;/p&gt;
 
-&lt;h2 id=&#34;vim-go:d6ac5b2eecfc12afd25350cc0802f0f4&#34;&gt;Vim-go&lt;/h2&gt;
+&lt;h2 id=&#34;vim-go&#34;&gt;Vim-go&lt;/h2&gt;
 
 &lt;p&gt;Vim은 다양한 플러그인을 제공한다. &lt;strong&gt;Vim-go&lt;/strong&gt;는 Go 개발환경을 지원하는 플러그인이다. 지원하는 기능은 아래와 같다.&lt;/p&gt;
 
@@ -1133,7 +1133,7 @@ $ cd ..
 등 개발 환경을 만들기 위한 거의 모든 기능들을 제공한다. 여기에 파일 네비게이션 플러그인, 자동완성 플러그인들을 추가로 설치하면, IDE 부럽지 않은 개발 환경을 만들 수 있다.&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h2 id=&#34;vim-go-설치:d6ac5b2eecfc12afd25350cc0802f0f4&#34;&gt;Vim-go 설치&lt;/h2&gt;
+&lt;h2 id=&#34;vim-go-설치&#34;&gt;Vim-go 설치&lt;/h2&gt;
 
 &lt;p&gt;Vim의 플러그인들을 편리하게 관리하기 위해서 몇 가지 패키지 매니저들이 있다. 보통 Vundle 이나 &lt;strong&gt;pathogen&lt;/strong&gt;을 사용한다. 나는 pathogen을 사용하고 있다. 아래와 같이 설치하자.&lt;/p&gt;
 
@@ -1189,7 +1189,7 @@ vim-go: gotags not found. Installing github.com/jstemmer/gotags to folder /home/
 계속하려면 엔터 혹은 명령을 입력하십시오
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h2 id=&#34;vim-go-기능-빠르게-살펴보기:d6ac5b2eecfc12afd25350cc0802f0f4&#34;&gt;Vim-go 기능 빠르게 살펴보기&lt;/h2&gt;
+&lt;h2 id=&#34;vim-go-기능-빠르게-살펴보기&#34;&gt;Vim-go 기능 빠르게 살펴보기&lt;/h2&gt;
 
 &lt;p&gt;Go 코드의 실행&lt;/p&gt;
 
@@ -1219,7 +1219,7 @@ vim-go: gotags not found. Installing github.com/jstemmer/gotags to folder /home/
 
 &lt;p&gt;대략 이런 식이다. 나머지 명령들은 직접 실행해 보자.&lt;/p&gt;
 
-&lt;h2 id=&#34;자동완성:d6ac5b2eecfc12afd25350cc0802f0f4&#34;&gt;자동완성&lt;/h2&gt;
+&lt;h2 id=&#34;자동완성&#34;&gt;자동완성&lt;/h2&gt;
 
 &lt;p&gt;자동완성은 IDE의 가장 쓸만한 기능 중 하나일 것이다. vim의  &lt;strong&gt;YCM(YouCompleteMe)&lt;/strong&gt;를 이용해서 자동완성 기능을 추가 할 수 있다. 컴파일을 하기 때문에 python-dev와 cmake 패키지를 미리 설치해야 한다.&lt;/p&gt;
 
@@ -1235,7 +1235,7 @@ vim-go: gotags not found. Installing github.com/jstemmer/gotags to folder /home/
 
 &lt;p&gt;YCM은 C, C++, Python, Java 등에도 사용 할 수 있다.&lt;/p&gt;
 
-&lt;h2 id=&#34;tagbar-설치:d6ac5b2eecfc12afd25350cc0802f0f4&#34;&gt;TagBar 설치&lt;/h2&gt;
+&lt;h2 id=&#34;tagbar-설치&#34;&gt;TagBar 설치&lt;/h2&gt;
 
 &lt;p&gt;ctags는 코드에 포함된 패키지, struct, 메서드의 목록을 한눈에 보여주는 애플리케이션이다. ctags를 설치하자. tagbar는 ctags를 기반으로 작동하는 플러그인이다.&lt;/p&gt;
 
@@ -1259,7 +1259,7 @@ vim-go: gotags not found. Installing github.com/jstemmer/gotags to folder /home/
 map &amp;lt;F8&amp;gt; :TagbarToggle&amp;lt;CR&amp;gt;
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;h2 id=&#34;nerdtree-설치:d6ac5b2eecfc12afd25350cc0802f0f4&#34;&gt;NerdTree 설치&lt;/h2&gt;
+&lt;h2 id=&#34;nerdtree-설치&#34;&gt;NerdTree 설치&lt;/h2&gt;
 
 &lt;p&gt;NerdTree는 파일 네비게이션을 만들어주는 플러그인다.&lt;/p&gt;
 
@@ -1291,13 +1291,13 @@ map &amp;lt;F4&amp;gt; :TagbarToggle&amp;lt;CR&amp;gt;
       <guid>https://golangkorea.github.io/post/readme-first/</guid>
       <description>
 
-&lt;h1 id=&#34;the-slow-hunch:2e04fa63e4b4eb0781e5f07bbdc4899e&#34;&gt;The Slow Hunch&lt;/h1&gt;
+&lt;h1 id=&#34;the-slow-hunch&#34;&gt;The Slow Hunch&lt;/h1&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://www.amazon.com/Where-Good-Ideas-Come-Innovation/dp/1594487715&#34;&gt;Where Good Ideas Come From: The Natural History of Innovation&lt;/a&gt;의 저자 Steven B. Johnson에 따르면 인류의 역사를 바꾼 혁신들은 번뜩이는 아이디어에서 시작된 경우가 매우 드물다고 합니다. 대개는 개개인의 작은 아이디어들이 오랜 시간에 걸쳐 다른 사람이 갖고 있는 비슷하거나 전혀 다른 아이디어들과 충돌하고 결합하면서 커뮤니티의 지능으로 진화하고 어느 순간 돌이킬 수 없는 변화의 모멘텀을 형성하며 세상을 바꿉니다. 커뮤니티내에 공유되고 있는 지능이 다시 역으로 개개인에게 영감과 비젼을 제시하는 상호작용을 일으키게 되는데 그런 과정은 통해 아이디어의 생산을 가능케하는 현상을 slow hunch라고 부릅니다.&lt;/p&gt;
 
 &lt;p&gt;새로 시작하는 Golang Korean 커뮤니티 웹사이트(이하 GoSudaWeb)은 프로그래밍 언어인 Go와 퉅들, 글로벌 개발자 커뮤니티내의 트랜드와 최선의 개발방식에 대한 소개를 블로그와 뉴스레터의 형식을 통해 공유하고자 첫발을 내딛었습니다. 지속적인 지식의 축적과 폭 넗은 공유가 이루어지는 웹사이트로 성장하여 미래의 킬러앱과 킬러 아이디어를 만들어내는 slow hunch에 기여할 수 있기를 기대해 봅니다. 많은 성원 부탁드립니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;콘텐트-제작-및-웹사이트-개발-참여-신청:2e04fa63e4b4eb0781e5f07bbdc4899e&#34;&gt;콘텐트 제작 및 웹사이트 개발 참여 신청&lt;/h1&gt;
+&lt;h1 id=&#34;콘텐트-제작-및-웹사이트-개발-참여-신청&#34;&gt;콘텐트 제작 및 웹사이트 개발 참여 신청&lt;/h1&gt;
 
 &lt;p&gt;GosudaWeb은 &lt;a href=&#34;https://pages.github.com/&#34;&gt;Github Page&lt;/a&gt;로 제작되고 모든 소스와 제작과정이 공개로 이루어 집니다: &lt;a href=&#34;https://github.com/golangkorea&#34;&gt;https://github.com/golangkorea&lt;/a&gt;.&lt;/p&gt;
 
@@ -1305,7 +1305,7 @@ map &amp;lt;F4&amp;gt; :TagbarToggle&amp;lt;CR&amp;gt;
 
 &lt;p&gt;Hugo를 이용해 사이트 개발에 참여하거나 golangkorea Organization에 오픈소스 프로젝트를 시작하시고 싶으신 분들은 멤버 신청을 하실 수 있습니다. 멤버 신청은 &lt;a href=&#34;mailto:golanginkorea@gmail.com&#34;&gt;golanginkorea@gmail.com&lt;/a&gt; 이나 &lt;a href=&#34;https://gitter.im/golang-korean-community/Lobby?utm_source=share-link&amp;amp;utm_medium=link&amp;amp;utm_campaign=share-link&#34;&gt;Golang Korean Community / Lobby&lt;/a&gt;로 해 주시면 됩니다. 일단 멤버로 등록되면 &lt;a href=&#34;https://github.com/orgs/golangkorea/teams/golangkorea-website&#34;&gt;golangkorea-website team&lt;/a&gt;을 통해 개발에 참여하실 수 있습니다.&lt;/p&gt;
 
-&lt;h1 id=&#34;토론방:2e04fa63e4b4eb0781e5f07bbdc4899e&#34;&gt;토론방&lt;/h1&gt;
+&lt;h1 id=&#34;토론방&#34;&gt;토론방&lt;/h1&gt;
 
 &lt;p&gt;&lt;a href=&#34;https://golangkorea.github.io&#34;&gt;golangkorea.github.io&lt;/a&gt; 개발, 유지 보수 및 지원에 대한 토론은 &lt;a href=&#34;https://gitter.im/golang-korean-community/golangkorea.github.io?utm_source=share-link&amp;amp;utm_medium=link&amp;amp;utm_campaign=share-link&#34;&gt;Gitter Room&lt;/a&gt;을 통해 하고 있으니 많은 동참 바라겠습니다.&lt;/p&gt;
 
@@ -1324,7 +1324,7 @@ map &amp;lt;F4&amp;gt; :TagbarToggle&amp;lt;CR&amp;gt;
 
 &lt;p&gt;여기에서 사용한 테스트 코드는 &lt;a href=&#34;https://bitbucket.org/dream_yun/handlertest&#34;&gt;Bitbucket&lt;/a&gt; 에서 다운로드 할 수 있다.&lt;/p&gt;
 
-&lt;h2 id=&#34;tdd:d70a83dd1877f2b6df6aaf116b63e31b&#34;&gt;TDD&lt;/h2&gt;
+&lt;h2 id=&#34;tdd&#34;&gt;TDD&lt;/h2&gt;
 
 &lt;p&gt;클라우드와 &lt;strong&gt;MSA&lt;/strong&gt;와 &lt;strong&gt;REST&lt;/strong&gt;의 등장으로 TDD가 재조명 받고 있다. TDD를 제대로 적용하려면 상당히 많은 시간과 노력이 필요하다. 특히 여기 저기 연동되는 라이브러리나 소프트웨어가 많은 경우 테스트가 굉장히 복잡해지는데, 복잡해지는 만큼 테스트의 신뢰성도 함께 떨어진다.&lt;/p&gt;
 
@@ -1355,7 +1355,7 @@ map &amp;lt;F4&amp;gt; :TagbarToggle&amp;lt;CR&amp;gt;
 &lt;li&gt;&lt;strong&gt;테스트 커버리지는&lt;/strong&gt; 유닛테스트가 얼마나 잘 이루어졌는지를 측정하기 위해서 사용한다. 테스트 커버리지를 계산하고 그 결과를 문서로 출력한다. 이 문서를 젠킨스와 통합해보자.&lt;/li&gt;
 &lt;/ol&gt;
 
-&lt;h2 id=&#34;go-유닛-테스트-개요:d70a83dd1877f2b6df6aaf116b63e31b&#34;&gt;Go 유닛 테스트 개요&lt;/h2&gt;
+&lt;h2 id=&#34;go-유닛-테스트-개요&#34;&gt;Go 유닛 테스트 개요&lt;/h2&gt;
 
 &lt;p&gt;Go 는 테스트 프레임워크를 내장(build-in)하고 있다. &lt;strong&gt;testing&lt;/strong&gt;페키지를 이용해서 유닛 테스트 코드를 만들고 &lt;strong&gt;go test&lt;/strong&gt;명령으로 테스트를 수행하면 된다. 유닛 테스트를 위한 간단한 예제 코드를 만들었다. 코드의 이름은 math.go 다.&lt;/p&gt;
 
@@ -1476,7 +1476,7 @@ FAIL	_/home/yundream/workspace/golang/unittest	0.002s
 
 &lt;p&gt;테스트 실패를 확인 할 수 있다.&lt;/p&gt;
 
-&lt;h2 id=&#34;testing-패키지:d70a83dd1877f2b6df6aaf116b63e31b&#34;&gt;testing 패키지&lt;/h2&gt;
+&lt;h2 id=&#34;testing-패키지&#34;&gt;testing 패키지&lt;/h2&gt;
 
 &lt;p&gt;함수가 실행 된 결과가 예측한 결과와 맞아 떨어지는 지를 검사하는 방식으로 테스트를 진행 한다. &lt;strong&gt;t.Fatal()&lt;/strong&gt;, &lt;strong&gt;t.Fail()&lt;/strong&gt;등을 이용해서 테스트를 제어 할 수 있다.&lt;/p&gt;
 
@@ -1491,7 +1491,7 @@ FAIL	_/home/yundream/workspace/golang/unittest	0.002s
 &lt;li&gt;&lt;strong&gt;Failed()&lt;/strong&gt; 실패하더라도 레포트하지 않는다.&lt;/li&gt;
 &lt;/ul&gt;
 
-&lt;h2 id=&#34;assertion:d70a83dd1877f2b6df6aaf116b63e31b&#34;&gt;Assertion&lt;/h2&gt;
+&lt;h2 id=&#34;assertion&#34;&gt;Assertion&lt;/h2&gt;
 
 &lt;p&gt;테스트 코드를 만들다 보면 if 문이 코드의 절반 이상을 차지하는 걸 보게될 것이다. 비교대상도 가지각색이라서 가독성이 떨어진다. assert 함수가 필요하다. 직접 만들어 보고 싶겠지만 그냥 잘 만들어져 있는 테스트 패키지 가져다가 쓰자. 내가 요즘 쓰고 있는 테스트 패키지는 &lt;strong&gt;github.com/stretchr/testify/assert&lt;/strong&gt;이다. 패키지를 설치 한 후 아래 코드를 테스트 했다.&lt;/p&gt;
 
@@ -1526,7 +1526,7 @@ FAIL	_/home/yundream/workspace/golang/mytest	0.003s
 
 &lt;p&gt;테스트 코드와 테스트 결과의 가독성 모두 좋아졌다. 이 패키지는 &lt;strong&gt;assert&lt;/strong&gt;외에도 &lt;strong&gt;mock&lt;/strong&gt;, &lt;strong&gt;http 테스트&lt;/strong&gt;, &lt;strong&gt;suite&lt;/strong&gt;등 테스트를 위한 다양한 툴들을 지원한다.&lt;/p&gt;
 
-&lt;h2 id=&#34;http-핸들러-테스트:d70a83dd1877f2b6df6aaf116b63e31b&#34;&gt;HTTP 핸들러 테스트&lt;/h2&gt;
+&lt;h2 id=&#34;http-핸들러-테스트&#34;&gt;HTTP 핸들러 테스트&lt;/h2&gt;
 
 &lt;p&gt;HTTP 핸들러의 경우 웹 서버를 띄워야 하기 때문에, 메서드보다 테스트가 까다롭다. 아래의 방식으로 테스트 할 수 있다.&lt;/p&gt;
 
@@ -1654,7 +1654,7 @@ ok  	bitbucket.org/dream_yun/handlertest/handler	0.003s
 
 &lt;p&gt;이렇게 테스트 시나리오에 따라서 테스트 코드를 추가하면 된다.&lt;/p&gt;
 
-&lt;h2 id=&#34;서비스간-연동-테스트:d70a83dd1877f2b6df6aaf116b63e31b&#34;&gt;서비스간 연동 테스트&lt;/h2&gt;
+&lt;h2 id=&#34;서비스간-연동-테스트&#34;&gt;서비스간 연동 테스트&lt;/h2&gt;
 
 &lt;p&gt;MSA 모델을 따르는 애플리케이션을 만들다 보면, 다른 (REST)애플리케이션과 통신 해야 할 수도 있다.&lt;/p&gt;
 
@@ -1796,7 +1796,7 @@ func (h Handler) Div(w http.ResponseWriter, r *http.Request) {
 
 &lt;p&gt;여기에서 중요한 점은 &lt;strong&gt;테스트를 쉽게 하기 위해서 메서드들을 수정&lt;/strong&gt;했다는 점이다. TDD에서는 코드에 맞는 테스트를 하는게 아니고, 테스트에 맞는 코드를 만든다.&lt;/p&gt;
 
-&lt;h2 id=&#34;목업-vs-직접-구성:d70a83dd1877f2b6df6aaf116b63e31b&#34;&gt;목업 vs 직접 구성&lt;/h2&gt;
+&lt;h2 id=&#34;목업-vs-직접-구성&#34;&gt;목업 vs 직접 구성&lt;/h2&gt;
 
 &lt;p&gt;예제로 삼았던 ping API 서버는 외부 소프트웨어의 도움 없이 작동한다. 하지만 현실에서 이런 코드를 찾기는 어렵다. 마이에스큐엘(Mysql), 몽고디비(Mongodb), 주키퍼(zookeeper), 레디스(Redis) 등 수많은 다른 애플리케이션들과 통신을 한다. 어떻게 테스트 해야 할까.&lt;/p&gt;
 
@@ -1806,7 +1806,7 @@ func (h Handler) Div(w http.ResponseWriter, r *http.Request) {
 
 &lt;p&gt;결론부터 말하자면 난 목업을 이용하지 않고 있다. 작동하는 소프트웨어들과 직접 연동해서 테스트 한다. 개발/테스트 환경 구축의 번거로움은.. 글쎄 나는 (데이터베이스를 설치하고 설정하는) 정도의 번거로움은 감수해야 하고, 감수한 만큼 개발자에게 이득이 있다고 생각하는 입장이다. 그리고 세상이 좋아졌다. VM, Container, Vagrant 등을 이용하면 개발환경을 손쉽게 구성하고 배포, 공유 할 수 있다.&lt;/p&gt;
 
-&lt;h2 id=&#34;테스트-커버리지:d70a83dd1877f2b6df6aaf116b63e31b&#34;&gt;테스트 커버리지&lt;/h2&gt;
+&lt;h2 id=&#34;테스트-커버리지&#34;&gt;테스트 커버리지&lt;/h2&gt;
 
 &lt;p&gt;테스트에 대한 품질은 테스트 커버리지로 측정 할 수 있다.&lt;/p&gt;
 
@@ -1897,7 +1897,7 @@ ok  	bitbucket.org/dream_yun/handlertest/handler	0.005s
 
 &lt;p&gt;&lt;strong&gt;strconv.Atoi()&lt;/strong&gt; 메서드에 대한 테스트가 빠져있음을 알 수 있다. 이에 대해서  &amp;ldquo;Div API는 클라이언트가 숫자(0-9)가 아닌 다른 값을 보낼 수도 있으므로, 에러 체크가 필요하다. 그리고 변수 a, b에 대한 타당성(숫자인지, int64 범위의 값인지 등)을 검사하는 코드도 추가해야 한다&amp;rdquo;라는 평가를 할 수 있을 것이다.&lt;/p&gt;
 
-&lt;h2 id=&#34;gocov:d70a83dd1877f2b6df6aaf116b63e31b&#34;&gt;gocov&lt;/h2&gt;
+&lt;h2 id=&#34;gocov&#34;&gt;gocov&lt;/h2&gt;
 
 &lt;p&gt;go에서 제공하는 기본 툴도 쓸만하긴 하지만, 레포팅 기능이 썩 맘에 들지 않는다. 그래서 &lt;strong&gt;gocov&lt;/strong&gt;라는 툴을 이용해서 레포트를 만들기로 했다.&lt;/p&gt;
 
@@ -1924,7 +1924,7 @@ ok  	bitbucket.org/dream_yun/handlertest/handler	0.005s	coverage: 91.3% of state
 
 &lt;p&gt;훨씬 보기 좋아졌다.&lt;/p&gt;
 
-&lt;h2 id=&#34;젠킨스와의-통합:d70a83dd1877f2b6df6aaf116b63e31b&#34;&gt;젠킨스와의 통합&lt;/h2&gt;
+&lt;h2 id=&#34;젠킨스와의-통합&#34;&gt;젠킨스와의 통합&lt;/h2&gt;
 
 &lt;p&gt;이미 젠킨스를 통해서 테스트를 자동화 하고 있다. 여기에 레포트만 추가하면 된다.&lt;/p&gt;
 
@@ -1944,7 +1944,7 @@ ok  	bitbucket.org/dream_yun/handlertest/handler	0.005s	coverage: 91.3% of state
 
 &lt;p&gt;&lt;img src=&#34;http://marcelog.github.io/articles/cobertura_example_covertool.png&#34; alt=&#34;coberatura 레포팅&#34; /&gt;&lt;/p&gt;
 
-&lt;h2 id=&#34;tdd-통합-프로세스:d70a83dd1877f2b6df6aaf116b63e31b&#34;&gt;TDD 통합 프로세스&lt;/h2&gt;
+&lt;h2 id=&#34;tdd-통합-프로세스&#34;&gt;TDD 통합 프로세스&lt;/h2&gt;
 
 &lt;p&gt;MSA 모델을 따르는 소프트웨어의 개발에서 배포 단계까지의 테스트 방식을 정리해 보자.&lt;/p&gt;
 
