@@ -47,7 +47,7 @@
   <meta name="author" content="">
 
   
-  <meta name="generator" content="Hugo 0.16" />
+  <meta name="generator" content="Hugo 0.16-DEV" />
 
   
   
@@ -157,22 +157,22 @@
           
             <nav id="TableOfContents">
 <ul>
-<li><a href="#컨텐츠-제작-기초">컨텐츠 제작 기초</a></li>
-<li><a href="#컨텐츠의-조직적인-관리-organization">컨텐츠의 조직적인 관리 (Organization)</a></li>
-<li><a href="#컨텐트-경로-destination">컨텐트 경로 (Destination)</a></li>
-<li><a href="#정면-변수들-front-matter">정면 변수들(Front Matter)</a></li>
-<li><a href="#지원되는-컨텐트의-포맷">지원되는 컨텐트의 포맷</a></li>
-<li><a href="#컨텐트-타입과-전형-content-types-and-archetypes">컨텐트 타입과 전형 (Content Types and archetypes)</a></li>
+<li><a href="#컨텐츠-제작-기초:87e917a9f02355061a990abda27cc32e">컨텐츠 제작 기초</a></li>
+<li><a href="#컨텐츠의-조직적인-관리-organization:87e917a9f02355061a990abda27cc32e">컨텐츠의 조직적인 관리 (Organization)</a></li>
+<li><a href="#컨텐트-경로-destination:87e917a9f02355061a990abda27cc32e">컨텐트 경로 (Destination)</a></li>
+<li><a href="#정면-변수들-front-matter:87e917a9f02355061a990abda27cc32e">정면 변수들(Front Matter)</a></li>
+<li><a href="#지원되는-컨텐트의-포맷:87e917a9f02355061a990abda27cc32e">지원되는 컨텐트의 포맷</a></li>
+<li><a href="#컨텐트-타입과-전형-content-types-and-archetypes:87e917a9f02355061a990abda27cc32e">컨텐트 타입과 전형 (Content Types and archetypes)</a></li>
 </ul>
 </nav>
           
           
 
-<h1 id="컨텐츠-제작-기초">컨텐츠 제작 기초</h1>
+<h1 id="컨텐츠-제작-기초:87e917a9f02355061a990abda27cc32e">컨텐츠 제작 기초</h1>
 
 <p>컨텐츠를 제작하면서 꼭 알아야 할 몇가지 개념을 정리하겠습니다.</p>
 
-<h1 id="컨텐츠의-조직적인-관리-organization">컨텐츠의 조직적인 관리 (Organization)</h1>
+<h1 id="컨텐츠의-조직적인-관리-organization:87e917a9f02355061a990abda27cc32e">컨텐츠의 조직적인 관리 (Organization)</h1>
 
 <p>사이트가 많은 양의 컨텐츠를 보유하게 되면서 조직적인 관리가 필요할 때 Hugo가 어떻게 도와주는지 알아 봅시다. <a href="https://golangkorea.github.io/post/hugo-intro/getting-started/">시리즈 1</a>에서 보았 듯이 Hugo의 <code>configuration</code><sup>1</sup>에 특별한 세팅이 없는 한 모든 컨텐츠는 <code>content</code> 폴더 안에 위치하게 됩니다. Hugo를 통해 만들어질 사이트의 URL은 <code>content</code>내의 폴더 구조와 매우 밀접한 관계가 있습니다. 우선 <code>content</code> 바로 아래 위치하는 폴더는 <code>section</code>이라고 부르는데 매우 중요한 역활을 합니다. 다음의 예는 <code>section</code>이 사이트 URL과 어떤 상관이 있는지 암시합니다. 만들어진 사이트의 URL경로는 거울을 보듯이 컨텐츠 소스의 경로을 반영합니다.</p>
 
@@ -199,7 +199,7 @@
 
 <p>이런 질문들에 대한 답을 얻기 위해서 다음의 개념들을 이해할 필요가 있습니다.</p>
 
-<h1 id="컨텐트-경로-destination">컨텐트 경로 (Destination)</h1>
+<h1 id="컨텐트-경로-destination:87e917a9f02355061a990abda27cc32e">컨텐트 경로 (Destination)</h1>
 
 <p>이미 살펴본 바와 같이 특별한 변수가 없다면 Hugo를 통해 생성된 컨텐트의 경로는 소스파일의 경로에 의해 결정됩니다. 하지만 컨텐트의 경로는 앞으로 살펴볼 정면 변수들(Front Matter)을 통해 다양한 형태로 조정될 수 있습니다. 그럼 Hugo는 컨텐트의 경로를 어떻게 조립하는 것일까요? 우선 몇가지 경로의 부분을 지칭하는 이름을 소개하겠습니다.</p>
 
@@ -254,7 +254,7 @@ http://spf13.com/extras/indexes/example
 
 <p><code>slug</code>나 <code>url</code> 정면변수들을 통해 컨텐트의 목적지 경로(Destination)를 부분적으로 수정하거나 전면적으로 교체할 수 있다는 걸 알 수 있습니다. 이제 목적지 경로 변경 기능외에 컨텐트 처리와 HTML변환시 정면 변수들이 어떤 역활을 하는지 알아봅시다.</p>
 
-<h1 id="정면-변수들-front-matter">정면 변수들(Front Matter)</h1>
+<h1 id="정면-변수들-front-matter:87e917a9f02355061a990abda27cc32e">정면 변수들(Front Matter)</h1>
 
 <p><code>Front Matter</code>는 컨텐트의 메타 데이터라고 할 수 있습니다. 컨텐트보다 먼저 나타난다는 의미로 <code>front matter</code>라는 이름을 지었을 것으로 추측해 봅니다. 시작과 끝을 나타내는 문자열에 따라 여러가지 포맷이 지원됩니다.</p>
 
@@ -306,7 +306,7 @@ toc = true
 
 <p>사이트 개발자의 입장에서 사이트의 기능을 확장하고 컨텐트 제작자에게 그 기능을 조종할 수 있는 인터페이스를 제공하려고 할 때 정면 변수를 유용하게 사용할 수 있습니다. 위에 정면변수 예를 보면, 렌더링된 컨텐트의 상단에 목차를 구현하고 그 기능을 컨텐트 제작시 <code>toc = true</code>를 이용해 나타나게 하는 예가 있습니다. 또 다른 예는 <code>authors</code>를 분류변수(taxonomies)로 등록하고 테마를 통해 구현한 뒤 정면변수의 하나로 컨텐트 제작자에게 자신의 이름을 입력할 수 있게 합니다. 컨텐츠 제작자는 항상 동일한 이름을 사용함으로서 사이트가 제공하는 컨텐츠 목록의 자동 발생을 사용할 수 있습니다.</p>
 
-<h1 id="지원되는-컨텐트의-포맷">지원되는 컨텐트의 포맷</h1>
+<h1 id="지원되는-컨텐트의-포맷:87e917a9f02355061a990abda27cc32e">지원되는 컨텐트의 포맷</h1>
 
 <p>컨텐트 상단에 정면변수들의 정의되고 그 뒤로 컨텐트의 내용이 따라옵니다. Hugo의 컨텐트는 다양한 포맷으로 제작될 수 있습니다. <a href="http://www.methods.co.nz/asciidoc/">asciidoc</a>, <a href="http://docutils.sourceforge.net/rst.html">reStructuredText</a>는 외부 프로그램의 도움을 얻어 지원되는 포맷들입니다. 외부 툴에 의존하지 않고 Hugo 자체적으로 컨텐트를 제작할 수 있는 포맷은 <a href="https://github.com/adam-p/markdown-here/wiki/Markdown-Cheatsheet">Markdown</a>입니다. Markdown을 이용해 새로운 컨텐트를 제작하고 싶으면 <code>hugo new</code>명령에 <code>md</code>확장자를 가지는 파일이름을 사용해 시작할 수 있습니다.</p>
 
@@ -315,7 +315,7 @@ toc = true
 
 <p>이 명령이 실행되면 Markdown 파일이 만들어 지고 기본적인 정면변수들의 셑업이 이루어 집니다. 이 Scaffolding 과정에서 Hugo는 post라는 archetype을 찾기 위해 테마의 archetypes 폴더나 프로젝트 내 archetypes 폴더안을 검색하고 정면변수들의 기본 셑업을 진행합니다. 만약에 post archetype이 정의되어 있지 않을 때는 Hugo의 기본 값들을 사용합니다.</p>
 
-<h1 id="컨텐트-타입과-전형-content-types-and-archetypes">컨텐트 타입과 전형 (Content Types and archetypes)</h1>
+<h1 id="컨텐트-타입과-전형-content-types-and-archetypes:87e917a9f02355061a990abda27cc32e">컨텐트 타입과 전형 (Content Types and archetypes)</h1>
 
 <p>컨텐트 타입은 기본적으로 소스의 위치가 어디에 있느냐에 따라 결정 됩니다. <code>post/my-first-blog.md</code>에 작성된 컨텐트는 정면변수 <code>type</code>이 존재하지 않는 한 post 컨텐트 타입으로 간주되어 타입에 맞는 렌더링이 이루어 집니다. 만약에 전혀 새로운 컨텐트 타입을 도입하고자 하면 어떻게 해야 할까요? 예를 들어 musician이라는 컨텐트 타입을 통해 유명한 음악가들의 소개를 하고자 하는 가정을 합시다. <code>hugo new musician/bach.md</code>로 컨텐트를 초기화 했을때 Hugo의 입장에서는 musician이라는 컨텐트 타입으로 bach.md의 HTML을 렌더링하려고 할 것입니다. musician 컨텐트에 특화된 렌더링을 제공하려면 다음과 같이 새로운 탬플릿을 layouts에 추가해야 합니다.</p>
 
