@@ -129,7 +129,7 @@
         <a href="https://golangkorea.github.io/post/go-start/getting-start/">Go언어 시작하기</a>
     </h1>
     <p class="meta">Aug 28, 2016
-         - 7 minute read 
+         - 8 minute read 
          - <a href="https://golangkorea.github.io/post/go-start/getting-start/#disqus_thread">Comments</a>
 
         
@@ -154,7 +154,7 @@
 
 
         
-          <p>Go 언어에 대해서 구글이 2009년에 만든 비교적 새로운 프로그래밍 언어다. 2009년이면 거의 7년 이상된 구닥다리 언어아닌가? 라고 생각 할 수 있겠으나, Ruby(1996년) 나 python(1991년) 과 비교해보면 느낌이 올 것이다. V8 자바스크립트 엔진 개발에 참여했던 Robert Griesemer, UTF-8을 만든 Rob Pike, 초창기 유닉스 운영체제를 설계했으며 B언어(C언어의 전신)를 개발한 Ken Thompson등 쟁쟁한 개발자들이 만든 언어다. 구글이 개발 했다는 프리미엄과 함께 도커(Docker)의 개발 언어라는게 알려지면서 유명세를 타게 됐다. Python이나 Java와 같은 범용 프로그래밍 언어로 시스템 프로그래밍과 네트워크 프로그램의 개발을 목표로 만들어진 언어다.</p>
+          <p>Go 언어에 대해서 구글이 2009년에 만든 비교적 새로운 프로그래밍 언어다. 2009년이면 거의 7년 이상된 구닥다리 언어잖아? 라고 생각 할 수 있겠으나, Ruby(1996년) 나 python(1991년) 과 비교해보면 느낌이 다를 것이다. V8 자바스크립트 엔진 개발에 참여했던 Robert Griesemer, UTF-8을 만든 Rob Pike, 초창기 유닉스 운영체제를 설계했으며 B언어(C언어의 전신)를 개발한 Ken Thompson등 쟁쟁한 개발자들이 만든 언어다. 구글이 개발 했다는 프리미엄과 함께 도커(Docker)의 개발 언어라는게 알려지면서 유명세를 타게 됐다. Python이나 Java와 같은 범용 프로그래밍 언어이며, 시스템 프로그래밍과 네트워크 프로그램의 개발을 목표로 만들어진 언어다.</p>
 
           
               <footer>
@@ -377,7 +377,7 @@
     <p>
     <ul id="series">
   
-    <li>Series: <a href="https://golangkorea.github.io/series/hugo-%EC%9E%85%EB%AC%B8%ED%95%98%EA%B8%B0">Hugo 입문하기</a> </li>
+    <li>Series: <a href="https://golangkorea.github.io/series/hugo-introduction">Hugo Introduction</a> </li>
   
 </ul>
     </p>    
@@ -432,7 +432,7 @@
 
 
         
-          <p>Hugo는 현존하는 가장 빠른 정적 사이트 제너레이터(Static Site Generator)로 알려져 있습니다. 기능적인 측면에서도 여타 동적 사이트 제너레이터(Static Site Generator)에 비해 손색이 없을 뿐더러 설치가 간편하고 Go언어에 친숙한 개발자들에게는 최고의 컨텐츠 제작 환경을 제공한다고 생각합니다. Golang Korean Community 사이트도 Hugo로 제작되고 있습니다. Hugo 입문 시리즈를 통해 이 사이트에 기여하시고자 하는 분들에게 가이드라인을 제공할 뿐만 아니라 자신만의 블로그 사이트를 쉽게 제작하고자 하는 분들에게도 도움이 되길 바라는 마음으로 시리즈를 준비했습니다. Hugo 시작하기 컨텐츠</p>
+          <p>Hugo는 현존하는 가장 빠른 정적 사이트 제너레이터(Static Site Generator)로 알려져 있습니다. 기능적인 측면에서도 여타 동적 사이트 제너레이터(Static Site Generator)에 비해 손색이 없을 뿐더러 설치가 간편하고 Go언어에 친숙한 개발자들에게는 최고의 컨텐츠 제작 환경을 제공한다고 생각합니다. Golang Korean Community 사이트도 Hugo로 제작되고 있습니다. Hugo 입문 시리즈를 통해 이 사이트에 기여하시고자 하는 분들에게 가이드라인을 제공할 뿐만 아니라 자신만의 블로그 사이트를 쉽게 제작하고자 하는 분들에게도 도움이 되길 기원하는 마음으로 시리즈를 준비했습니다. Hugo 시작하기 컨텐츠</p>
 
           
               <footer>
@@ -593,6 +593,7 @@
 
   
 
+
 <aside class="sidebar thirds">
   <section class="first odd">
 
@@ -681,7 +682,46 @@
     
   
 
+  <section class="odd">
+      <h1>Tags</h1>
+      <ul id="tags">
+          <div id="tags-cloud"></div>
+      </ul>
+  </section>
+
 </aside>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+  var words = [
+    
+      { text: "beginning", weight:  1 , link: "/tags/beginning" },
+    
+      { text: "blog", weight:  7 , link: "/tags/blog" },
+    
+      { text: "community", weight:  1 , link: "/tags/community" },
+    
+      { text: "development", weight:  2 , link: "/tags/development" },
+    
+      { text: "hugo", weight:  7 , link: "/tags/hugo" },
+    
+      { text: "install", weight:  1 , link: "/tags/install" },
+    
+      { text: "tdd", weight:  1 , link: "/tags/tdd" },
+    
+      { text: "unittest", weight:  1 , link: "/tags/unittest" },
+    
+      { text: "vim", weight:  1 , link: "/tags/vim" },
+    
+  ];
+  $('#tags-cloud').jQCloud(words, {
+      width: 280,
+      height: 300
+    });
+});
+
+</script>
     
  </div>
 </div>

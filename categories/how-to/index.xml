@@ -17,11 +17,13 @@
       <guid>https://golangkorea.github.io/post/go-start/getting-start/</guid>
       <description>
 
+&lt;p&gt;&lt;img src=&#34;http://digveloper.ppillip.com/wp-content/uploads/2013/04/appenginegophercolor.jpg&#34; alt=&#34;Go 로고&#34; /&gt;&lt;/p&gt;
+
 &lt;h2 id=&#34;go-언어에-대해서&#34;&gt;Go 언어에 대해서&lt;/h2&gt;
 
-&lt;p&gt;구글이 2009년에 만든 비교적 새로운 프로그래밍 언어다. 2009년이면 거의 7년 이상된 구닥다리 언어아닌가? 라고 생각 할 수 있겠으나, Ruby(1996년) 나 python(1991년) 과 비교해보면 느낌이 올 것이다. V8 자바스크립트 엔진 개발에 참여했던 Robert Griesemer, UTF-8을 만든 &lt;strong&gt;Rob Pike&lt;/strong&gt;, 초창기 유닉스 운영체제를 설계했으며 B언어(C언어의 전신)를 개발한 &lt;strong&gt;Ken Thompson&lt;/strong&gt;등 쟁쟁한 개발자들이 만든 언어다. 구글이 개발 했다는 프리미엄과 함께 &lt;strong&gt;도커(Docker)&lt;/strong&gt;의 개발 언어라는게 알려지면서 유명세를 타게 됐다.&lt;/p&gt;
+&lt;p&gt;구글이 2009년에 만든 비교적 새로운 프로그래밍 언어다. 2009년이면 거의 7년 이상된 구닥다리 언어잖아? 라고 생각 할 수 있겠으나, Ruby(1996년) 나 python(1991년) 과 비교해보면 느낌이 다를 것이다. V8 자바스크립트 엔진 개발에 참여했던 &lt;strong&gt;Robert Griesemer&lt;/strong&gt;, UTF-8을 만든 &lt;strong&gt;Rob Pike&lt;/strong&gt;, 초창기 유닉스 운영체제를 설계했으며 B언어(C언어의 전신)를 개발한 &lt;strong&gt;Ken Thompson&lt;/strong&gt;등 쟁쟁한 개발자들이 만든 언어다. 구글이 개발 했다는 프리미엄과 함께 &lt;strong&gt;도커(Docker)&lt;/strong&gt;의 개발 언어라는게 알려지면서 유명세를 타게 됐다.&lt;/p&gt;
 
-&lt;p&gt;Python이나 Java와 같은 범용 프로그래밍 언어로 시스템 프로그래밍과 네트워크 프로그램의 개발을 목표로 만들어진 언어다. 비교적 최근에 만들어진 언어답게 C++, Java, Python 언어들의 장점을 상당 부분 수용했다. 이렇게 보면 최신 프로그래밍 언어들의 트랜드를 따를 것 같지만 코드는 &lt;strong&gt;C 언어&lt;/strong&gt;와 매우 비슷한 느낌을 준다.&lt;/p&gt;
+&lt;p&gt;Python이나 Java와 같은 범용 프로그래밍 언어이며, 시스템 프로그래밍과 네트워크 프로그램의 개발을 목표로 만들어진 언어다. 비교적 최근에 만들어진 언어답게 C++, Java, Python 언어들의 장점을 상당 부분 수용했다. 이렇게 보면 최신 프로그래밍 언어들의 트랜드를 따를 것 같지만 코드는 &lt;strong&gt;C 언어&lt;/strong&gt;와 매우 비슷한 느낌을 준다.&lt;/p&gt;
 
 &lt;p&gt;C 언어 처럼 컴파일이 되며, 컴파일 시간에 타입을 체크하는 정적 타입 언어다. 그리고 C 언어처럼 단순하다. 약 25개 정도의 키워드만이 제공되는데, 실제 코드를 만들다 보면 10개 내외의 키워드 만으로 프로그래밍이 가능하다. 아래 go 언어가 제공하는 키워드들이다.&lt;/p&gt;
 
@@ -36,9 +38,9 @@ continue     for          import       return       var
 
 &lt;p&gt;키워드가 적은 만큼 복잡한 준비작업 없이 쉽게 시작 할 수 있으며, 몇 개의 키워드로 반복 사용 함으로써 프로그래밍 숙련도를 빠르게 높일 수 있다는 것도 큰 장점이다.&lt;/p&gt;
 
-&lt;p&gt;Go 언어는 &lt;strong&gt;동시성(concurrency)&lt;/strong&gt;를 잘 지원하는 것으로 유명하다. Go는 고루틴(goroutine)라는 경량스레드(lightweight thread)를 제공하는데, 고루틴간 메시지를 주고 받을 수 있는 채널(channel)을 이용하면, 아주 쉽게(정말 쉽다) 동시성 프로그램을 개발 할 수 있다. 고루틴은 얼랑(Erlang)의 경량 쓰레드와 매우 유사한데, &lt;strong&gt;2k&lt;/strong&gt; 정도로 그 크기가 매우 작다. 많은 수의 고루틴을 시스템 부담을 최소화 하면서 만들 수 있다.&lt;/p&gt;
+&lt;p&gt;Go 언어는 &lt;strong&gt;동시성(concurrency)&lt;/strong&gt;를 잘 지원하는 것으로 유명하다. Go는 &lt;strong&gt;고루틴(goroutine)&lt;/strong&gt;라는 경량스레드(lightweight thread)를 제공하는데, 고루틴간 메시지를 주고 받을 수 있는 채널(channel)을 이용하면, 아주 쉽게(정말 쉽다) 동시성 프로그램을 개발 할 수 있다. 고루틴은 얼랑(Erlang)의 경량 쓰레드와 매우 유사한데, &lt;strong&gt;2k&lt;/strong&gt; 정도로 그 크기가 매우 작다. 많은 수의 고루틴을 시스템 부담을 최소화 하면서 만들 수 있다.&lt;/p&gt;
 
-&lt;p&gt;Go 언어를 사용하다보면, 웹 애플리케이션을 만들기가 매우 편하다는 느낌을 받게 된다. 특히 &lt;strong&gt;MSA(Microservice Architecture)&lt;/strong&gt;와 &lt;strong&gt;REST(Representational State Transfer)&lt;/strong&gt; 모델의 애플리케이션을 쉽게 만들 수 있다. 루비나 파이선 같은 언어의 경우 다양한 &lt;strong&gt;웹 프레임워크&lt;/strong&gt;중에서 선택을 고민하게 마련인데, Go 언어는 기본으로 제공하는 &lt;strong&gt;net/http&lt;/strong&gt; 패키지로 충분하다. 물론 Go 언어도 다양한 마이크로 프레임워크와 풀 프레임워크를 제공하긴 하지만 이런 프레임워크를 쓰면, &amp;ldquo;왜 프레임워크를 쓰세요 ? 그냥 기본(net/http) 패키지 쓰세요&amp;rdquo;라는 말을 들을 정도다.&lt;/p&gt;
+&lt;p&gt;Go 언어를 사용하다보면, 웹 애플리케이션을 만들기가 매우 편하다는 느낌을 받게 된다. 특히 &lt;strong&gt;MSA(Microservice Architecture)&lt;/strong&gt;와 &lt;strong&gt;REST(Representational State Transfer)&lt;/strong&gt; 모델의 애플리케이션을 쉽게 만들 수 있다. 루비나 파이선 같은 언어의 경우 다양한 &lt;strong&gt;웹 프레임워크&lt;/strong&gt;중에서 선택을 고민하게 마련인데, Go 언어는 기본으로 제공하는 &lt;strong&gt;net/http&lt;/strong&gt; 패키지로 충분하다. 물론 Go 언어도 다양한 마이크로 프레임워크와 풀 프레임워크를 제공하긴 하지만 이런 프레임워크를 쓰면, &amp;ldquo;왜 프레임워크를 쓰세요 ? 그냥 기본(net/http) 패키지 쓰세요&amp;rdquo;라는 말을 들을 정도로 강력하다.&lt;/p&gt;
 
 &lt;p&gt;대규모의 분산 시스템을 유지해야 하는 구글의 요구를 위해서 웹 개발 관련 패키지가 강력해진 것 같다.&lt;/p&gt;
 
@@ -72,20 +74,22 @@ go version go1.7 linux/amd64
 # export GOPATH:$HOME/workspace
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;이것으로 go 언어 개발 환경을 마쳤다. 이제 Hello World 프로그램을 만들어보고 Go 프로그램의 기본적인 특징들을 살펴보자.&lt;/p&gt;
+&lt;p&gt;이들 환경변수들은 .bashrc 등에 설정해서, 로그인 시간에 적용되도록 하자.&lt;/p&gt;
+
+&lt;p&gt;이것으로 go 언어 개발 환경을 마쳤다. 이제 Hello World 프로그램을 만들면서 Go 프로그램의 기본적인 특징들을 살펴보자.&lt;/p&gt;
 
 &lt;h3 id=&#34;패키지-관리-시스템&#34;&gt;패키지 관리 시스템&lt;/h3&gt;
 
-&lt;p&gt;Hello World 프로그램을 만들기 전에 Go 언어의 패키지 관리 시스템을 사펴봐야 할 것같다. 앞서 나는 workspace 라는 작업 디렉토리를 만들었다. 다른 프로그램이라면 workspace 디렉토리 밑에 프로젝트 파일을 만드는 것으로 개발을 시작할 것이다. 예컨데 mkdir workspace/helloworld 디렉토리를 먼저 만들 것이다.&lt;/p&gt;
+&lt;p&gt;Hello World 프로그램을 만들기 전에 Go 언어의 패키지 관리 시스템을 살펴봐야 할 것같다. 앞서 나는 workspace 라는 작업 디렉토리를 만들었다. 다른 프로그램이라면 workspace 디렉토리 밑에 프로젝트 파일을 만드는 것으로 개발을 시작할 것이다. 예컨데 mkdir workspace/helloworld 로 디렉토리를 먼저 만들 것이다.&lt;/p&gt;
 
-&lt;p&gt;go 언어는 다르다. 우선 go 언어는 &lt;strong&gt;인터넷&lt;/strong&gt;을 기본 개발 환경으로 한다. Go로 원할히 개발하기 위해서는 컴퓨터가 인터넷에 연결되어 있어야 하며, 코드를 저장하고 읽기 위한 github, bitbucket 혹은 직접 구성한 git 서버가 있어야 한다. 즉 go 언어에서 패키지는 프로젝트 저장소 단위로 관리가 된다.&lt;/p&gt;
+&lt;p&gt;go 언어는 다르다. 우선 go 언어는 &lt;strong&gt;인터넷&lt;/strong&gt;을 기본 개발 환경으로 한다. Go로 원할히 개발하기 위해서는 컴퓨터가 인터넷에 연결되어 있어야 하며, 코드를 저장하고 읽기 위한 github, bitbucket 혹은 직접 구성한 git 서버가 있어야 한다. 즉 go 언어에서 패키지는 프로젝트 저장소 단위로 관리한다.&lt;/p&gt;
 
-&lt;p&gt;예를 들어 &lt;strong&gt;sqlite3&lt;/strong&gt;을 사용하는 애플리케이션을 개발한다고 가정해 보자. 이를 위해서 sqlite3 패키지를 go get으로 다운로드 해야 하는데 git 으로 부터 다운로드 한다.&lt;/p&gt;
+&lt;p&gt;예를 들어 &lt;strong&gt;sqlite3&lt;/strong&gt;을 사용하는 애플리케이션을 개발한다고 가정해 보자. 이를 위해서 sqlite3 패키지를 go get으로 다운로드 해야 하는데 git 주소로 부터 다운로드 한다.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;go get github.com/mattn/go-sqlite3
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;거의 모든 패키지가 이처럼 인터넷 상에 있는 git으로 관리 되고 있다. workspace를 살펴보자.&lt;/p&gt;
+&lt;p&gt;거의 모든 패키지가 이처럼 인터넷 상에 있는 git으로 관리 되고 있다. sqlite3 패키지를 설치한 후 workspace를 살펴보자.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;.
 ├── pkg
@@ -104,22 +108,25 @@ go version go1.7 linux/amd64
 └── bin 
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;패키지의 경로가 github 경로인 것을 확인 할 수 있다. 물론 인터넷에 연결하지 않고도 프로젝트를 수행 할 수는 있지만 제대로 go 프로그래밍을 하려면 인터넷과 github 계정이 필요하다.
-  * src : 패키지의 소스코드가 위치한다.
-  * pkg : 패키지의 소스코드를 빌드해서 만들어진 라이브러리 파일(.a - ar archive 파일)이 위치한다. go-sqlite3.a 파일이 보일 것이다.
-  * bin : 패키지가 main 함수를 포함할 경우 실행 파일이 만들어 지는데, 이들 실행파일이 복사된다. go-sqlite3는 실행파일이 없으므로 bin에 파일이 복사되지 않는다.&lt;/p&gt;
+&lt;p&gt;패키지의 경로가 github 경로인 것을 확인 할 수 있다. 물론 인터넷에 연결하지 않고도 프로젝트를 수행 할 수는 있지만 제대로 go 프로그래밍을 하려면 인터넷과 github 계정이 필요하다. 아래 주요 디렉토리의 용도를 정리했다.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;src : 패키지의 소스코드가 위치한다.&lt;/li&gt;
+&lt;li&gt;pkg : 패키지의 소스코드를 빌드해서 만들어진 라이브러리 파일(.a - ar archive 파일)이 위치한다. go-sqlite3.a 파일이 보일 것이다.&lt;/li&gt;
+&lt;li&gt;bin : 패키지가 main 함수를 포함할 경우 실행 파일이 만들어 지는데, 이들 실행파일이 복사된다. go-sqlite3는 실행파일이 없으므로 bin에 파일이 복사되지 않는다.&lt;/li&gt;
+&lt;/ul&gt;
 
 &lt;p&gt;아래에서 다룰 Hello World 프로젝트도 github 기반으로 진행 할 것이다. github 계정이 없다면 지금 계정을 만들자. 내가 사용하고 있는 github 계정은 &lt;strong&gt;yundream&lt;/strong&gt; 이다.&lt;/p&gt;
 
 &lt;h3 id=&#34;hello-world를-만들어보자&#34;&gt;Hello World를 만들어보자.&lt;/h3&gt;
 
-&lt;p&gt;Hello World 프로젝트를 시작하기 위해서 github 계정에 helloworld 프로젝트를 만들었다. 프로젝트를 만들 때 &lt;strong&gt;Initialize this repository with a README&lt;/strong&gt; 옵션을 체크하자. 이제 go get 명령을 이용해서 패키지를 다운로드 한다.&lt;/p&gt;
+&lt;p&gt;Hello World 프로젝트를 시작하기 위해서 내가 사용하는 github 계정에 helloworld 프로젝트를 만들었다. 프로젝트를 만들 때 &lt;strong&gt;Initialize this repository with a README&lt;/strong&gt; 옵션을 체크하자. 이제 go get 명령을 이용해서 패키지를 다운로드 한다.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;$ go get github.com/yundream/helloworld
 package github.com/yundream/helloworld: no buildable Go source files in /home/yundream/golang/src/github.com/yundream/helloworld
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;지금은 README.md 파일만 있으므로 빌드 할 수 있는 go 파일이 없다는 경고메시지가 뜨지만 무시하자. &lt;strong&gt;GOPATH&lt;/strong&gt; 환경에 등록된 /home/yundream/golang 디렉토리 밑에 패키지를 다운로드 해서 설치하는 것을 확인 할 수 있을 것이다. 디렉토리로 이동해서 helloworld.go 파일을 만들어보자.&lt;/p&gt;
+&lt;p&gt;지금은 README.md 파일만 있으므로 빌드 할 수 있는 go 파일이 없다는 경고메시지뜰 것이다. 무시하자. &lt;strong&gt;GOPATH&lt;/strong&gt; 환경에 등록된 /home/yundream/golang 디렉토리 밑에 패키지를 다운로드(README.md) 해서 설치하는 것을 확인 할 수 있을 것이다. 디렉토리로 이동해서 helloworld.go 파일을 만들어보자.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package main
 
@@ -155,14 +162,14 @@ Hello World
 &lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package main
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;패키지를 선언한다. 모든 go 언어는 패키지 선언으로 시작해야 한다. 이 패키지이름을 이용해서 코드를 조직화하고 재사용 할 수 있다. C언어와 유사하게 go 언어도 실행 프로그램과 라이브러리를 위한 두 개의 코드 타입을 가지고 있다. 실행 프로그램이란 쉘 에서 명령을 내려서 직접 실행 할 수 있는 (우리가 일반적으로 알고 있는)프로그램이고, 라이브러리는 다른 프로그램에서 이용 할 수 있게 패키징된 코드의 모음이다. 실행 프로그램을 만들기 위한 go 코드는 반드시 &lt;strong&gt;package main&lt;/strong&gt;을 선언해야 한다.&lt;/p&gt;
+&lt;p&gt;패키지를 선언한다. 모든 go 언어는 패키지 선언으로 시작해야 한다. 이 패키지이름을 이용해서 코드를 조직화하고 재사용 할 수 있다. C언어와 유사하게 go 언어도 실행 프로그램과 라이브러리, 두 개의 코드 타입을 가지고 있다. 실행 프로그램이란 쉘 에서 명령을 내려서 직접 실행 할 수 있는 (우리가 일반적으로 알고 있는)프로그램이고, 라이브러리는 다른 프로그램에서 이용 할 수 있게 패키징된 코드의 모음이다. 실행 프로그램을 만들기 위한 go 코드는 반드시 &lt;strong&gt;package main&lt;/strong&gt;을 선언해야 한다.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;import (
   &amp;quot;fmt&amp;quot;
 )
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;외부 패키지를 import 하기 위해서 사용한다. java의 import와 매우 유사하다. 위에서 go 코드는 실행 프로그램과 라이브러리 타입이 있다고 했던 것을 기억할 것이다. import는 라이브러리 타입의 go 코드를 재사용 하기 위해서 사용한다. 여기에서는 화면과 파일 출력에 관련된 여러 유용한 기능을 담고 있는 &lt;strong&gt;fmt&lt;/strong&gt; 패키지를 import했다.&lt;/p&gt;
+&lt;p&gt;외부 패키지를 import 하기 위해서 사용한다. java의 import와 매우 유사하다. 위에서 go 코드는 실행 프로그램과 라이브러리 타입이 있다고 했던 것을 기억할 것이다. import는 라이브러리 타입의 go 코드를 재사용 하기 위해서 사용한다. 여기에서는 화면과 파일 출력에 관련된 여러 유용한 기능을 담고 있는 &lt;strong&gt;fmt&lt;/strong&gt; 패키지를 import했다. fmt는 git 저장소 경로가 없는데, go에서 제공하는 기본 패키지라고 보면 된다.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func main() {
     fmt.Println(&amp;quot;Hello World&amp;quot;)
@@ -182,7 +189,7 @@ Hello World
 Hello World
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;go 프로젝트를 진행하다 보면, go get을 이용해서 go 기반의 소프트웨어들을 설치하게 될 것이다. 환경변수 PATH에 &lt;strong&gt;$GOPATH/bin&lt;/strong&gt; 도 추가하자.&lt;/p&gt;
+&lt;p&gt;go 프로젝트를 진행하다 보면, go get을 이용해서 go 기반의 소프트웨어들을 설치하게 될 것이다. 이들은 $GOPATH/bin에 설치가 되니, 실행을 위해서 환경변수 PATH에 &lt;strong&gt;$GOPATH/bin&lt;/strong&gt; 도 추가하자.&lt;/p&gt;
 
 &lt;p&gt;만약 패키지를 지우고 싶다면 $GOPATH/src로 이동해서 패키지 디렉토리를(이 경우 $GOPATH/src/github.com/yundream/helloworld) 지워주기만 하면 된다.&lt;/p&gt;
 
@@ -208,7 +215,7 @@ func Reverse(s string) string {
 &lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# go get github.com/yundream/stringutil
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;go get으로 치된 패키지를 확인해보자.&lt;/p&gt;
+&lt;p&gt;go get으로 설치된 패키지를 확인해보자.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;# go list ... | grep yundream
 github.com/yundream/helloworld
@@ -244,13 +251,26 @@ FEDCBA
 
 &lt;h3 id=&#34;one-파일-배포&#34;&gt;One 파일 배포&lt;/h3&gt;
 
-&lt;p&gt;기본적으로 Go 언어에서 라이브러리 타입의 패키지들은 빌드가 되면 모두 &lt;strong&gt;.a(정적 라이브러리)&lt;/strong&gt; 형태로 만들어진다. &lt;strong&gt;공유 라이브러리(Shared Library - 리눅스는 .so파일 윈도우즈는 dll)&lt;/strong&gt;를 지원하기는 하지만 운영체제에 따라 제한 적일 수 있다. 대게의 경우 정적 라이브러리를 코드내에 포함해서 &lt;strong&gt;하나의 실행 파일로 배포&lt;/strong&gt;하는 방법을 사용한다.&lt;/p&gt;
+&lt;p&gt;Go 언어에서 라이브러리 타입의 패키지들은 &lt;strong&gt;.a(정적 라이브러리)&lt;/strong&gt; 형태로 만들어진다. &lt;strong&gt;공유 라이브러리(Shared Library - 리눅스는 .so파일 윈도우즈는 dll)&lt;/strong&gt;를 지원하기는 하지만 운영체제에 따라 제한 적일 수 있다. 보통은 정적 라이브러리를 코드내에 포함해서 &lt;strong&gt;하나의 실행 파일로 배포&lt;/strong&gt;하는 방법을 사용한다.&lt;/p&gt;
 
-&lt;p&gt;이 방법은 패키징이 단순하고 운영체제에 설치된 동적 라이브러리의 버전 호환문제에서 자유롭기 때문에 배포가 매우 쉬워진다는 장점이 있다. 다만 라이브러리 코드가 포함되므로 코드가 더 커지고, 취약점이 있는 라이브러리에 대한 체크와 업데이트가 쉽지 않다는 문제는 있다. 특정 라이브러리에서 어떤 취약점이 발견됐다면, 해당 라이브러리를 포함한 모든 애플리케이션을 재 빌드 해야 한다.&lt;/p&gt;
+&lt;p&gt;이 방법은 패키징이 단순해지며, 운영체제의 동적 라이브러리와의 호환문제에서 자유롭기 때문에 배포가 쉬워진다는 장점이 있다. 대신 라이브러리 코드가 포함되므로 코드가 더 커지고, 취약점이 있는 라이브러리에 대한 체크와 업데이트가 쉽지 않다는 문제가 있다. 특정 라이브러리에서 어떤 취약점이 발견됐다면, 해당 라이브러리를 포함한 모든 애플리케이션을 재 빌드 해야 한다.&lt;/p&gt;
 
-&lt;p&gt;현대적인 애플리케이션들이 공유 라이브러리를 선호한다는 점에서 시대에 역행한다는 생각을 가질 수 있을 것이다. 이러한 방식을 선택한 이유를 생각해봐야 한다. 구글은 프라이빗한 클라우드 환경에서 작동하는 시스템 애플리케이션의 개발을 위해서 go 언어를 개발 했다. 다양한 운영체제와 운영 환경등을 가지고 있는 클라우드 환경에 애플리케이션을 배포하기 위해서는 외부 의존성을 없애고 빠르게 배포하는게 더 나을 것 이다. 프라이빗한 네트워크에서 실행되며, 직접 서비스에 관여하는 일도 없을 테니 취약점에 대한 대응 문제도 그리 심각하지 않을 것이다.&lt;/p&gt;
+&lt;p&gt;현대적인 애플리케이션들이 공유 라이브러리를 선호한다는 점에서 시대에 역행한다는 생각을 가질 수 있을 것이다. 이러한 방식을 선택한 이유를 생각해봐야 한다. 구글은 프라이빗한 클라우드 환경에서 작동하는 시스템 애플리케이션의 개발을 위해서 go 언어를 사용하고 있다. 다양한 운영체제와 운영 환경등을 가지고 있는 클라우드 환경에 애플리케이션을 배포하기 위해서는 외부 의존성을 없애고 빠르게 배포하는게 더 나을 것 이다. 프라이빗한 네트워크에서 실행되며, 직접 서비스에 관여하는 일도 없을 테니 취약점에 대한 대응 문제도 그리 심각하지 않을 것이다.&lt;/p&gt;
 
 &lt;p&gt;클라우드와 같은 분산된 환경에서는 go 언어의 방식이 더 나을 수 있다.&lt;/p&gt;
+
+&lt;h2 id=&#34;마치며&#34;&gt;마치며&lt;/h2&gt;
+
+&lt;p&gt;테스트에 사용한 코드들은 아래 github에서 찾을 수 있다.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/yundream/helloworld&#34;&gt;https://github.com/yundream/helloworld&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/yundream/stringutil&#34;&gt;https://github.com/yundream/stringutil&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# go get github.com/yundream/helloworld
+# go get github.com/yundream/stringutil
+&lt;/code&gt;&lt;/pre&gt;
 </description>
     </item>
     
@@ -1068,12 +1088,12 @@ $ cd ..
       <pubDate>Tue, 23 Aug 2016 22:35:57 -0400</pubDate>
       
       <guid>https://golangkorea.github.io/post/hugo-intro/overview/</guid>
-      <description>&lt;p&gt;Hugo는 현존하는 가장 빠른 정적 사이트 제너레이터(Static Site Generator)로 알려져 있습니다. 기능적인 측면에서도 여타 동적 사이트 제너레이터(Static Site Generator)에 비해 손색이 없을 뿐더러 설치가 간편하고 Go언어에 친숙한 개발자들에게는 최고의 컨텐츠 제작 환경을 제공한다고 생각합니다. &lt;a href=&#34;https://golangkorea.github.io&#34;&gt;Golang Korean Community&lt;/a&gt; 사이트도 Hugo로 제작되고 있습니다. &lt;strong&gt;Hugo 입문&lt;/strong&gt; 시리즈를 통해 이 사이트에 기여하시고자 하는 분들에게 가이드라인을 제공할 뿐만 아니라 자신만의 블로그 사이트를 쉽게 제작하고자 하는 분들에게도 도움이 되길 바라는 마음으로 시리즈를 준비했습니다.&lt;/p&gt;
+      <description>&lt;p&gt;Hugo는 현존하는 가장 빠른 정적 사이트 제너레이터(Static Site Generator)로 알려져 있습니다. 기능적인 측면에서도 여타 동적 사이트 제너레이터(Static Site Generator)에 비해 손색이 없을 뿐더러 설치가 간편하고 Go언어에 친숙한 개발자들에게는 최고의 컨텐츠 제작 환경을 제공한다고 생각합니다. &lt;a href=&#34;https://golangkorea.github.io&#34;&gt;Golang Korean Community&lt;/a&gt; 사이트도 Hugo로 제작되고 있습니다. &lt;strong&gt;Hugo 입문&lt;/strong&gt; 시리즈를 통해 이 사이트에 기여하시고자 하는 분들에게 가이드라인을 제공할 뿐만 아니라 자신만의 블로그 사이트를 쉽게 제작하고자 하는 분들에게도 도움이 되길 기원하는 마음으로 시리즈를 준비했습니다.&lt;/p&gt;
 
 &lt;ul&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/getting-started/&#34;&gt;Hugo 시작하기&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/content-basic/&#34;&gt;컨텐츠 제작 기초&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/theme-customizing/&#34;&gt;사이트 테마 개발하기&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/theme-customizing/&#34;&gt;사이트 테마 커스터마이징 하기&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/taxonomy-basic/&#34;&gt;분류(Taxonomy)기능 사용하기&lt;/a&gt;&lt;/li&gt;
 &lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/how-to-contribute-content/&#34;&gt;사이트에 블로그 올리는 방법&lt;/a&gt;&lt;/li&gt;
 &lt;/ul&gt;

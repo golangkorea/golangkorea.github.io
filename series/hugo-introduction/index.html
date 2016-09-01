@@ -217,6 +217,27 @@
           </h2>
           <article>
             <h1>
+              <a href="https://golangkorea.github.io/post/hugo-intro/getting-started/" title="시리즈 #1 - Hugo 시작하기">시리즈 #1 - Hugo 시작하기</a>
+            </h1>
+            <time>
+              <span class="month">Aug</span>
+              <span class="day">23</span>
+            </time>
+            <footer>
+              <span class="categories"> 
+                tags:
+                
+                 <a class="category" href="https://golangkorea.github.io/tags/blog">Blog</a> <a class="category" href="https://golangkorea.github.io/tags/hugo">Hugo</a>
+                
+              </span>
+            </footer>
+          </article>
+          
+          <h2>
+            2016
+          </h2>
+          <article>
+            <h1>
               <a href="https://golangkorea.github.io/post/hugo-intro/overview/" title="Hugo 입문 - 개요">Hugo 입문 - 개요</a>
             </h1>
             <time>
@@ -238,6 +259,7 @@
     </div>
 
     
+
 
 <aside class="sidebar thirds">
   <section class="first odd">
@@ -327,7 +349,46 @@
     
   
 
+  <section class="odd">
+      <h1>Tags</h1>
+      <ul id="tags">
+          <div id="tags-cloud"></div>
+      </ul>
+  </section>
+
 </aside>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+  var words = [
+    
+      { text: "beginning", weight:  1 , link: "/tags/beginning" },
+    
+      { text: "blog", weight:  7 , link: "/tags/blog" },
+    
+      { text: "community", weight:  1 , link: "/tags/community" },
+    
+      { text: "development", weight:  2 , link: "/tags/development" },
+    
+      { text: "hugo", weight:  7 , link: "/tags/hugo" },
+    
+      { text: "install", weight:  1 , link: "/tags/install" },
+    
+      { text: "tdd", weight:  1 , link: "/tags/tdd" },
+    
+      { text: "unittest", weight:  1 , link: "/tags/unittest" },
+    
+      { text: "vim", weight:  1 , link: "/tags/vim" },
+    
+  ];
+  $('#tags-cloud').jQCloud(words, {
+      width: 280,
+      height: 300
+    });
+});
+
+</script>
 
   </div>
 </div>
