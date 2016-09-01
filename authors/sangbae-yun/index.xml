@@ -213,7 +213,7 @@ func Reverse(s string) string {
 &lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# go get github.com/yundream/stringutil
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;go get으로 치된 패키지를 확인해보자.&lt;/p&gt;
+&lt;p&gt;go get으로 설치된 패키지를 확인해보자.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code&gt;# go list ... | grep yundream
 github.com/yundream/helloworld
