@@ -127,7 +127,7 @@
          Go의 주요 특징들 
     </h1>
     <p class="meta">Sep 12, 2016
-         - 10 minute read 
+         - 11 minute read 
          - <a href="https://golangkorea.github.io/post/go-start/feature/#disqus_thread">Comments</a>
 
         
@@ -143,6 +143,8 @@
     </p>
     <p>
     <ul id="series">
+  
+    <li>Series: <a href="https://golangkorea.github.io/series/go-%EC%8B%9C%EC%9E%91%ED%95%98%EA%B8%B0">Go 시작하기</a> </li>
   
 </ul>
     </p>    
@@ -254,6 +256,15 @@ func main() {
 <p><a href="https://play.golang.org/p/Slj3hhovW4">Playground</a></p>
 
 <p>뭔가 굉장히 낯설어 보인다. 일단 캡슐화는 지원한다. 보통 <strong>private, public</strong> 키워드를 이용하는데, Go언어는 그런 거 없다. 대신 대/소 문자로 구분을 한다. 대문자로 시작하면 public, 소문자로 시작하면 private가 되는 식이다.  private 변수나 메서드는 패키지 내에서만 사용 할 수 있다.</p>
+
+<p>메서드가 구조체와 분리되기 때문에, 이 메서드가 어느 구조체에 연결된 것인지를 구분해야 한다. <strong>수신자(receiver - func 키워드와 함수명 사이에 위치한다)</strong>를 이용해서, 연결된 구조체를 확인 할 수 있다. 메서드는 <strong>.</strong> 연산자를 이용해서 호출 할 수 있다.</p>
+
+<p>Go는 생성자가 없다. 예제에서 처럼, 구조체를 생성 할 때 초기값을 할당 하거나 혹은 구조체 객체의 포인터를 반환하는 <strong>New</strong> 함수를 만들어서 사용한다.</p>
+
+<pre><code class="language-go">func New(minAge int, name string, int age) *Person {
+    return &amp;Person{minAge: minAge, name: name, age: age}
+}
+</code></pre>
 
 <h2 id="에러-처리">에러 처리</h2>
 
