@@ -1,0 +1,725 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width,minimum-scale=1,maximum-scale=1">
+
+  
+  
+  <link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+  
+
+  
+  <title>Golang의 내부, 2부: Go 컴파일러 들여다 보기</title>
+
+  
+  
+  <link rel="stylesheet" href="https://golangkorea.github.io/css/hugo-octopress.css">
+
+  
+  
+    <link rel="stylesheet" href="https://golangkorea.github.io/css/custom.css">
+  
+    <link rel="stylesheet" href="https://golangkorea.github.io/css/custom-font.css">
+  
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+  
+  <link href="https://golangkorea.github.io/favicon.png" rel="icon">
+
+  
+  
+  
+
+  
+
+  <meta name="description" content="Golang 한국 사용자 모임입니다.">
+  <meta name="keywords" content="Go,Golang,GolangKorea,Gopher">
+
+  <meta name="author" content="">
+
+  
+  <meta name="generator" content="Hugo 0.17-DEV" />
+
+  
+  
+
+  
+  <link rel="stylesheet" href="https://golangkorea.github.io/js/highlight/styles/darcula.css">
+<link rel="stylesheet" href="https://golangkorea.github.io/js/jqcloud/jqcloud.min.css">
+<link rel="stylesheet" href="//fonts.googleapis.com/earlyaccess/nanumgothic.css">
+<link rel="stylesheet" href="//fonts.googleapis.com/earlyaccess/nanumgothiccoding.css">
+
+  <script   src="https://code.jquery.com/jquery-1.12.4.min.js"   integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="   crossorigin="anonymous"></script>
+<script src="https://golangkorea.github.io/js/highlight/highlight.pack.js"></script>
+<script src="https://golangkorea.github.io/js/jqcloud/jqcloud.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+  
+
+</head>
+<body>
+
+
+<header role="banner"><hgroup>
+  
+  <h1><a href="https://golangkorea.github.io/">Golang Korean Community</a></h1>
+    <h2>Go에 관련된 수다를 추구하는 개발자들의 세상</h2>
+</hgroup></header>
+
+
+<nav role="navigation">
+
+<ul class="main-navigation">
+  
+  
+</ul>
+
+
+<ul class="subscription">
+  
+    
+        <a href="https://golangkorea.github.io/index.xml" target="_blank" type="application/rss+xml" title="RSS"><i class="fa fa-rss-square fa-lg"></i></a>
+    
+  
+
+</ul>
+
+
+
+<script>
+(function() {
+  var cx = '002661009167463862046:hk6lhiihuma';
+  var gcse = document.createElement('script');
+  gcse.type = 'text/javascript';
+  gcse.async = true;
+  gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
+  var s = document.getElementsByTagName('script')[0];
+  s.parentNode.insertBefore(gcse, s);
+})();
+</script>
+<form>
+  <fieldset role="search">
+  <gcse:search class="search"></gcse:search>  
+  </fieldset>
+</form>
+</nav>
+
+
+<div id="main">
+  <div id="content">
+    <div>
+      <article class="hentry" role="article">
+
+        
+        
+
+<header>
+    <h1 class="entry-title">
+         Golang의 내부, 2부: Go 컴파일러 들여다 보기 
+    </h1>
+    <p class="meta">Sep 15, 2016
+         - 8 minute read 
+         - <a href="https://golangkorea.github.io/post/golang-internals/part2/#disqus_thread">Comments</a>
+
+        
+        
+        
+            - <a class="label" href="https://golangkorea.github.io/categories/%eb%b2%88%ec%97%ad/">번역</a><a class="label" href="https://golangkorea.github.io/categories/%ed%95%b5%ed%82%b9/">핵킹</a>
+        
+    </p>
+    <p>Posted by 
+    
+        <a href="https://golangkorea.github.io/authors/jhonghee-park">Jhonghee Park</a>
+    
+    </p>
+    <p>
+    <ul id="series">
+  
+    <li>Series: <a href="https://golangkorea.github.io/series/golang--internals">Golang  Internals</a> </li>
+  
+</ul>
+    </p>    
+</header>
+
+
+        <div class="entry-content">
+          
+          
+          
+            <nav id="TableOfContents">
+<ul>
+<li><a href="#시작하기-전에">시작하기 전에</a></li>
+<li><a href="#간단한-go-프로그램-만들기">간단한 Go 프로그램 만들기</a></li>
+<li><a href="#main-메서드의-노드-트리에-대한-이해">main 메서드의 노드 트리에 대한 이해</a></li>
+<li><a href="#컴파일러는-어떻게-할당노드를-번역하는가">컴파일러는 어떻게 할당노드를 번역하는가</a></li>
+<li><a href="#getitab-메서드의-내부"><em>getitab</em> 메서드의 내부</a></li>
+<li><a href="#다음에-살펴볼-내용은">다음에 살펴볼 내용은?</a></li>
+</ul>
+</nav>
+          
+          
+
+<p>독자는 인터페이스 레퍼런스를 통해 변수를 사용할 경우 Go 런타임내에서 어떤 일이 있는지 정확하게 알고 있는가? 이 질문에 쉽게 답할 수 없는 이유는 어떤 인터페이스를 구현하는 타입의 경우 그 인터페이스를 가리키는 어떤 레퍼런스도 갖고 있지 않기 때문이다. 하지만 여전히 시도는 해 볼 수 있는데 <a href="https://golangkorea.github.io/post/golang-internals/part1/">이전 블로그 포스트</a>에서 논했던 Go 컴파일러의 지식을 이용하는 것이다.</p>
+
+<p>그러면, Go 컴파일러속으로 잠수해 들어가자: 간단한 Go 프로그램을 제작하고 Go 타입캐스팅(typecasting)이 내부적으로 어떻게 동작하는 지 살펴보겠다. 이 것을 예로 들면서, 어떻게 노드 트리가 생성되고 사용되는지 설명하겠다. 이렇게 함으로써 독자도 이 지식을 다른 Go 컴파일러 기능에 적용할 수 있을 것이다.</p>
+
+<h1 id="시작하기-전에">시작하기 전에</h1>
+
+<p>실험을 하기 전에, (Go 툴을 쓰는 것이 아니라) Go 컴파일러를 직접 사용할 필요가 있다. 다음 명령을 사용해 이 기능에 접근할 수 있다:</p>
+
+<blockquote>
+<pre><code>go tool 6g test.go
+</code></pre>
+</blockquote>
+
+<p>이 명령으로 <em>test.go</em> 소스파일은 컴파일되고 오브젝트 파일(object file)이 만들어 진다. 여기서 <em>6g</em> 는 AMD64 아키텍쳐인 저자의 머신을 위한 컴파일러의 이름이다. 다른 아키텍쳐에서는 상응하는 컴파일러를 사용해야 함을 주목하라.</p>
+
+<p>컴파일러를 직접 사용할 때 유용한 커맨드 라인 인수들을 사용할 수 있는데, 자세한 내용은 <a href="https://golang.org/cmd/gc/#hdr-Command_Line">여기</a>를 참고하라. 이 실험을 위해서, 노드 트리의 레이아웃을 출력해 주는 <em>-W</em> 플래그를 사용하겠다.</p>
+
+<h1 id="간단한-go-프로그램-만들기">간단한 Go 프로그램 만들기</h1>
+
+<p>우선 간단한 Go 프로그램을 만들자. 저자의 버전은 다음과 같다:</p>
+
+<blockquote>
+<pre><code class="language-go">  1  package main
+  2
+  3  type I interface {
+  4          DoSomeWork()
+  5  }
+  6
+  7  type T struct {
+  8          a int
+  9  }
+ 10
+ 11  func (t *T) DoSomeWork() {
+ 12  }
+ 13
+ 14  func main() {
+ 15          t := &amp;T{}
+ 16          i := I(t)
+ 17          print(i)
+ 18  }
+</code></pre>
+</blockquote>
+
+<p>정말 간단하지 않은가? 불필요하게 생각되는 단 하나는 17째 줄인데, <em>i</em> 변수를 출력하는 부분이다. 불필요하다고 판단됨에도 불구하고 이 줄이 없다면, <em>i</em> 는 사용하지 않은 변수로 간주되어 프로그램은 컴파일 되지 않을 것이다. 다음 단계는 이 프로그램을 <em>-W</em> 를 사용해 컴파일 하는 것이다:</p>
+
+<blockquote>
+<pre><code>go tool 6g -W test.go
+</code></pre>
+</blockquote>
+
+<p>이 명령을 실행한 후에, 프로그램내 정의된 각 메서드에 해당하는 노드 트리를 포함한 출력을 보게 될 것이다. 이 경우, <em>main</em> 과 <em>init</em> 메서드가 있다. <em>init</em> 메서드가 언급된 이유는 모든 프로그램에 암시적으로 정의되어 있기 때문인데, 실제로 여기에서는 다루지 않겠다.</p>
+
+<p>각 메서드마다, 컴파일러는 두개의 노드트리 버전을 출력한다. 첫번째는 소스파일을 파싱하고 얻는 노드 트리의 원본이고 두번째는 타입체킹후 모든 필요한 수정을 거친 버전이다.</p>
+
+<h1 id="main-메서드의-노드-트리에-대한-이해">main 메서드의 노드 트리에 대한 이해</h1>
+
+<p>우선 main 메서드에서 나온 노드 트리의 원본을 자세히 들여다 보고 정확하게 무슨 일이 일어나고 있는지를 이해하기 위한 시도를 해보자.</p>
+
+<blockquote>
+<pre><code>DCL l(15)
+.   NAME-main.t u(1) a(1) g(1) l(15) x(0+0) class(PAUTO) f(1) ld(1) tc(1) used(1) PTR64-*main.T
+
+AS l(15) colas(1) tc(1)
+.   NAME-main.t u(1) a(1) g(1) l(15) x(0+0) class(PAUTO) f(1) ld(1) tc(1) used(1) PTR64-*main.T
+.   PTRLIT l(15) esc(no) ld(1) tc(1) PTR64-*main.T
+.   .   STRUCTLIT l(15) tc(1) main.T
+.   .   .   TYPE &lt;S&gt; l(15) tc(1) implicit(1) type=PTR64-*main.T PTR64-*main.T
+
+DCL l(16)
+.   NAME-main.i u(1) a(1) g(2) l(16) x(0+0) class(PAUTO) f(1) ld(1) tc(1) used(1) main.I
+
+AS l(16) tc(1)
+.   NAME-main.autotmp_0000 u(1) a(1) l(16) x(0+0) class(PAUTO) esc(N) tc(1) used(1) PTR64-*main.T
+.   NAME-main.t u(1) a(1) g(1) l(15) x(0+0) class(PAUTO) f(1) ld(1) tc(1) used(1) PTR64-*main.T
+
+AS l(16) colas(1) tc(1)
+.   NAME-main.i u(1) a(1) g(2) l(16) x(0+0) class(PAUTO) f(1) ld(1) tc(1) used(1) main.I
+.   CONVIFACE l(16) tc(1) main.I
+.   .   NAME-main.autotmp_0000 u(1) a(1) l(16) x(0+0) class(PAUTO) esc(N) tc(1) used(1) PTR64-*main.T
+
+VARKILL l(16) tc(1)
+.   NAME-main.autotmp_0000 u(1) a(1) l(16) x(0+0) class(PAUTO) esc(N) tc(1) used(1) PTR64-*main.T
+
+PRINT l(17) tc(1)
+PRINT-list
+.   NAME-main.i u(1) a(1) g(2) l(16) x(0+0) class(PAUTO) f(1) ld(1) tc(1) used(1) main.I
+</code></pre>
+</blockquote>
+
+<p>아래 설명할 때는 불필요한 부분을 모두 제거한 요약한 버전을 사용하겠다.</p>
+
+<p>첫번째 노드는 꽤 단순하다.</p>
+
+<blockquote>
+<pre><code>DCL l(15)
+.   NAME-main.t l(15) PTR64-*main.T
+</code></pre>
+</blockquote>
+
+<p>첫번째 노드는 선언 노드이다. <em>l(15)</em> 는 노드가 줄 15에 정의되어 있음을 알려준다. 선언 노드는 <em>main.t</em> 변수를 나타내는 이름 노드(name node)에 레퍼런스를 갖는다. 변수가 정의된 곳은 main 패키지이고 실제로 <em>main.T</em> 타입를 가리키는 64비트 포인터이다. 15째 줄을 보면 어떤 선언이 되어 있는지 쉽게 이해할 수 있다.</p>
+
+<p>다음 것은 약간 까다롭다.</p>
+
+<blockquote>
+<pre><code>AS l(15)
+.   NAME-main.t l(15) PTR64-*main.T
+.   PTRLIT l(15) PTR64-*main.T
+.   .   STRUCTLIT l(15) main.T
+.   .   .   TYPE l(15) type=PTR64-*main.T PTR64-*main.T
+</code></pre>
+</blockquote>
+
+<p>최상위 노드(root node)는 할당(assignment) 노드이다. 첫번째 자식노드는 이름 노드(name node)로 <em>main.t</em> 변수를 대표한다. 두번째 자식노드는 <em>main.t</em> 에 할당되는, 포인터 리터럴 노드이다: &amp;를 생각하라. 이 노드는 struct 리터럴 노드를 자식으로 갖고 있고, 그 노드는 또 실제 타입인 (<em>main.T</em>)를 대표하는 타입 노드를 포인터로 가리킨다.</p>
+
+<p>다음 노드는 또 다른 선언이다. 이번에는 <em>main.I</em> 타입에 속하는 <em>main.i</em> 변수의 선언이다.</p>
+
+<blockquote>
+<pre><code>DCL l(16)
+.   NAME-main.i l(16) main.I
+</code></pre>
+</blockquote>
+
+<p>그런 다음, 컴파일러는 또 다른 변수, <em>autotmp_0000</em> 를 만들고, <em>main.t</em> 변수를 할당한다.</p>
+
+<blockquote>
+<pre><code>AS l(16) tc(1)
+.   NAME-main.autotmp_0000 l(16) PTR64-*main.T
+.   NAME-main.t l(15) PTR64-*main.T
+</code></pre>
+</blockquote>
+
+<p>마침내, 흥미로운 노드들에 도착했다.</p>
+
+<blockquote>
+<pre><code>AS l(16)
+.   NAME-main.i l(16)main.I
+.   CONVIFACE l(16) main.I
+.   .   NAME-main.autotmp_0000 PTR64-*main.T
+</code></pre>
+</blockquote>
+
+<p>여기를 보면, 컴파일러가 <em>CONVIFACE</em> 라고 불리는 특별한 노드를 <em>main.i</em> 에 할당하는 것을 볼 수 있다. 하지만 이것만으로는 실제로 내부에서 어떤 일이 일어나는지 알 수 없다. 한가지 방법은 모든 모드 트리 수정이 적용되고 난 후에 main 메서드의 노드 트리속을 들여다 보는 것인데, 출력된 내용 중 &ldquo;after walk main&rdquo; 라는 섹션내의 정보를 통해 알아보는 것이다.</p>
+
+<h1 id="컴파일러는-어떻게-할당노드를-번역하는가">컴파일러는 어떻게 할당노드를 번역하는가</h1>
+
+<p>아래를 보면 컴파일러가 어떻게 할당 노드(assignment node)를 번역하는 지 알 수 있다:</p>
+
+<blockquote>
+<pre><code>AS-init
+.   AS l(16)
+.   .   NAME-main.autotmp_0003 l(16) PTR64-*uint8
+.   .   NAME-go.itab.*&quot;&quot;.T.&quot;&quot;.I l(16) PTR64-*uint8
+
+.   IF l(16)
+.   IF-test
+.   .   EQ l(16) bool
+.   .   .   NAME-main.autotmp_0003 l(16) PTR64-*uint8
+.   .   .   LITERAL-nil I(16) PTR64-*uint8
+.   IF-body
+.   .   AS l(16)
+.   .   .   NAME-main.autotmp_0003 l(16) PTR64-*uint8
+.   .   .   CALLFUNC l(16) PTR64-*byte
+.   .   .   .   NAME-runtime.typ2Itab l(2) FUNC-funcSTRUCT-(FIELD-
+.   .   .   .   .   NAME-runtime.typ·2 l(2) PTR64-*byte, FIELD-
+.   .   .   .   .   NAME-runtime.typ2·3 l(2) PTR64-*byte PTR64-*byte, FIELD-
+.   .   .   .   .   NAME-runtime.cache·4 l(2) PTR64-*PTR64-*byte PTR64-*PTR64-*byte) PTR64-*byte
+.   .   .   CALLFUNC-list
+.   .   .   .   AS l(16)
+.   .   .   .   .   INDREG-SP l(16) runtime.typ·2 G0 PTR64-*byte
+.   .   .   .   .   ADDR l(16) PTR64-*uint8
+.   .   .   .   .   .   NAME-type.*&quot;&quot;.T l(11) uint8
+
+.   .   .   .   AS l(16)
+.   .   .   .   .   INDREG-SP l(16) runtime.typ2·3 G0 PTR64-*byte
+.   .   .   .   .   ADDR l(16) PTR64-*uint8
+.   .   .   .   .   .   NAME-type.&quot;&quot;.I l(16) uint8
+
+.   .   .   .   AS l(16)
+.   .   .   .   .   INDREG-SP l(16) runtime.cache·4 G0 PTR64-*PTR64-*byte
+.   .   .   .   .   ADDR l(16) PTR64-*PTR64-*uint8
+.   .   .   .   .   .   NAME-go.itab.*&quot;&quot;.T.&quot;&quot;.I l(16) PTR64-*uint8
+AS l(16)
+.   NAME-main.i l(16) main.I
+.   EFACE l(16) main.I
+.   .   NAME-main.autotmp_0003 l(16) PTR64-*uint8
+.   .   NAME-main.autotmp_0000 l(16) PTR64-*main.T
+</code></pre>
+</blockquote>
+
+<p>출력을 통해 볼 수 있듯이, 컴파일러는 우선 초기화 노드 리스트 (<em>AS-init</em>) 를 할당 노드에 첨가한다. <em>AS-init</em> 내에서는, <em>go.itab.*””.T.””</em>.I 변수 값을 새로 만든 변수 <em>main.autotmp_0003</em> 에 할당한다. 그런 다음, 변수가 <em>nil</em> 인지를 검사한다. 만약에 <em>nil</em> 이면, 컴파일러는 <em>runtime.typ2Itab</em> 함수를 다음의 인수들을 사용해 호출한다:</p>
+
+<ul>
+<li><em>main.T</em> 타입의 포인터,</li>
+<li><em>main.I</em> 인터페이스 타입의 포인터,</li>
+<li><em>go.itab.*””.T.””.I</em> 변수를 가리키는 포인터.</li>
+</ul>
+
+<p>코드에서 보면, 이 변수가 <em>main.T</em> 에서 <em>main.I</em> 로 타입변환된 결과를 저장하는데 사용되고 있음이 명백하다.</p>
+
+<h1 id="getitab-메서드의-내부"><em>getitab</em> 메서드의 내부</h1>
+
+<p>논리적인 다음 단계는 <em>runtime.typ2Itab</em> 를 찾아보는 것이다. 아래에 이 함수를 나열해 놓았다.</p>
+
+<blockquote>
+<pre><code>func typ2Itab(t *_type, inter *interfacetype, cache **itab) *itab {
+    tab := getitab(inter, t, false)
+    atomicstorep(unsafe.Pointer(cache), unsafe.Pointer(tab))
+    return tab
+}
+</code></pre>
+</blockquote>
+
+<p>확실해 보이는 것은 실제 작업은 <em>getitab</em> 메서드 내부에서 진행된다는 점인데, 두번째 줄에서 단순히 tab 변수를 cache 변수에 저장하는 점을 통해 알 수 있다. 그럼 <em>getitab</em> 내부를 들여다 보자. 꽤 긴 내용이라 가장 들여다 볼 가치가 있는 부분만 복사했다.</p>
+
+<blockquote>
+<pre><code>m =
+    (*itab)(persistentalloc(unsafe.Sizeof(itab{})+uintptr(len(inter.mhdr)-1)*ptrSize, 0,
+    &amp;memstats.other_sys))
+    m.inter = interm._type = typ
+
+ni := len(inter.mhdr)
+nt := len(x.mhdr)
+j := 0
+for k := 0; k &lt; ni; k++ {
+	i := &amp;inter.mhdr[k]
+	iname := i.name
+	ipkgpath := i.pkgpath
+	itype := i._type
+	for ; j &lt; nt; j++ {
+		t := &amp;x.mhdr[j]
+		if t.mtyp == itype &amp;&amp; t.name == iname &amp;&amp; t.pkgpath == ipkgpath {
+			if m != nil {
+				*(*unsafe.Pointer)(add(unsafe.Pointer(&amp;m.fun[0]), uintptr(k)*ptrSize)) = t.ifn
+			}
+		}
+	}
+}
+</code></pre>
+</blockquote>
+
+<p>우선 결과를 저장할 메모리를 할당한다.</p>
+
+<blockquote>
+<pre><code>(*itab)(persistentalloc(unsafe.Sizeof(itab{})+uintptr(len(inter.mhdr)-1)*ptrSize, 0, &amp;memstats.other_sys))
+</code></pre>
+</blockquote>
+
+<p>Go 언어에서 왜 메모리를 할당하는지 그리고 왜 이렇게 이상한 방식으로 하는지 궁금해 진다. 이 질문에 답하기 위해 <em>itab</em> struct 정의를 들여다 보아야 할 필요가 있다.</p>
+
+<blockquote>
+<pre><code>type itab struct {
+	inter  *interfacetype
+	_type  *_type
+	link   *itab
+	bad    int32
+	unused int32
+	fun    [1]uintptr // variable sized
+}
+</code></pre>
+</blockquote>
+
+<p>마지막 특성인 <em>fun</em> 은 요소가 하나인 배열로 정의되어 있다. 하지만 실제로 배열의 크기는 변할 수 있다고 코멘트되어 있다. 나중에 보겠지만 이 특성은 특정한 타입내 정의된 메서드들을 가리키는 포인터 배열를 가지고 있다. 이 메서드들은 인터페이스 타입의 메서드에 상응한다. Go 언어의 저자들은 이 특성을 위해 동적 메로리 할당을 사용한다. (그렇다, unsafe 패키지를 사용하면 이런 일들이 가능하다.) 메모리를 얼마나 할당해야 하는지는 struct 자체의 크기에 인터페이스내 메서드의 숫자에 포인터 크기를 곱한 값을 더해 계산할 수 있다.</p>
+
+<blockquote>
+<pre><code>unsafe.Sizeof(itab{})+uintptr(len(inter.mhdr)-1)*ptrSize
+</code></pre>
+</blockquote>
+
+<p>다음으로 두개의 중첩된 루프를 볼 수 있다. 첫째로 인터페이스의 모든 메서드를 차례로 처리한다. 인터페이스의 각 메서드에 대해서 특정한 타입내에 상응하는 메서드를 찾으려 한다. (메서드는 <em>mhdr</em> 컬렉션에 저장되어 있다.) 두 메서드가 서로 같은지를 비교하는 과정은 굳이 설명할 필요가 없겠다.</p>
+
+<blockquote>
+<pre><code>if t.mtyp == itype &amp;&amp; t.name == iname &amp;&amp; t.pkgpath == ipkgpath
+</code></pre>
+</blockquote>
+
+<p>만약 매치를 찾으면, 결과값의 <em>fun</em> 에 메서드를 가리키는 포인터를 저장한다:</p>
+
+<blockquote>
+<pre><code>*(*unsafe.Pointer)(add(unsafe.Pointer(&amp;m.fun[0]), uintptr(k)*ptrSize)) = t.ifn
+</code></pre>
+</blockquote>
+
+<p>성능에 대해 짧게 언급하면: 인터페이스와 사전에 설정된 타입 정의에 대해 메서드는 알파벳 순서로 정렬되어 있어서, 이 중첩 루프는 *O(n * m)* 대신 <em>O(n + m)</em> 으로 반복한다. n 과 m 은 상응하는 메서드 숫자들</p>
+
+<p>마지막으로, 할당의 마지막 부분을 기억하는가?</p>
+
+<blockquote>
+<pre><code>AS l(16)
+.   NAME-main.i l(16) main.I
+.   EFACE l(16) main.I
+.   .   NAME-main.autotmp_0003 l(16) PTR64-*uint8
+.   .   NAME-main.autotmp_0000 l(16) PTR64-*main.T
+</code></pre>
+</blockquote>
+
+<p>여기에서 <em>EFACE</em> 노드를 <em>main.i</em> 변수에 할당한다. <em>EFACE</em> 노드는 <em>main.autotmp_0003</em> 와 <em>main.autotmp_0000</em> 변수들에 대한 레퍼런스를 가지고 있는데 - <em>main.autotmp_0003</em> 는 <em>runtime.typ2Itab</em> 에 의해 반환된 itab struct를 가리키는 포인터이고, <em>main.autotmp_0000</em> 변수는 <em>main.t</em> 와 같은 값을 가지고 있다. 인터페이스 레퍼런스를 통해 메서드를 호출하는데 필요한 것은 이게 전부이다.</p>
+
+<p>그래서, <em>main.i</em> 변수는 런타임 <a href="https://godoc.org/runtime">runtime</a> 패키지내 정의된 <a href="https://golang.org/src/runtime/iface.go">iface</a> struct의 인스턴스를 가지고 있다.</p>
+
+<blockquote>
+<pre><code>type iface struct {
+    tab  *itab
+    data unsafe.Pointer
+}
+</code></pre>
+</blockquote>
+
+<h1 id="다음에-살펴볼-내용은">다음에 살펴볼 내용은?</h1>
+
+<p>저자가 지금까지 Go 컴파일러와 런타임에 대해 아주 작은 부분만 설명했다는 점을 이해한다. 얘기해 볼만한 흥미로운 주제들이 여전히 많이 남아있다. 예를 들면, 오브젝트 파일, 링커, 재배치(relocations), 등에 대해서는 다음 블로그 포스트에서 살펴보기로 하겠다.</p>
+
+<ul>
+<li>원문: <a href="http://blog.altoros.com/golang-internals-part-2-diving-into-the-go-compiler.html">Golang Internals, Part 2: Diving Into the Go Compiler</a></li>
+<li>저자: Siarhei Matsiukevich</li>
+<li>번역자: Jhonghee Park</li>
+</ul>
+
+        </div>
+        
+
+<footer>
+  <p class="meta">
+    <span class="byline author vcard">Posted by <span class="fn">
+    
+        <a href="https://golangkorea.github.io/authors/jhonghee-park">Jhonghee Park</a>
+    
+    </span></span>
+    
+    <time>Sep 15, 2016</time>
+    
+      <span class="categories">
+        Tags:
+        
+          <a class="category" href="https://golangkorea.github.io/tags/golang">Golang</a>  <a class="category" href="https://golangkorea.github.io/tags/internals">Internals</a>  <a class="category" href="https://golangkorea.github.io/tags/compiler">Compiler</a>  <a class="category" href="https://golangkorea.github.io/tags/structure">Structure</a>  
+    
+    </span>
+    
+    <span class="edit-in-github">
+      <a class="label" href="https://github.com/golangkorea/golangkorea-hugo/blob/master/content/post/golang-internals/part2.md">Edit in GitHub</a>
+    </span>
+    
+  </p>
+
+  
+  
+
+  
+
+  <p class="meta">
+    
+        <a class="basic-alignment left" href="https://golangkorea.github.io/post/golang-internals/part1/" title="Golang의 내부, 1부: 주요 컨셉트와 프로젝트 구조">Golang의 내부, 1부: 주요 컨셉트와 프로젝트 구조</a>
+    
+
+    
+      <a class="basic-alignment right" href="https://golangkorea.github.io/post/golang-internals/part3/" title="Golang의 내부, 3부: 링커, 오브젝트 파일, 그리고 재배치">Golang의 내부, 3부: 링커, 오브젝트 파일, 그리고 재배치</a>
+    
+  </p>
+  
+    
+      <div id="disqus_thread"></div>
+<script type="text/javascript">
+
+(function() {
+    
+    
+    
+    
+
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    var disqus_shortname = 'UA-82835198-1';
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+    
+  
+</footer>
+
+      </article>
+    </div>
+    
+
+
+<aside class="sidebar thirds">
+  <section class="first odd">
+
+    
+      <h1>못 먹어도 Go인 세상</h1>
+    
+
+    <p>
+      
+        새로운 도전과 개발의 재미를 Go를 통해 만끽해 보세요. We love to talk, learn and share our experience. Come join us. Let&rsquo;s have some fun!
+      
+    </p>
+  </section>
+
+
+
+  
+  <ul class="sidebar-nav">
+    <li class="sidebar-nav-item">
+      <a target="_blank" href="https://github.com/golangkorea/golangkorea-hugo/" title="https://github.com/golangkorea/golangkorea-hugo/"><i class="fa fa-github fa-3x"></i></a>
+      
+      
+       
+      
+      
+      <a target="_blank" href="https://plus.google.com/communities/115721275599816202991" title="https://plus.google.com/communities/115721275599816202991"><i class="fa fa-google-plus fa-3x"></i></a>
+      <a target="_blank" href="https://www.facebook.com/groups/golangko/" title="https://www.facebook.com/groups/golangko/"><i class="fa fa-facebook fa-3x"></i></a>
+      
+
+    
+    
+    </li>
+  </ul>
+
+  
+
+  
+    
+      <section class="odd">
+        
+          <h1>Join Us</h1>
+        
+        
+          <li>
+            <a href="https://github.com/golangkorea" title="GitHub Organization"  target="_blank" >GitHub Organization</a>
+          </li>
+        
+          <li>
+            <a href="https://gitter.im/golang-korean-community/golangkorea.github.io?utm_source=share-link&amp;utm_medium=link&amp;utm_campaign=share-link" title="Gitter Room"  target="_blank" >Gitter Room</a>
+          </li>
+        
+      </section>
+    
+  
+
+  
+  
+  
+    
+      <section class="even">
+        <h1>Recent Posts</h1>
+        <ul id="recent_posts">
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part6/">Golang의 내부, 6부: 부트스트래핑과 메모리 할당자</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part5/">Golang의 내부, 5부: 런타임 부트스트랩</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part4/">Golang의 내부, 4부: 오브젝트 파일, 그리고 함수 메타데이터</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part3/">Golang의 내부, 3부: 링커, 오브젝트 파일, 그리고 재배치</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part2/">Golang의 내부, 2부: Go 컴파일러 들여다 보기</a>
+            </li>
+          
+        </ul>
+      </section>
+    
+  
+
+  <section class="odd">
+      <h1>Tags</h1>
+      <ul id="tags">
+          <div id="tags-cloud"></div>
+      </ul>
+  </section>
+
+</aside>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+  var words = [
+    
+      { text: "allocator", weight:  1 , link: "/tags/allocator" },
+    
+      { text: "assembler", weight:  1 , link: "/tags/assembler" },
+    
+      { text: "beginning", weight:  2 , link: "/tags/beginning" },
+    
+      { text: "blog", weight:  7 , link: "/tags/blog" },
+    
+      { text: "bootstrap", weight:  2 , link: "/tags/bootstrap" },
+    
+      { text: "community", weight:  1 , link: "/tags/community" },
+    
+      { text: "compiler", weight:  3 , link: "/tags/compiler" },
+    
+      { text: "development", weight:  2 , link: "/tags/development" },
+    
+      { text: "golang", weight:  7 , link: "/tags/golang" },
+    
+      { text: "hugo", weight:  7 , link: "/tags/hugo" },
+    
+      { text: "install", weight:  1 , link: "/tags/install" },
+    
+      { text: "internals", weight:  7 , link: "/tags/internals" },
+    
+      { text: "linker", weight:  3 , link: "/tags/linker" },
+    
+      { text: "memory", weight:  1 , link: "/tags/memory" },
+    
+      { text: "metadata", weight:  1 , link: "/tags/metadata" },
+    
+      { text: "object-file", weight:  2 , link: "/tags/object-file" },
+    
+      { text: "relocations", weight:  2 , link: "/tags/relocations" },
+    
+      { text: "runtime", weight:  2 , link: "/tags/runtime" },
+    
+      { text: "structure", weight:  2 , link: "/tags/structure" },
+    
+      { text: "tdd", weight:  1 , link: "/tags/tdd" },
+    
+      { text: "unittest", weight:  1 , link: "/tags/unittest" },
+    
+      { text: "vim", weight:  1 , link: "/tags/vim" },
+    
+  ];
+  $('#tags-cloud').jQCloud(words, {
+      width: 280,
+      height: 300
+    });
+});
+
+</script>
+
+  </div>
+</div>
+
+<footer role="contentinfo">
+  <p>Copyright &copy; 2016  - <a href="https://golangkorea.github.io/license/">License</a> -
+  <span class="credit">Powered by <a target="_blank" href="https://gohugo.io">Hugo</a> and <a target="_blank" href="https://github.com/parsiya/hugo-octopress/">Hugo-Octopress</a> theme.
+</p>
+
+</footer>
+
+
+</body>
+</html>
+

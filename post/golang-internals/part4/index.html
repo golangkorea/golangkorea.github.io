@@ -1,0 +1,525 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width,minimum-scale=1,maximum-scale=1">
+
+  
+  
+  <link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+  
+
+  
+  <title>Golang의 내부, 4부: 오브젝트 파일, 그리고 함수 메타데이터</title>
+
+  
+  
+  <link rel="stylesheet" href="https://golangkorea.github.io/css/hugo-octopress.css">
+
+  
+  
+    <link rel="stylesheet" href="https://golangkorea.github.io/css/custom.css">
+  
+    <link rel="stylesheet" href="https://golangkorea.github.io/css/custom-font.css">
+  
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+  
+  <link href="https://golangkorea.github.io/favicon.png" rel="icon">
+
+  
+  
+  
+
+  
+
+  <meta name="description" content="Golang 한국 사용자 모임입니다.">
+  <meta name="keywords" content="Go,Golang,GolangKorea,Gopher">
+
+  <meta name="author" content="">
+
+  
+  <meta name="generator" content="Hugo 0.17-DEV" />
+
+  
+  
+
+  
+  <link rel="stylesheet" href="https://golangkorea.github.io/js/highlight/styles/darcula.css">
+<link rel="stylesheet" href="https://golangkorea.github.io/js/jqcloud/jqcloud.min.css">
+<link rel="stylesheet" href="//fonts.googleapis.com/earlyaccess/nanumgothic.css">
+<link rel="stylesheet" href="//fonts.googleapis.com/earlyaccess/nanumgothiccoding.css">
+
+  <script   src="https://code.jquery.com/jquery-1.12.4.min.js"   integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="   crossorigin="anonymous"></script>
+<script src="https://golangkorea.github.io/js/highlight/highlight.pack.js"></script>
+<script src="https://golangkorea.github.io/js/jqcloud/jqcloud.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+  
+
+</head>
+<body>
+
+
+<header role="banner"><hgroup>
+  
+  <h1><a href="https://golangkorea.github.io/">Golang Korean Community</a></h1>
+    <h2>Go에 관련된 수다를 추구하는 개발자들의 세상</h2>
+</hgroup></header>
+
+
+<nav role="navigation">
+
+<ul class="main-navigation">
+  
+  
+</ul>
+
+
+<ul class="subscription">
+  
+    
+        <a href="https://golangkorea.github.io/index.xml" target="_blank" type="application/rss+xml" title="RSS"><i class="fa fa-rss-square fa-lg"></i></a>
+    
+  
+
+</ul>
+
+
+
+<script>
+(function() {
+  var cx = '002661009167463862046:hk6lhiihuma';
+  var gcse = document.createElement('script');
+  gcse.type = 'text/javascript';
+  gcse.async = true;
+  gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
+  var s = document.getElementsByTagName('script')[0];
+  s.parentNode.insertBefore(gcse, s);
+})();
+</script>
+<form>
+  <fieldset role="search">
+  <gcse:search class="search"></gcse:search>  
+  </fieldset>
+</form>
+</nav>
+
+
+<div id="main">
+  <div id="content">
+    <div>
+      <article class="hentry" role="article">
+
+        
+        
+
+<header>
+    <h1 class="entry-title">
+         Golang의 내부, 4부: 오브젝트 파일, 그리고 함수 메타데이터 
+    </h1>
+    <p class="meta">Sep 18, 2016
+         - 4 minute read 
+         - <a href="https://golangkorea.github.io/post/golang-internals/part4/#disqus_thread">Comments</a>
+
+        
+        
+        
+            - <a class="label" href="https://golangkorea.github.io/categories/%eb%b2%88%ec%97%ad/">번역</a><a class="label" href="https://golangkorea.github.io/categories/%ed%95%b5%ed%82%b9/">핵킹</a>
+        
+    </p>
+    <p>Posted by 
+    
+        <a href="https://golangkorea.github.io/authors/jhonghee-park">Jhonghee Park</a>
+    
+    </p>
+    <p>
+    <ul id="series">
+  
+    <li>Series: <a href="https://golangkorea.github.io/series/golang--internals">Golang  Internals</a> </li>
+  
+</ul>
+    </p>    
+</header>
+
+
+        <div class="entry-content">
+          
+          
+          
+            <nav id="TableOfContents">
+<ul>
+<li><a href="#함수-메타데이터의-구조">함수 메타데이터의 구조</a></li>
+<li><a href="#가비지-컬렉터는-어떻게-함수-메타데이터를-사용하는가">가비지 컬렉터는 어떻게 함수 메타데이터를 사용하는가</a></li>
+<li><a href="#golang에-대해-더-알아보기">Golang에 대해 더 알아보기</a></li>
+</ul>
+</nav>
+          
+          
+
+<p>오늘은, Func 구조에 대해 좀 더 자세히 들여다 보고 어떻게 가비지 컬렉션이 작동하는지 몇가지 자세한 내용을 논하겠다.</p>
+
+<p>이 포스트는 <a href="https://golangkorea.github.io/post/golang-internals/part3/">Golang의 내부, 3부: 링커, 오브젝트 파일, 그리고 재배치</a>의 연속이어서, 독자가 아직 읽지 않았다면 이 포스트를 소화하기 전에 읽기를 적극 권장한다.</p>
+
+<h1 id="함수-메타데이터의-구조">함수 메타데이터의 구조</h1>
+
+<p>재배치에 대한 주요한 아이디어는 3부를 통해 분명해 졌을 것이다. 이제 main 메서드의 Func 구조를 살펴보자:</p>
+
+<blockquote>
+<pre><code>01 Func: &amp;goobj.Func{
+02     Args:    0,
+03     Frame:   8,
+04     Leaf:    false,
+05     NoSplit: false,
+06     Var:     {
+07     },
+08     PCSP:   goobj.Data{Offset:255, Size:7},
+09     PCFile: goobj.Data{Offset:263, Size:3},
+10     PCLine: goobj.Data{Offset:267, Size:7},
+11     PCData: {
+12         {Offset:276, Size:5},
+13     },
+14     FuncData: {
+15         {
+16             Sym:    goobj.SymID{Name:&quot;gclocals·3280bececceccd33cb74587feedb1f9f&quot;, Version:0},
+17          Offset: 0,
+18     },
+19     {
+20          Sym:    goobj.SymID{Name:&quot;gclocals·3280bececceccd33cb74587feedb1f9f&quot;, Version:0},
+21                Offset: 0,
+22            },
+23        },
+24        File: {&quot;/home/adminone/temp/test.go&quot;},
+25    },
+</code></pre>
+</blockquote>
+
+<p>이 구조체는 Go언어의 런타임이 사용하는, 컴파일러가 오브젝트 파일에 방출한 함수 메타데이터로 생각해 볼 수 있다. <a href="https://docs.google.com/document/d/1lyPIbmsYbXnpNj57a261hgOYVpNRcgydurVQIyZOz_o/pub">이 문서</a>를 통해 Func내 정확한 포맷과 여러 필드들의 의미에 대한 설명을 접할 수 있다. 이제, 런타임에서 이 메타데이터가 어떻게 사용되는지 보겠다.</p>
+
+<p>runtime 패키지 안에서 이 메타데이터는 다음 구조체에 매핑되어 있다.</p>
+
+<blockquote>
+<pre><code>01 type _func struct {
+02     entry   uintptr // start pc
+03     nameoff int32   // function name
+04
+05     args  int32 // in/out args size
+06     frame int32 // legacy frame size; use pcsp if possible
+07
+08     pcsp      int32
+09     pcfile    int32
+10     pcln      int32
+11     npcdata   int32
+12     nfuncdata int32
+13 }
+</code></pre>
+</blockquote>
+
+<p>오브젝트 파일 안에 있는 정보가 모두 다 직접적으로 매핑되어 있는 것은 아니다. 몇몇 필드들은 링커에만 사용된다. 그렇다 해도 여기에서 가장 흥미로운 필드들은 <em>pcsp</em>, <em>pcfile</em>, 그리고 <em>pcln</em> 이다. 이 필드들은 <a href="http://en.wikipedia.org/wiki/Program_counter">프로그램 카운터</a>가 stack pointer, filename, 그리고 line으로 번역될 때 사용된다.</p>
+
+<p>예를 들면, <em>panic</em> 이 발생할 경우 이 메타데이터 필드들이 필요할 것이다. 그 순간에 런타임이 알고 있는 바는 오직 <em>panic</em> 을 야기한 현재의 어셈블리 명령의 프로그램 카운터이다. 그래서 런타임은 그 카운터를 이용해 현재 파일과 라인 번호, 그리고 stack trace 전부를 얻는 것이다. 파일과 라인 번호는 <em>pcfile</em> 과 <em>pcln</em> 필드를 이용하면 바로 해결된다. stack trace는 <em>pcsp</em> 를 이용하여 재귀적으로 해결한다.</p>
+
+<p>이제 프로그램 카운터를 가지고 어떻게 상응하는 라인 번호를 얻을 수 있는지에 대한 질문에 답을 하자. 답을 얻기 위해서는 어셈블리 코드를 들여다 보고 오브젝트 파일에 라인 번호가 어떻게 저장되어 있는 지를 이해해야 한다:</p>
+
+<blockquote>
+<pre><code>1 0x001a 00026 (test.go:4)    MOVQ    $1,(SP)
+2     0x0022 00034 (test.go:4)    PCDATA  $0,$0
+3     0x0022 00034 (test.go:4)    CALL    ,runtime.printint(SB)
+4     0x0027 00039 (test.go:5)    ADDQ    $8,SP
+5     0x002b 00043 (test.go:5)    RET ,
+</code></pre>
+</blockquote>
+
+<p>프로그램 카운터 26에서 38까지는 라인 번호 4에 상응하고 카운터 39에서 <em>next_function_program_counter - 1</em> 까지는 라인 번호 5에 해당된다. 효율적 공간사용을 생각하면 다음과 같은 맵을 저장하는 것으로 충분하다:</p>
+
+<blockquote>
+<pre><code>1 26 - 4
+2 39 - 5
+3 …
+</code></pre>
+</blockquote>
+
+<p>이것은 컴파일러가 하는 일과 거의 일치한다. <em>pcln</em> 필드는 현재 실행중인 함수의 첫번째 프로그램 카운터에 상응하는 특정한 오프셋을 맵안에서 가리키고 있다. 이 오프셋과 또 다음 함수의 첫번째 프로그램 카운터의 오프셋을 알고, 런타임은 바이너리 검색을 이용해 주어진 프로그램 카운터에 상응하는 라인 번호를 찾는다.</p>
+
+<p>Go 언어에서 이런 아이디어는 일반화 되어 있다. 라인 번호와 스택 포인터만 프로그램 카운터에 맵팅되어 있는게 아니라 어떤 정수 값도 매핑될 수 있다. <em>PCDATA</em> 명령을 통해서 가능한 것이다. 매번 링커는 다음 명령을 찾는다:</p>
+
+<blockquote>
+<pre><code>1 0x0022 00034 (test.go:4)    PCDATA  $0,$0
+</code></pre>
+</blockquote>
+
+<p>이 명령은 실제로 어셈블러 명령을 생산하지 않는다. 대신, 이 명령의 두번째 인수를 맵안에서 현재의 프로그램 카운터를 사용해 저장하고, 첫번째 인수는 어떤 맵이 사용되는 지를 나타낸다. 이 첫번째 인수를 통해, 새로운 맵을 쉽게 첨가할 수 있는데, 컴파일러와 런타임에는 그 의미가 알려지지만 링커에게는 보이지 않는다.</p>
+
+<h1 id="가비지-컬렉터는-어떻게-함수-메타데이터를-사용하는가">가비지 컬렉터는 어떻게 함수 메타데이터를 사용하는가</h1>
+
+<p>마지막으로 아직 설명을 더 명확하게 해야할 함수 메타데이터의 내용은 FuncData 배열인데, 가비지 컬렉션에 필요한 정보를 담고 있다. Go 언어는 <a href="http://www.brpreiss.com/books/opus5/html/page424.html">mark-and-sweep</a> 가비지 컬렉터 (GC)를 사용하는데 두 단계를 거쳐 동작한다. 첫번째 단계인 (mark)에서는, 모든 객체를 섭렵하면서 아직 사용중인 것들은 &ldquo;reachable&rdquo;로 표시한다. 표시되지 않은 모든 객체는 두번째 단계인 (sweep)에서 제거된다.</p>
+
+<p>그래서, 가비지 컬렉터는 전역 변수, 프로세서 레지스터, 스택 프레임, 그리고 이미 위치가 알려진 객체내 포인터들과 같이 잘 알려진 위치들내 도달할 수 있는(reachable) 객체를 찾아보면서 시작한다. 하지만 곰곰히 생각해 보면, 스택 프레임안에서 포인터를 찾아내는 것이 그렇게 쉽지는 않는 일이다. 그렇다면 런타임이 가비지 컬렉션을 실행할때 스택안에서 어떻게 포인터와 포인터가 아닌 타입의 변수들을 알아 내는 것일까? 바로 여기에서 <em>FuncData</em> 가 등장하는 것이다.</p>
+
+<p>각 함수마다 컴파일러는 두개의 변수를 만든다. 하나는 스택 프레임의 인수들을 위한 비트맵 벡터를 담고 있다. 다른 하나는 나머지 프레임을 위한 비트맵으로 함수에 정의된 포인터 타입의 모든 지역 변수들을 포함한다. 이 변수들은 각자 가비지 컬렉터에게 스택 프레임안에 포인터들이 어디에 위치하는지 정확하게 알려주고 이는 가비지 컬렉터가 일을 하는 데 충분한 정보이다.</p>
+
+<p><em>PCDATA</em> 와 같이 <em>FUNCDATA</em> 역시 의사-Go 어셈블리 명령(pseudo-Go assembly instruction)에 의해 발생된 것임을 언급할 가치가 있겠다:</p>
+
+<blockquote>
+<pre><code>1 0x001a 00026 (test.go:3)    FUNCDATA    $0,gclocals·3280bececceccd33cb74587feedb1f9f+0(SB)
+</code></pre>
+</blockquote>
+
+<p>이 명령의 첫번째 인수는 이것이 인수들을 위한 함수 데이터인지 아니면 지역 변수 공간인지를 나타낸다. 두번째 인수는 실제로 GC 마스크를 담고 있는 숨겨진 변수에 대한 참조 값이다.</p>
+
+<h1 id="golang에-대해-더-알아보기">Golang에 대해 더 알아보기</h1>
+
+<p>앞으로 나올 포스트에서는 Go 언어의 부트 스트랩 과정을 얘기하겠다. 런타임이 어떻게 작동하는지를 이해하는데 중요한 단서이다. 일주일 뒤에 보자.</p>
+
+<ul>
+<li>원문: <a href="http://blog.altoros.com/golang-part-4-object-files-and-function-metadata.html">Golang Internals, Part 4: Object Files and Function Metadata</a></li>
+<li>저자: Siarhei Matsiukevich</li>
+<li>번역자: Jhonghee Park</li>
+</ul>
+
+        </div>
+        
+
+<footer>
+  <p class="meta">
+    <span class="byline author vcard">Posted by <span class="fn">
+    
+        <a href="https://golangkorea.github.io/authors/jhonghee-park">Jhonghee Park</a>
+    
+    </span></span>
+    
+    <time>Sep 18, 2016</time>
+    
+      <span class="categories">
+        Tags:
+        
+          <a class="category" href="https://golangkorea.github.io/tags/golang">Golang</a>  <a class="category" href="https://golangkorea.github.io/tags/internals">Internals</a>  <a class="category" href="https://golangkorea.github.io/tags/linker">linker</a>  <a class="category" href="https://golangkorea.github.io/tags/object-file">object file</a>  <a class="category" href="https://golangkorea.github.io/tags/relocations">relocations</a>  <a class="category" href="https://golangkorea.github.io/tags/metadata">metadata</a>  
+    
+    </span>
+    
+    <span class="edit-in-github">
+      <a class="label" href="https://github.com/golangkorea/golangkorea-hugo/blob/master/content/post/golang-internals/part4.md">Edit in GitHub</a>
+    </span>
+    
+  </p>
+
+  
+  
+
+  
+
+  <p class="meta">
+    
+        <a class="basic-alignment left" href="https://golangkorea.github.io/post/golang-internals/part3/" title="Golang의 내부, 3부: 링커, 오브젝트 파일, 그리고 재배치">Golang의 내부, 3부: 링커, 오브젝트 파일, 그리고 재배치</a>
+    
+
+    
+      <a class="basic-alignment right" href="https://golangkorea.github.io/post/golang-internals/part5/" title="Golang의 내부, 5부: 런타임 부트스트랩">Golang의 내부, 5부: 런타임 부트스트랩</a>
+    
+  </p>
+  
+    
+      <div id="disqus_thread"></div>
+<script type="text/javascript">
+
+(function() {
+    
+    
+    
+    
+
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    var disqus_shortname = 'UA-82835198-1';
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+    
+  
+</footer>
+
+      </article>
+    </div>
+    
+
+
+<aside class="sidebar thirds">
+  <section class="first odd">
+
+    
+      <h1>못 먹어도 Go인 세상</h1>
+    
+
+    <p>
+      
+        새로운 도전과 개발의 재미를 Go를 통해 만끽해 보세요. We love to talk, learn and share our experience. Come join us. Let&rsquo;s have some fun!
+      
+    </p>
+  </section>
+
+
+
+  
+  <ul class="sidebar-nav">
+    <li class="sidebar-nav-item">
+      <a target="_blank" href="https://github.com/golangkorea/golangkorea-hugo/" title="https://github.com/golangkorea/golangkorea-hugo/"><i class="fa fa-github fa-3x"></i></a>
+      
+      
+       
+      
+      
+      <a target="_blank" href="https://plus.google.com/communities/115721275599816202991" title="https://plus.google.com/communities/115721275599816202991"><i class="fa fa-google-plus fa-3x"></i></a>
+      <a target="_blank" href="https://www.facebook.com/groups/golangko/" title="https://www.facebook.com/groups/golangko/"><i class="fa fa-facebook fa-3x"></i></a>
+      
+
+    
+    
+    </li>
+  </ul>
+
+  
+
+  
+    
+      <section class="odd">
+        
+          <h1>Join Us</h1>
+        
+        
+          <li>
+            <a href="https://github.com/golangkorea" title="GitHub Organization"  target="_blank" >GitHub Organization</a>
+          </li>
+        
+          <li>
+            <a href="https://gitter.im/golang-korean-community/golangkorea.github.io?utm_source=share-link&amp;utm_medium=link&amp;utm_campaign=share-link" title="Gitter Room"  target="_blank" >Gitter Room</a>
+          </li>
+        
+      </section>
+    
+  
+
+  
+  
+  
+    
+      <section class="even">
+        <h1>Recent Posts</h1>
+        <ul id="recent_posts">
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part6/">Golang의 내부, 6부: 부트스트래핑과 메모리 할당자</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part5/">Golang의 내부, 5부: 런타임 부트스트랩</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part4/">Golang의 내부, 4부: 오브젝트 파일, 그리고 함수 메타데이터</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part3/">Golang의 내부, 3부: 링커, 오브젝트 파일, 그리고 재배치</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part2/">Golang의 내부, 2부: Go 컴파일러 들여다 보기</a>
+            </li>
+          
+        </ul>
+      </section>
+    
+  
+
+  <section class="odd">
+      <h1>Tags</h1>
+      <ul id="tags">
+          <div id="tags-cloud"></div>
+      </ul>
+  </section>
+
+</aside>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+  var words = [
+    
+      { text: "allocator", weight:  1 , link: "/tags/allocator" },
+    
+      { text: "assembler", weight:  1 , link: "/tags/assembler" },
+    
+      { text: "beginning", weight:  2 , link: "/tags/beginning" },
+    
+      { text: "blog", weight:  7 , link: "/tags/blog" },
+    
+      { text: "bootstrap", weight:  2 , link: "/tags/bootstrap" },
+    
+      { text: "community", weight:  1 , link: "/tags/community" },
+    
+      { text: "compiler", weight:  3 , link: "/tags/compiler" },
+    
+      { text: "development", weight:  2 , link: "/tags/development" },
+    
+      { text: "golang", weight:  7 , link: "/tags/golang" },
+    
+      { text: "hugo", weight:  7 , link: "/tags/hugo" },
+    
+      { text: "install", weight:  1 , link: "/tags/install" },
+    
+      { text: "internals", weight:  7 , link: "/tags/internals" },
+    
+      { text: "linker", weight:  3 , link: "/tags/linker" },
+    
+      { text: "memory", weight:  1 , link: "/tags/memory" },
+    
+      { text: "metadata", weight:  1 , link: "/tags/metadata" },
+    
+      { text: "object-file", weight:  2 , link: "/tags/object-file" },
+    
+      { text: "relocations", weight:  2 , link: "/tags/relocations" },
+    
+      { text: "runtime", weight:  2 , link: "/tags/runtime" },
+    
+      { text: "structure", weight:  2 , link: "/tags/structure" },
+    
+      { text: "tdd", weight:  1 , link: "/tags/tdd" },
+    
+      { text: "unittest", weight:  1 , link: "/tags/unittest" },
+    
+      { text: "vim", weight:  1 , link: "/tags/vim" },
+    
+  ];
+  $('#tags-cloud').jQCloud(words, {
+      width: 280,
+      height: 300
+    });
+});
+
+</script>
+
+  </div>
+</div>
+
+<footer role="contentinfo">
+  <p>Copyright &copy; 2016  - <a href="https://golangkorea.github.io/license/">License</a> -
+  <span class="credit">Powered by <a target="_blank" href="https://gohugo.io">Hugo</a> and <a target="_blank" href="https://github.com/parsiya/hugo-octopress/">Hugo-Octopress</a> theme.
+</p>
+
+</footer>
+
+
+</body>
+</html>
+

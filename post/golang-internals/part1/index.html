@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width,minimum-scale=1,maximum-scale=1">
+
+  
+  
+  <link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+  
+
+  
+  <title>Golang의 내부, 1부: 주요 컨셉트와 프로젝트 구조</title>
+
+  
+  
+  <link rel="stylesheet" href="https://golangkorea.github.io/css/hugo-octopress.css">
+
+  
+  
+    <link rel="stylesheet" href="https://golangkorea.github.io/css/custom.css">
+  
+    <link rel="stylesheet" href="https://golangkorea.github.io/css/custom-font.css">
+  
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+  
+  <link href="https://golangkorea.github.io/favicon.png" rel="icon">
+
+  
+  
+  
+
+  
+
+  <meta name="description" content="Golang 한국 사용자 모임입니다.">
+  <meta name="keywords" content="Go,Golang,GolangKorea,Gopher">
+
+  <meta name="author" content="">
+
+  
+  <meta name="generator" content="Hugo 0.17-DEV" />
+
+  
+  
+
+  
+  <link rel="stylesheet" href="https://golangkorea.github.io/js/highlight/styles/darcula.css">
+<link rel="stylesheet" href="https://golangkorea.github.io/js/jqcloud/jqcloud.min.css">
+<link rel="stylesheet" href="//fonts.googleapis.com/earlyaccess/nanumgothic.css">
+<link rel="stylesheet" href="//fonts.googleapis.com/earlyaccess/nanumgothiccoding.css">
+
+  <script   src="https://code.jquery.com/jquery-1.12.4.min.js"   integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="   crossorigin="anonymous"></script>
+<script src="https://golangkorea.github.io/js/highlight/highlight.pack.js"></script>
+<script src="https://golangkorea.github.io/js/jqcloud/jqcloud.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+  
+
+</head>
+<body>
+
+
+<header role="banner"><hgroup>
+  
+  <h1><a href="https://golangkorea.github.io/">Golang Korean Community</a></h1>
+    <h2>Go에 관련된 수다를 추구하는 개발자들의 세상</h2>
+</hgroup></header>
+
+
+<nav role="navigation">
+
+<ul class="main-navigation">
+  
+  
+</ul>
+
+
+<ul class="subscription">
+  
+    
+        <a href="https://golangkorea.github.io/index.xml" target="_blank" type="application/rss+xml" title="RSS"><i class="fa fa-rss-square fa-lg"></i></a>
+    
+  
+
+</ul>
+
+
+
+<script>
+(function() {
+  var cx = '002661009167463862046:hk6lhiihuma';
+  var gcse = document.createElement('script');
+  gcse.type = 'text/javascript';
+  gcse.async = true;
+  gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
+  var s = document.getElementsByTagName('script')[0];
+  s.parentNode.insertBefore(gcse, s);
+})();
+</script>
+<form>
+  <fieldset role="search">
+  <gcse:search class="search"></gcse:search>  
+  </fieldset>
+</form>
+</nav>
+
+
+<div id="main">
+  <div id="content">
+    <div>
+      <article class="hentry" role="article">
+
+        
+        
+
+<header>
+    <h1 class="entry-title">
+         Golang의 내부, 1부: 주요 컨셉트와 프로젝트 구조 
+    </h1>
+    <p class="meta">Sep 13, 2016
+         - 5 minute read 
+         - <a href="https://golangkorea.github.io/post/golang-internals/part1/#disqus_thread">Comments</a>
+
+        
+        
+        
+            - <a class="label" href="https://golangkorea.github.io/categories/%eb%b2%88%ec%97%ad/">번역</a><a class="label" href="https://golangkorea.github.io/categories/%ed%95%b5%ed%82%b9/">핵킹</a>
+        
+    </p>
+    <p>Posted by 
+    
+        <a href="https://golangkorea.github.io/authors/jhonghee-park">Jhonghee Park</a>
+    
+    </p>
+    <p>
+    <ul id="series">
+  
+    <li>Series: <a href="https://golangkorea.github.io/series/golang--internals">Golang  Internals</a> </li>
+  
+</ul>
+    </p>    
+</header>
+
+
+        <div class="entry-content">
+          
+          
+          
+            <nav id="TableOfContents">
+<ul>
+<li><a href="#시작하며">시작하며</a></li>
+<li><a href="#프로젝트-구조-이해하기">프로젝트 구조 이해하기</a></li>
+<li><a href="#컴파일러-내부">컴파일러 내부</a></li>
+<li><a href="#go-문법-들여다-보기">Go 문법 들여다 보기</a></li>
+<li><a href="#노드-이해하기">노드 이해하기</a></li>
+</ul>
+</nav>
+          
+          
+
+<p>이 블로그 시리즈는 기본적인 Go 언어특성에 이미 익숙하며 좀 더 심도있게 내부구조를 알고자 하는 독자들을 위해 쓰여졌다. 이 포스트는 Go언어의 소스코드의 구조와 Go 컴파일러의 내부를 어느 정도 상세히 살펴보겠다. 이 글을 읽고 난 후, 독자는 다음과 같은 질문에 답을 얻을 것이다.</p>
+
+<ol>
+<li>Go의 소스코드는 어떤 구조를 가지고 있는가?</li>
+<li>Go의 컴파일러는 어떻게 동작하는가?</li>
+<li>Go의 노드 트리(node treee)의 기본 구조는 무엇인가?</li>
+</ol>
+
+<h1 id="시작하며">시작하며</h1>
+
+<p>새로운 프로그래밍 언어를 배우기 시작할 때, 보통은 &ldquo;hello-world&rdquo;와 같은 튜토리얼이나, 초보자 가이드, 그리고 언어의 주요한 컨셉트, 문법, 심지어 표준 라이브러리에 대한 상세한 정보들 많이 접하게 된다. 하지만, 언어가 런타임 도중에 할당하는 주요한 데이터 구조의 레이아웃이라던지, 내장 함수를 호출할 때 어떤 어셈블리 코드가 발생하는지와 같은 정보를 얻는 것은 쉽지 않다. 물론, 답은 소스코드내에 자리잡고 있지만, 저자의 경험에 비추어 보면, 이렇다 할 성과없이 수많은 시간을 허비하는 일도 가능하다.</p>
+
+<p>이런 주제에 대해 전문가인 척 하지도 않을 거고, 모든 가능한 측면을 설명하려는 시도 또한 하지 않겠다. 대신, 목표하는 바는 독자들 스스로 Go 소스코드를 어떻게 해독해 나갈 수 있는 지를 보여주는 것이다.</p>
+
+<p>시작하기 전에, 반드시 필요한 것은 각자의 Go 소스코드 복사본을 갖는 것이다. 소스코드를 다운 받는데 특별할 게 전혀 없다. 다음 명령을 실행해 보자.</p>
+
+<blockquote>
+<pre><code>git clone https://github.com/golang/go
+</code></pre>
+</blockquote>
+
+<p>메인 브랜치의 코드는 상시 변하는 점을 주목하자. 그래서 저자는 이 블로그에서 release-branch.go1.4 브랜치를 사용한다.</p>
+
+<h1 id="프로젝트-구조-이해하기">프로젝트 구조 이해하기</h1>
+
+<p>Go 레포의 <code>/src</code> 폴더를 보게 되면, 많은 폴더를 발견하게 된다. 대부분은 Go의 표준 라이브러리 소스 파일을 갖고 있다. 여기에도 표준 이름짓기 관행이 항상 적용되는데, 각 패키지는 그 이름에 상응하는 이름의 폴더 아래 있다. 표준 라이브러리외에 다른 것들을 살펴보자. 저자의 견해로는, 아래 폴더들이 가장 중요하고 유용하다.</p>
+
+<style type="text/css"><!--
+.myTable { background-color:white;border-collapse:collapse; } .myTable th { background-color:#E0E0E0;color:black; } .myTable td, .myTable th { padding:5px;border:1px solid #989898; }
+--></style>
+
+<table class="myTable">
+<tbody>
+<tr>
+<th><center>폴더</center></th>
+<th style="width: 530px;" width="70%"><center>설명</center></th>
+</tr>
+<tr>
+<td><a href="https://github.com/golang/go/tree/release-branch.go1.4/src/cmd" target="golangsrc">/src/cmd/</a></td>
+<td>코멘드 라인 툴들을 보관한다.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/golang/go/tree/release-branch.go1.4/src/cmd/go" target="golangsrc">/src/cmd/go/</a></td>
+<td>Go 툴의 소스 파일이 있는데, 이 툴들은 Go 소스코드를 다운받거나, 빌드하고, 설치하는데 사용된다. 툴이 실행되면서 전체 소스를 수집하고, Go 링커와 컴파일러 코멘드 라인 툴들을 호출한다.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/golang/go/tree/release-branch.go1.4/src/cmd/dist" target="golangsrc">/src/cmd/dist/ </a></td>
+<td>다른 코멘트 라인 툴과 표준 라이브러리의 모든 패키지를 빌드하는 툴을 보관한다. 모든 특정한 툴이나 패키지에서 어떤 라이브러리가 사용되었는지를 알아 보려면 이 소스를 분석하고 싶을 것이다.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/golang/go/tree/release-branch.go1.4/src/cmd/gc" target="golangsrc">/src/cmd/gc/</a></td>
+<td>Go 컴파일러내 (프로세서) 아키텍쳐에 의존하지 않는 부분이다.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/golang/go/tree/release-branch.go1.4/src/cmd/ld" target="golangsrc">/src/cmd/ld/</a></td>
+<td>Go 링커내 (프로세서) 아키텍쳐에 의존하지 않는 부분이다. 아키텍쳐에 의존적인 부분들은 "l"로 끝나는 이름의 폴더에 위치하며 컴파일러와 같은 이름짓기 관행을 따른다.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/golang/go/tree/release-branch.go1.4/src/cmd/5a" target="golangsrc">/src/cmd/5a/</a>, 6a, 8a, and 9a</td>
+<td>여러 아키텍쳐에 맞춘 Go 어셈블러 컴파일러들을 발견할 수 있다. Go 어셈블러는 일종의 어셈블리 언어로 하층 기계어와는 딱 맞아 떨어지는 것은 아니다. 대신 각 아키텍쳐마다 독특한 컴파일러들이 있어 Go의 어셈블러를 기계의 어셈블러도 번역한다. 더 자세한 내용은 다음 링크를 참조하라. <a href="https://golang.org/doc/asm" target="golangsrc">여기</a>.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/golang/go/tree/release-branch.go1.4/src/lib9" target="golangsrc">/src/lib9/</a>, <a href="https://github.com/golang/go/tree/release-branch.go1.4/src/libbio" target="golangsrc">/src/libbio</a>, <a href="https://github.com/golang/go/tree/release-branch.go1.4/src/liblink" target="golangsrc">/src/liblink</a></td>
+<td>컴파일러, 링커, 그리고 런타임 패키지에 사용된 각종 라이브러리들.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/golang/go/tree/release-branch.go1.4/src/runtime" target="golangsrc">/src/runtime/</a></td>
+<td>가장 중요한 Go 패키지로 모든 프로그램에 간접적으로 포함된다. 메모리 관리, 가비지 콜렉션, Go 루틴 생산등, 런타임 기능 전체를 포함하고 있다.</td>
+</tr>
+</tbody>
+</table>
+
+<h1 id="컴파일러-내부">컴파일러 내부</h1>
+
+<p>위에서 언급한 것 처럼, 아키텍쳐에 무관한 Go 컴파일러는 <code>/src/cmd/gc</code> 폴더에 위치 한다. 시작 점은 <code>lex.c</code> 파일에 있다. 코멘드 라인 인수 파싱 같은 보편적인 기능들을 차치하고 들여다 보면, 컴파일러는 다음과 같은 일들을 한다.</p>
+
+<ol>
+<li><p>어떤 공통의 데이터 구조를 초기화 한다.</p></li>
+
+<li><p>주어진 모든 Go 파일을 차례로 읽어서 각 파일에 yyparse 메서드를 호출한다. 이때 실제로 파싱이 작동한다. Go 컴파일러는 <code>Bison</code>을 파서 발생기(parser generator)로 사용한다. 언어의 문법은 <a href="https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.y">go.y</a>에 완전히 서술되어 있다. (자세한 내용은 나중에 더 제공될 예정이다) 결과로, 이 단계는 완전한 파스트리(parse tree)를 생성하는데, 이때 트리의 각 노드는 컴파일된 프로그램의 요소들을 대표한다.</p></li>
+
+<li><p>생성된 트리를 재귀적으로(Recursively) 방문하면서 약간의 수정을 가한다, 예를 들어, 암시적으로 타입이 주어진 노드에 타입 정보를 정의하거나, 타입 케스팅과 같은 언어요소들을 런타임 패키지내 어떤 함수을 호출하는 식으로 다시 재구성하기도 한다 그외 다른 일들도 실행한다.</p></li>
+
+<li><p>파스트리(parse tree)가 완성되고 난 뒤 실제 컴파일을 실행한다. 노드들은 어셈블리 코드로 번역된다.</p></li>
+
+<li><p>생성된 어셈블리 코드에 심볼 테이블과 같은 부수적인 데이터 구조를 함께 오브젝트 파일 (object file)에 담아 만들고 디스크에 저장한다.</p></li>
+</ol>
+
+<h1 id="go-문법-들여다-보기">Go 문법 들여다 보기</h1>
+
+<p>이제 두번째 단계를 좀 더 가까이 살펴보자. <a href="https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.y">go.y</a> 파일은 언어 문법(grammar)을 가지고 있어 Go 컴파일러를 조사하고 언어의 구문론(syntax)을 이해하는 데 좋은 출발점이다. 파일의 주요한 부분은 선언문들로 구성되며, 다음과 유사하다.</p>
+
+<blockquote>
+<pre><code>xfndcl:
+     LFUNC fndcl fnbody
+
+fndcl:
+     sym '(' oarg_type_list_ocomma ')' fnres
+| '(' oarg_type_list_ocomma ')' sym '(' oarg_type_list_ocomma ')' fnres
+</code></pre>
+</blockquote>
+
+<p>이 선언에서는, <em>xfndcl</em> 와 <em>fundcl</em> 노드가 정의된다. <em>fundcl</em> 노드는 두가지 형식중에 하나이다. 첫번째는 다음의 언어 구성소(construct)에 상응하는 형식이다:</p>
+
+<blockquote>
+<pre><code>somefunction(x int, y int) int
+</code></pre>
+</blockquote>
+
+<p>그리고 두번째는 다음의 언어 구성소에 상응한다:</p>
+
+<blockquote>
+<pre><code>(t *SomeType) somefunction(x int, y int) int.
+</code></pre>
+</blockquote>
+
+<p><em>xfndcl</em> 노드는 상수인 <em>LFUNC</em> 에 저장된 키워드 <em>func</em> 를 뒤 따르는 <em>fndcl</em> 와 <em>fnbodynodes</em> 로 구성되어 있다.</p>
+
+<p>Bison(혹은 Yacc) 문법의 중요한 기능중에 하나는 무작위의 C 코드를 각 노드 정의옆에 갖다 붙일 수 있다는 것이다. 소스 코드안에 이런 노드의 정의가 매치될 때 마다 C 코드는 실행된다. 여기서, (실행된)결과의 노드는 $$ 사용해 표시하고 $1, $2 등등으로 자식 노드를 나타낸다.</p>
+
+<p>예제를 통해 보면 다 쉽게 이해할 수 있다. 다음은 실제코드를 간소한 예다.</p>
+
+<blockquote>
+<pre><code>fndcl:
+      sym '(' oarg_type_list_ocomma ')' fnres
+        {
+          t = nod(OTFUNC, N, N);
+          t-&gt;list = $3;
+          t-&gt;rlist = $5;
+
+          $$ = nod(ODCLFUNC, N, N);
+          $$-&gt;nname = newname($1);
+          $$-&gt;nname-&gt;ntype = t;
+          declare($$-&gt;nname, PFUNC);
+      }
+| '(' oarg_type_list_ocomma ')' sym '(' oarg_type_list_ocomma ')' fnres
+</code></pre>
+</blockquote>
+
+<p>우선, 새로운 노드가 만들어 지고 함수 선언을 위한 타입 정보를 갖는다. $3는 인수 리스트로 $5는 결과 리스트로 이 노드에서 레퍼런스된다. 그런 다음, $$ 결과 노드가 만들어 져서, 함수 이름과, 타입 노드를 저장한다. 보다시피 <a href="https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.y">go.y</a>내 정의된 것들과 노드 구조사이에 직접적인 연결이 있을 수 없다.</p>
+
+<h1 id="노드-이해하기">노드 이해하기</h1>
+
+<p>이제 노드가 실제로 무엇인지 알아 볼 시간이다. 첫번째로, 노드는 struct이고, <a href="https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.h#L245">여기</a>에 정의되어 있다. 이 struct는 굉장히 많은 특성들을 갖고 있는데 그 이유는 다른 종류의 노드를 지원해야 하고 노드종류마다 다른 속성들을 가지고 있기 때문이다.</p>
+
+<table class="myTable">
+<tbody>
+<tr>
+<th><center>노드 struct 필드</center></th>
+<th style="width: 530px;" width="70%"><center>설명</center></th>
+</tr>
+<tr>
+<td><a href="https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.h#L259" target="golangsrc">op</a></td>
+<td>이 필드는 각 노드마다 존재하며 노드의 연산이 무엇이지를 나타낸다. 이 필드를 통해 노드의 종류를 분간할 수 있다. 이전 예제에서 본 <em>OTFUNC</em> (연산 타입 함수) 과 <em>ODCLFUNC</em> (연산 선언 함수)같은 것 들이다.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.h#L295" target="golangsrc">type</a></td>
+<td>노드가 타입정보를 보유할 때 (때로 타입이 없는 노드도 있다. 예를 들면, <em>if</em>, <em>switch</em>, 혹은 <em>for</em>와 같은 제어 흐름문들), 이 필드는 타입정보를 가지고 있는 또 다른 struct를 가리키는 레퍼런스이다.</td>
+</tr>
+<tr>
+<td><a href="https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.h#L309" target="golangsrc">val</a></td>
+<td>이 필드는 리터럴 노드의 실제 값을 갖는다.</td>
+</tr>
+</tbody>
+</table>
+
+<p>독자는 이제 노드 트리의 기본적 구조를 이해했으므로, 그 지식을 실전에 투여할 수 있다. 다음 포스트에서는, Go 컴파일러가 과연 무엇을 생산하는지를 간단한 Go 애플리케이션을 통해 살펴보겠다.</p>
+
+<ul>
+<li>원문: <a href="http://blog.altoros.com/golang-part-1-main-concepts-and-project-structure.html">Golang Internals, Part 1: Main Concepts and Project Structure</a></li>
+<li>저자: Siarhei Matsiukevich</li>
+<li>번역자: Jhonghee Park</li>
+</ul>
+
+        </div>
+        
+
+<footer>
+  <p class="meta">
+    <span class="byline author vcard">Posted by <span class="fn">
+    
+        <a href="https://golangkorea.github.io/authors/jhonghee-park">Jhonghee Park</a>
+    
+    </span></span>
+    
+    <time>Sep 13, 2016</time>
+    
+      <span class="categories">
+        Tags:
+        
+          <a class="category" href="https://golangkorea.github.io/tags/golang">Golang</a>  <a class="category" href="https://golangkorea.github.io/tags/internals">Internals</a>  <a class="category" href="https://golangkorea.github.io/tags/compiler">Compiler</a>  <a class="category" href="https://golangkorea.github.io/tags/structure">Structure</a>  
+    
+    </span>
+    
+    <span class="edit-in-github">
+      <a class="label" href="https://github.com/golangkorea/golangkorea-hugo/blob/master/content/post/golang-internals/part1.md">Edit in GitHub</a>
+    </span>
+    
+  </p>
+
+  
+  
+
+  
+
+  <p class="meta">
+    
+        <a class="basic-alignment left" href="https://golangkorea.github.io/post/golang-internals/resources/" title="Golang의 내부, 0부: 부록">Golang의 내부, 0부: 부록</a>
+    
+
+    
+      <a class="basic-alignment right" href="https://golangkorea.github.io/post/golang-internals/part2/" title="Golang의 내부, 2부: Go 컴파일러 들여다 보기">Golang의 내부, 2부: Go 컴파일러 들여다 보기</a>
+    
+  </p>
+  
+    
+      <div id="disqus_thread"></div>
+<script type="text/javascript">
+
+(function() {
+    
+    
+    
+    
+
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    var disqus_shortname = 'UA-82835198-1';
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+    
+  
+</footer>
+
+      </article>
+    </div>
+    
+
+
+<aside class="sidebar thirds">
+  <section class="first odd">
+
+    
+      <h1>못 먹어도 Go인 세상</h1>
+    
+
+    <p>
+      
+        새로운 도전과 개발의 재미를 Go를 통해 만끽해 보세요. We love to talk, learn and share our experience. Come join us. Let&rsquo;s have some fun!
+      
+    </p>
+  </section>
+
+
+
+  
+  <ul class="sidebar-nav">
+    <li class="sidebar-nav-item">
+      <a target="_blank" href="https://github.com/golangkorea/golangkorea-hugo/" title="https://github.com/golangkorea/golangkorea-hugo/"><i class="fa fa-github fa-3x"></i></a>
+      
+      
+       
+      
+      
+      <a target="_blank" href="https://plus.google.com/communities/115721275599816202991" title="https://plus.google.com/communities/115721275599816202991"><i class="fa fa-google-plus fa-3x"></i></a>
+      <a target="_blank" href="https://www.facebook.com/groups/golangko/" title="https://www.facebook.com/groups/golangko/"><i class="fa fa-facebook fa-3x"></i></a>
+      
+
+    
+    
+    </li>
+  </ul>
+
+  
+
+  
+    
+      <section class="odd">
+        
+          <h1>Join Us</h1>
+        
+        
+          <li>
+            <a href="https://github.com/golangkorea" title="GitHub Organization"  target="_blank" >GitHub Organization</a>
+          </li>
+        
+          <li>
+            <a href="https://gitter.im/golang-korean-community/golangkorea.github.io?utm_source=share-link&amp;utm_medium=link&amp;utm_campaign=share-link" title="Gitter Room"  target="_blank" >Gitter Room</a>
+          </li>
+        
+      </section>
+    
+  
+
+  
+  
+  
+    
+      <section class="even">
+        <h1>Recent Posts</h1>
+        <ul id="recent_posts">
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part6/">Golang의 내부, 6부: 부트스트래핑과 메모리 할당자</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part5/">Golang의 내부, 5부: 런타임 부트스트랩</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part4/">Golang의 내부, 4부: 오브젝트 파일, 그리고 함수 메타데이터</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part3/">Golang의 내부, 3부: 링커, 오브젝트 파일, 그리고 재배치</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part2/">Golang의 내부, 2부: Go 컴파일러 들여다 보기</a>
+            </li>
+          
+        </ul>
+      </section>
+    
+  
+
+  <section class="odd">
+      <h1>Tags</h1>
+      <ul id="tags">
+          <div id="tags-cloud"></div>
+      </ul>
+  </section>
+
+</aside>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+  var words = [
+    
+      { text: "allocator", weight:  1 , link: "/tags/allocator" },
+    
+      { text: "assembler", weight:  1 , link: "/tags/assembler" },
+    
+      { text: "beginning", weight:  2 , link: "/tags/beginning" },
+    
+      { text: "blog", weight:  7 , link: "/tags/blog" },
+    
+      { text: "bootstrap", weight:  2 , link: "/tags/bootstrap" },
+    
+      { text: "community", weight:  1 , link: "/tags/community" },
+    
+      { text: "compiler", weight:  3 , link: "/tags/compiler" },
+    
+      { text: "development", weight:  2 , link: "/tags/development" },
+    
+      { text: "golang", weight:  7 , link: "/tags/golang" },
+    
+      { text: "hugo", weight:  7 , link: "/tags/hugo" },
+    
+      { text: "install", weight:  1 , link: "/tags/install" },
+    
+      { text: "internals", weight:  7 , link: "/tags/internals" },
+    
+      { text: "linker", weight:  3 , link: "/tags/linker" },
+    
+      { text: "memory", weight:  1 , link: "/tags/memory" },
+    
+      { text: "metadata", weight:  1 , link: "/tags/metadata" },
+    
+      { text: "object-file", weight:  2 , link: "/tags/object-file" },
+    
+      { text: "relocations", weight:  2 , link: "/tags/relocations" },
+    
+      { text: "runtime", weight:  2 , link: "/tags/runtime" },
+    
+      { text: "structure", weight:  2 , link: "/tags/structure" },
+    
+      { text: "tdd", weight:  1 , link: "/tags/tdd" },
+    
+      { text: "unittest", weight:  1 , link: "/tags/unittest" },
+    
+      { text: "vim", weight:  1 , link: "/tags/vim" },
+    
+  ];
+  $('#tags-cloud').jQCloud(words, {
+      width: 280,
+      height: 300
+    });
+});
+
+</script>
+
+  </div>
+</div>
+
+<footer role="contentinfo">
+  <p>Copyright &copy; 2016  - <a href="https://golangkorea.github.io/license/">License</a> -
+  <span class="credit">Powered by <a target="_blank" href="https://gohugo.io">Hugo</a> and <a target="_blank" href="https://github.com/parsiya/hugo-octopress/">Hugo-Octopress</a> theme.
+</p>
+
+</footer>
+
+
+</body>
+</html>
+

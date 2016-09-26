@@ -6,8 +6,1515 @@
     <description>Recent content on Golang Korean Community</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 12 Sep 2016 13:10:03 +0900</lastBuildDate>
+    <lastBuildDate>Tue, 20 Sep 2016 16:20:29 -0400</lastBuildDate>
     <atom:link href="https://golangkorea.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Golang의 내부, 6부: 부트스트래핑과 메모리 할당자</title>
+      <link>https://golangkorea.github.io/post/golang-internals/part6/</link>
+      <pubDate>Tue, 20 Sep 2016 16:20:29 -0400</pubDate>
+      
+      <guid>https://golangkorea.github.io/post/golang-internals/part6/</guid>
+      <description>
+
+&lt;p&gt;이 포스트는 Golang 내부 시리즈의 연속이다. Go 런타임을 자세히 이해하는데 열쇠와 같은 부트스트랩 과정을 살펴볼 것이다. 이번에는 시작하는 순서의 두번째 부분을 섭렵해서 어떻게 인수들이 초기화되고, 어떤 함수들이 호출되는지 등을 배우겠다.&lt;/p&gt;
+
+&lt;h1 id=&#34;시작하는-순서&#34;&gt;시작하는 순서&lt;/h1&gt;
+
+&lt;p&gt;지난 번에 얘기하다가 만 &lt;em&gt;runtime.rt0_go&lt;/em&gt; 함수를 다시 다루어야 겠다. 아직 이 함수에서 살펴보지 않은 부분이 여전히 있다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;01 CLD                         // convention is D is always left cleared
+02 CALL    runtime·check(SB)
+03
+04 MOVL    16(SP), AX          // copy argc
+05 MOVL    AX, 0(SP)
+06 MOVQ    24(SP), AX          // copy argv
+07 MOVQ    AX, 8(SP)
+08 CALL    runtime·args(SB)
+09 CALL    runtime·osinit(SB)
+10 CALL    runtime·schedinit(SB)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;첫번째 명령 (CLD)는 &lt;em&gt;FLAGS&lt;/em&gt; 레지스터의 &lt;a href=&#34;https://en.wikipedia.org/wiki/Direction_flag&#34;&gt;direction&lt;/a&gt; 프래그를 지운다. 이 플래그는 문자열 처리 방향에 영향을 준다.&lt;/p&gt;
+
+&lt;p&gt;다음 함수는 &lt;em&gt;runtime.check&lt;/em&gt; 함수를 호출하는데, 그 또한 이 문서의 목적에 비추어 그리 중요하지는 않다. 런타임은 모든 내장 타입의 인스턴스들을 만들고, 타입의 크기와 파라미터들을 확인하는 정도의 일을 한다. 그리고 만약 작업중 문제가 생기면 &lt;em&gt;panic&lt;/em&gt; 한다. &lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/runtime1.go#L136&#34;&gt;function&lt;/a&gt;를 통해 쉽게 알아볼 수 있다.&lt;/p&gt;
+
+&lt;h1 id=&#34;인수-분석하기&#34;&gt;인수 분석하기&lt;/h1&gt;
+
+&lt;p&gt;그 다음 함수 &lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/runtime1.go#L48&#34;&gt;runtime.Args&lt;/a&gt; 는 좀 더 흥미롭다. The next function, 리눅스 시스템에서 (&lt;em&gt;argc&lt;/em&gt; 와 &lt;em&gt;argv&lt;/em&gt;) 인수를 정적 변수속에 저장하는 것말고도 이 함수는 ELF 보조 벡터를 분석하며 &lt;em&gt;syscall&lt;/em&gt; 주소를 초기화한다.&lt;/p&gt;
+
+&lt;p&gt;설명이 좀 더 필요하겠다. 운영체계가 프로그램을 메모리에 올릴때, 그 프로그램의 초기 스택을 미리 정해진 포맷의 어떤 데이타로 초기화한다. 스택의 꼭대기에는 환경 변수들의 포인터인 인수들이 깔린다. 스택의 바닥에는 &amp;ldquo;ELF 보조 벡터&amp;rdquo;를 볼 수 인데, 실제로 이 것은 어떤 유용한 정보를 담고 있는 기록의 배열들이다. 예를 들면, 프로그램 헤더의 수와 크기들이다. 여기 이 &lt;a href=&#34;http://articles.manugarg.com/aboutelfauxiliaryvectors&#34;&gt;문서&lt;/a&gt;를 통해 ELF 보조 벡터 포맷에 대해 좀 자세히 알아 보라.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;runtime.Args&lt;/em&gt; 함수는 벡터를 파싱하는 책임이 있다. 런타임은 벡터에 담고 있는 모든 정보들 중에 단지 &lt;em&gt;startupRandomData&lt;/em&gt; 만을 사용하는데, 주로 헤싱 함수(hashing functions)들과 어떤 syscall들의 위치를 가리키는 포인터들을 초기화하는데 주로 사용된다. 다음에 나오는 변수들을 초기화한다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 __vdso_time_sym
+2 __vdso_gettimeofday_sym
+3 __vdso_clock_gettime_sym
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 것들은 여러 함수들내 현재 시간을 획득하는데 사용된다. 이 모든 변수들은 기본값을 가진다. 이렇게 함으로써 Golang에서 상응하는 함수들을 호출하기 위해 &lt;em&gt;&lt;a href=&#34;http://www.ukuug.org/events/linux2001/papers/html/AArcangeli-vsyscalls.html&#34;&gt;vsyscall&lt;/a&gt;&lt;/em&gt; 메카니즘의 사용이 허용된다.&lt;/p&gt;
+
+&lt;h1 id=&#34;runtime-osinit-함수의-내부&#34;&gt;&lt;em&gt;runtime.osinit&lt;/em&gt; 함수의 내부&lt;/h1&gt;
+
+&lt;p&gt;시작 순서에서 그 다음으로 호출되는 함수는 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/os1_linux.go#L172&#34;&gt;runtime.osinit&lt;/a&gt;&lt;/em&gt; 이다. 리눅스 시스템에서 단 한가지 하는 일이 있는데 그것은 시스템내 CPU 숫자를 가지고 있는 ncpu 변수를 한 syscall을 통해 초기화하는 것이다.&lt;/p&gt;
+
+&lt;h1 id=&#34;runtime-schedinit-함수의-내부&#34;&gt;&lt;em&gt;runtime.schedinit&lt;/em&gt; 함수의 내부&lt;/h1&gt;
+
+&lt;p&gt;시작 순서에서 다음 함수인 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/proc1.go#L40&#34;&gt;runtime.schedinit&lt;/a&gt;&lt;/em&gt; 는 더 흥미롭다. 현재의 고루틴을 얻는 것으로 시작하는데, 사실 이 것은 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/runtime2.go#L211&#34;&gt;g&lt;/a&gt;&lt;/em&gt; 구조의 포인터이다. 이미 이 포인터가 어떻게 저장되는 지는 TLS 구현을 논할 때 얘기한 바있다. 다음은 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/race1.go#L110&#34;&gt;runtime.raceinit&lt;/a&gt;&lt;/em&gt; 를 호출한다. runtime.raceinit에 대한 토론은 넘어가겠다. 왜냐하면 이 함수는 race 조건이 활성화되지 않은 경우는 보통 호출되지 않기 때문이다. 그 다음에는 몇몇 다른 초기화 함수들이 호출된다.&lt;/p&gt;
+
+&lt;p&gt;하나씩 살펴보자.&lt;/p&gt;
+
+&lt;h1 id=&#34;traceback-초기화&#34;&gt;traceback 초기화&lt;/h1&gt;
+
+&lt;p&gt;&lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/traceback.go#L58&#34;&gt;runtime.tracebackinit&lt;/a&gt;&lt;/em&gt; 함수는 traceback을 초기화하는 일을 한다. Traceback이라는 것은 현재의 실행지점에 오기까지 호출된 함수들의 스택을 말한다. 예를 들어, panic이 일어날 때마다 볼 수 있다. Traceback은 주어진 프로그램 카운터로 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/traceback.go#L120&#34;&gt;runtime.gentraceback&lt;/a&gt;&lt;/em&gt; 함수를 호출함으로써 얻어진다. 이 함수가 동작하려면, 몇몇 내장함수들의 주소를 알 필요가 있는데, 그 이유는 traceback에 이 함수들이 나타나는 것을 원하지 않기 때문이다. 이 주소들은 &lt;em&gt;runtime.tracebackinit&lt;/em&gt; 을 통해 초기화된다.&lt;/p&gt;
+
+&lt;h1 id=&#34;링커-심볼들-검사하기&#34;&gt;링커 심볼들 검사하기&lt;/h1&gt;
+
+&lt;p&gt;링커 심볼들은 링커가 실행파일과 오브젝트 파일에 뿜어내는 데이터를 말한다. 대부분의 내용은 &lt;a href=&#34;https://golangkorea.github.io/post/golang-internals/part3/&#34;&gt;Golang의 내부, 3부: 링커, 오브젝트 파일, 그리고 재배치&lt;/a&gt;에서 논했다. runtime 패키지에서 링커 심볼들은 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/symtab.go#L37&#34;&gt;moduledata&lt;/a&gt;&lt;/em&gt; 구조체에 맵핑되어 있다. &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/symtab.go#L95&#34;&gt;runtime.moduledataverify&lt;/a&gt;&lt;/em&gt; 함수를 통해 이 데이타에 대한 확인이 이루어지고 오염여부와 구조가 바른지를 검사한다.&lt;/p&gt;
+
+&lt;h1 id=&#34;스택-풀-초기화하기&#34;&gt;스택 풀 초기화하기&lt;/h1&gt;
+
+&lt;p&gt;다음 초기화 단계를 이해하기 위해서는 Go 언어에서 스택이 어떻게 자라는지를 대한 지식이 조금 필요하다. 새로운 고루팅이 만들어 지면 작고 크기가 고정된 스택이 할당된다. 스택이 어떤 한계치에 도달하면, 크기가 두배가 되고 스택은 다른 장소로 복사된다.&lt;/p&gt;
+
+&lt;p&gt;아직 살펴보아야 할 자세한 내용들로 어떻게 한계치에 도달했는지를 결정하는지, Go가 어떻게 스택내 포인터들을 조정하는지가 남아 있다. 이전 포스트에서 &lt;em&gt;stackguard0&lt;/em&gt; 필드와 함수 메타데이더를 얘기할 때 이런 주제에 대해 약간 다루기도 했다. 이 주제에 대해 유용한 정보는 &lt;a href=&#34;https://docs.google.com/document/d/1wAaf1rYoM4S4gtnPh0zOlGzWtrZFQ5suE8qr2sD8uWQ/pub&#34;&gt;이 문서&lt;/a&gt;를 통해 찾을 수 있다.&lt;/p&gt;
+
+&lt;p&gt;Go는 현재 이용되지 않은 스택들을 저장하기 위해 스택 풀을 이용한다. 스택 풀은 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/stack1.go#L54&#34;&gt;runtime.stackinit&lt;/a&gt;&lt;/em&gt; 함수내 초기화된 배열이다. 이 배열안의 각 아이템은 같은 크기를 갖는 스택들의 linked list 구조를 담고 있다.&lt;/p&gt;
+
+&lt;p&gt;이 단계에 초기화되는 또 다른 변수로 &lt;em&gt;runtime.stackFreeQueue&lt;/em&gt; 가 있다. 이것 역시 스택들로 이루어진 linked list를 담고 있지만, 가비지 컬렉션중에 리스트에 추가되며 끝나면 지워진다. 2 KB, 4 KB, 8 KB 그리고 16 KB 크기의 스택만이 저장되고 그 보다 큰 것들은 직접 할당되는 점을 주목하라.&lt;/p&gt;
+
+&lt;h1 id=&#34;메모리-할당자-초기화하기&#34;&gt;메모리 할당자 초기화하기&lt;/h1&gt;
+
+&lt;p&gt;메모리 할당 과정은 이 &lt;a href=&#34;(https://github.com/golang/go/blob/go1.5.1/src/runtime/malloc.go#L5)&#34;&gt;소스 코드 커밋&lt;/a&gt;에 서술되어 있다. 메모리 할당이 어떻게 작동하는지를 이해하고자 한다면 꼭 읽어 보길 권장한다. 이 주제는 앞으로 나올 포스트에서 더 자세히 다루도록 하겠다. 메모리 할당자의 초기화는 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/malloc.go#L216&#34;&gt;runtime.mallocinit&lt;/a&gt;&lt;/em&gt; 함수내 자리잡고 있다. 가까이 들여다 보자.&lt;/p&gt;
+
+&lt;h1 id=&#34;사이즈-클래스들-size-classes-를-초기화하기&#34;&gt;사이즈 클래스들(size classes)를 초기화하기&lt;/h1&gt;
+
+&lt;p&gt;여기에 처음 볼 수 있는 것은 &lt;em&gt;runtime.mallocinit&lt;/em&gt; 가 또 다른 함수-&lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/msize.go#L66&#34;&gt;initSizes&lt;/a&gt;&lt;/em&gt; 를 호출하는 것이다. 이 함수는 사이즈 클래스들를 계산하는 일을 한다. 하지만 클래스의 크기를 어떻게 결정하는가? (32 KB 가 안되는) 작은 객체를 할당할 때, Go 런타임은 처음 미리 정해둔 클래스 크기로 객체의 크기를 반올림한다. 그래서 할당된 메모리 블록은 실제 필요한 객체 크기보 보통 좀 더 큰, 미리 정해진 크기들중에 하나를 선택할 수 밖에 없다. 이로 인해 메모리가 조금 낭비되긴 하지만 이 방법을 통해서 다른 객체에 이미 할당된 메모리를 재사용하는 것이 용이해 진다.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;initSizes&lt;/em&gt; 함수는 이런 클래스를 계산하는 일을 한다. 함수 꼭대기에서 다음 코드를 볼 수 있다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;01     align := 8
+02     for size := align; size &amp;lt;= _MaxSmallSize; size += align {
+03         if size&amp;amp;(size-1) == 0 {
+04             if size &amp;gt;= 2048 {
+05                 align = 256
+06             } else if size &amp;gt;= 128 {
+07                 align = size / 8
+08             } else if size &amp;gt;= 16 {
+09                 align = 16
+10 …
+11             }
+12         }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;보다시피 가장 작은 사이즈 클래스들은 8과 16 바이트이다. 그 다음 클래스는 128 바이트까지 16 바이트가 올라갈 때마다 위치해 있다. 128부터 2,048 바이트까지는 size/8 바이트마다 클래스가 위치해 있다. 2,048 바이트 이후에는 256 바이트마다 사이즈 클래스가 위치해 있다.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;initSizes&lt;/em&gt; 메서드는 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/msize.go#L49&#34;&gt;class_to_size&lt;/a&gt;&lt;/em&gt; 배열을 초기화한다. 이 배열은 하나의 클래스(여기에서 크기라 함은 클래스 리스트내 서열을 의미한다)를 그 크기로 변환한다. 이 함수는 또 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/msize.go#L50&#34;&gt;class_to_allocnpages&lt;/a&gt;&lt;/em&gt; 배열을 초기화하는데 이 배열은 주어진 클래스의 객체를 채우기 위해 OS로 부터 얼마나 많은 메모리 페이지를 받아내야 하는가에 대한 데이터를 저장한다. 이외 배열을 두개 더-&lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/msize.go#L53&#34;&gt;size_to_class8&lt;/a&gt;&lt;/em&gt; 와 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/msize.go#L54&#34;&gt;size_to_class128&lt;/a&gt;&lt;/em&gt; 를 초기화한다. 이 두 배열은 객체 크기로 부터 상응하는 클래스 서열로 변환하는데 사용되는데 첫번째 것은 1 KB 보다 작은 객체의 크기를 변환하고, 두번째는 1-32 KB 크기의 객체에 대한 변환을 맡는다.&lt;/p&gt;
+
+&lt;h1 id=&#34;가상-메모리-예약하기&#34;&gt;가상 메모리 예약하기&lt;/h1&gt;
+
+&lt;p&gt;&lt;em&gt;mallocinit&lt;/em&gt; 함수가 다음으로 하는 일은 미래에 있을 할당들을 위해 가상 메모리를 예약하는 것이다. x64 아키텍쳐에서 이것이 어떻게 구현되었는지 알아보자. 무엇보다도 우선 다음 변수들을 초기화해야 한다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 arenaSize := round(_MaxMem, _PageSize)
+2 bitmapSize = arenaSize / (ptrSize * 8 / 4)
+3 spansSize = arenaSize / _PageSize * ptrSize
+4 spansSize = round(spansSize, _PageSize)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;arenaSize&lt;/em&gt; 은 객체 할당의 예약에 사용될 수 있는 가상 메모리의 최대치이다. 64비트 아키텍쳐에서는 512 GB에 해당한다.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;bitmapSize&lt;/em&gt; 는 가비지 컬렉션 (GC) 비트맵을 위해 예약될 수 있는 메모리의 양에 상응한다. GC 비트맵은 특별한 메모리 타입으로 메모리에서 포인터들이 정확히 어디에 위치하는지를 보여주는데 사용되고 이 포인터들이 가리키는 객체들이 GC에 의해 표시(mark)될 것인지의 여부를 결정하는데 사용된다.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;spansSize&lt;/em&gt; 는 모든 메모리 스팬(memory span)들을 가리키는 포인터들의 배열을 저장하기 위해 얼마나 많은 메모리를 예약되었는지를 나타낸다. 메모리 스팬은 객체 할당을 위해 사용된 메모리 블록를 둘러 싸는 구조이다.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;이 변수들이 모두 계산되면, 실제 예약이 끝나는 것이다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 pSize = bitmapSize + spansSize + arenaSize + _PageSize
+2 p = uintptr(sysReserve(unsafe.Pointer(p), pSize, &amp;amp;reserved))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;마침내, 모든 메모리에 상관된 객체들을 위한 중앙 저장소로 사용될 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/mheap.go#L65&#34;&gt;mheap&lt;/a&gt;&lt;/em&gt; 전역 변수를 초기화 할 수 있다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 p1 := round(p, _PageSize)
+2
+3 mheap_.spans = (**mspan)(unsafe.Pointer(p1))
+4 mheap_.bitmap = p1 + spansSize
+5 mheap_.arena_start = p1 + (spansSize + bitmapSize)
+6 mheap_.arena_used = mheap_.arena_start
+7 mheap_.arena_end = p + pSize
+8 mheap_.arena_reserved = reserved
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;처음부터, &lt;em&gt;mheap_.arena_used&lt;/em&gt; 가 &lt;em&gt;mheap_.arena_start&lt;/em&gt; 와 동일한 주소를 가지고 초기화되었음을 주목하라. 이유는 아직 아무 것도 할당되지 않았기 때문이다.&lt;/p&gt;
+
+&lt;h1 id=&#34;힢-heap-초기화&#34;&gt;힢(Heap) 초기화&lt;/h1&gt;
+
+&lt;p&gt;다음으로 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/mheap.go#L273&#34;&gt;mHeap_Init&lt;/a&gt;&lt;/em&gt; 함수가 호출된다. 할당자의 초기화가 제일 먼저 진행되었다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 fixAlloc_Init(&amp;amp;h.spanalloc, unsafe.Sizeof(mspan{}), recordspan, unsafe.Pointer(h), &amp;amp;memstats.mspan_sys)
+2 fixAlloc_Init(&amp;amp;h.cachealloc, unsafe.Sizeof(mcache{}), nil, nil, &amp;amp;memstats.mcache_sys)
+3 fixAlloc_Init(&amp;amp;h.specialfinalizeralloc, unsafe.Sizeof(specialfinalizer{}), nil, nil, &amp;amp;memstats.other_sys)
+4 fixAlloc_Init(&amp;amp;h.specialprofilealloc, unsafe.Sizeof(specialprofile{}), nil, nil, &amp;amp;memstats.other_sys)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;할당자가 무엇인가를 더 잘 이해하기 위해서, 우선 어떻게 사용되는지 살펴보자. 모든 할당자는 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/mfixalloc.go#L54&#34;&gt;fixAlloc_Alloc&lt;/a&gt;&lt;/em&gt; 함수 내에서 운영된다. 이 함수는 다음과 같은 구조체의 새로운 할당이 필요할때 호출된다 - &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/mheap.go#L101&#34;&gt;mspan&lt;/a&gt;&lt;/em&gt;, &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/mcache.go#L11&#34;&gt;mcache&lt;/a&gt;&lt;/em&gt;, &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/mheap.go#L1009&#34;&gt;specialfinalizer&lt;/a&gt;&lt;/em&gt;, 그리고 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/mheap.go#L1050&#34;&gt;specialprofile&lt;/a&gt;&lt;/em&gt;. 이 함수의 주요한 부분은:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 if uintptr(f.nchunk) &amp;lt; f.size {
+2     f.chunk = (*uint8)(persistentalloc(_FixAllocChunk, 0, f.stat))
+3     f.nchunk = _FixAllocChunk
+4 }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 부분은 메모리를 할당하지만 구조체의 실제 크기인 &lt;em&gt;f.size&lt;/em&gt; 바이트를 할당하는 대신 (현재는 16 KB)인 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/malloc.go#L130&#34;&gt;_FixAllocChunk&lt;/a&gt;&lt;/em&gt; 바이트를 따로 떼어 놓은다. 나머지 사용가능한 공간은 할당자내 저장된다. 다음번에 같은 타입의 구조체를 할당할 필요가 있으면 시간을 많이 소비하는 &lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/malloc.go#L828&#34;&gt;persistentalloc&lt;/a&gt;를 호출할 필요가 없게 된다.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;persistentalloc&lt;/em&gt; 함수는 가비지 컬렉트되어서는 않되는 메모리를 할당하는 일을 한다. 이 함수의 웍플로우는 다음과 같다:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;만약 할당된 블록이 64 KB보다 크면 OS 메모리로 부터 직접 할당된다.&lt;/li&gt;
+&lt;li&gt;그렇기 않은 경우는, 우선 지속성 할당자(persistent allocator)를 찾을 필요가 있다.
+
+&lt;ul&gt;
+&lt;li&gt;지속성 할당자는 각 프로세서에 부착되어 있다. 이유는 하나만 가지고 작업할 경우 locks을 사용해야 함을 피하기 위해서이다. 그래서 현재 프로세서에 부착된 지속성 할당자를 사용하고자 하는 것이다.&lt;/li&gt;
+&lt;li&gt;만약 현재 프로세서의 정보를 얻을 수 없는 경우는, 전역 할당자 (global allocator)가 사용된다.&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;만약 할당자가 캐쉬에 사용가능한 메모리가 충분치 않을 경우는 OS로 부터 메모리를 더 가지고 온다.&lt;/li&gt;
+&lt;li&gt;필요한 만큼의 메모리가 할당자의 캐쉬에서 반환된다.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;p&gt;&lt;em&gt;persistentalloc&lt;/em&gt; 과 &lt;em&gt;fixAlloc_Alloc&lt;/em&gt; 함수는 비슷하게 작동한다. 이 함수들은 두가지 레벨의 캐쉬를 구현하고 있다고 말할 수 있겠다. &lt;em&gt;persistentalloc&lt;/em&gt; 는 &lt;em&gt;fixAlloc_Alloc&lt;/em&gt; 에만 사용되는 것이 아니라 지속성 메모리(persistent memory)를 할당할 필요가 있는 여러 군데에서 사용되고 있다는 것을 숙지하여야 한다.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;mHeap_Init&lt;/em&gt; 함수로 다시 돌아가자. 답을 해야할 중요한 질문이 하나 더 있는데, 그것은 이 함수의 시작부분에서 할당자가 초기화되는 목적이었더 네개의 구조가 어떻게 사용되는지에 대한 것이다:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;mspan&lt;/em&gt; 는 가비지 컬렉트되어야 하는 메모리 블록을 감싸는 것이다. 사이즈 클래스들(size classes)을 논할 때 얘기했었다. 특정한 사이즈 클라스의 새로운 객체를 할당할 필요가 생겼을때 새로운 mspan이 만들어진다.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;mcache&lt;/em&gt; 는 각 프로세서에 부착된 구조체이다. 메모리 스팬을 캐취에 저장하는 일을 한다. 프로세스마다 따로 캐쉬를 갖는 이유는 locking을 피하기 위해서 이다.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;specialfinalizeralloc&lt;/em&gt; 는 &lt;em&gt;runtime.SetFinalizer&lt;/em&gt; 함수가 호출될 때 할당되는 구조체이다. 객체가 제거되면서 정리정돈(cleanup)하는 코드를 실행시키길 원한다면 이 구조체를 만들어야 할 것이다. 좋은 예제로 새로운 파일마다 finalizer를 연계시키는 &lt;em&gt;os.NewFile&lt;/em&gt; 함수이다. 이 finalizer가 OS 파일 설명자(file descriptor)를 닫아야 한다.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;specialprofilealloc&lt;/em&gt; 는 메모리 프로파일러에 사용되는 구조체이다.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;메모리 할당자들을 초기화하고 난 후, &lt;em&gt;mHeap_Init&lt;/em&gt; 함수는 &lt;em&gt;&lt;a href=&#34;https://github.com/golang/go/blob/go1.5.1/src/runtime/mheap.go#L863&#34;&gt;mSpanList_Init&lt;/a&gt;&lt;/em&gt; 을 호출함으로서 리스트들을 초기화 한다. 간단한 일로 linked 리스트를 위한 첫번째 입력을 초기화하는 것이다. &lt;em&gt;mheap&lt;/em&gt; 구조체는 그러한 linked 리스트를 몇개 가지고 있다.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;mheap.free&lt;/em&gt; 와 &lt;em&gt;mheap.busy&lt;/em&gt; 는 &lt;em&gt;free&lt;/em&gt; 와 &lt;em&gt;busy&lt;/em&gt; 리스트를 담고 있는 배열들로 대형(32 KB보다 크고, 1 MB보다 작은) 객체들을 위한 메모리 스팬을 갖고 있다. 각 배열은 가능한 크기의 아이템을 가지고 있다. 여기서 크기들은 페이지로 측정된다. 한 페이지는 32 KB에 해당한다. 첫번째 아이템은 32 KB 스팬을 가지는 리스트를 담고 있고, 두번째는 64 KB 스팬을 가지는 리스트를 담고 있는 그런 식이다.&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;mheap.freelarge&lt;/em&gt; 와 &lt;em&gt;mheap.busylarge&lt;/em&gt; 는 1 MB이상의 객체들을 위한 free 와 busy 리스트들이다.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;다음 단계는 &lt;em&gt;mheap.central&lt;/em&gt; 를 초기화하는 것인데, (32 KB 보다 작은) 소형 객체들을 위한 스팬들을 저장한다. &lt;em&gt;mheap.central&lt;/em&gt; 안에서는 리스트가 사이즈 클래스에 맞게 그룹을 형성한다. 초기화는 이제까지 우리가 본 것들과 유사하다. 단순히 각 free 리스트에 대한 linked 리스트를 초기화 하는 것이다.&lt;/p&gt;
+
+&lt;h1 id=&#34;캐쉬의-초기화&#34;&gt;캐쉬의 초기화&lt;/h1&gt;
+
+&lt;p&gt;이제 메모리 할당자 초기화에 대한 얘기가 거의 끝나간다. &lt;em&gt;mallocinit&lt;/em&gt; 함수내 마지막으로 남은 것은 mcache 초기화이다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 _g_ := getg()
+2 _g_.m.mcache = allocmcache()
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;여기를 보면, 우선 현재의 고루틴을 얻는다. 각 고루틴은 &lt;em&gt;m&lt;/em&gt; 구조체로 연결된 링크를 담고 있다. 이 구조체는 시스템 쓰레드를 감싸는 구조이다. 이 구조체의 내부에는 &lt;em&gt;mcache&lt;/em&gt; 라는 필드가 있는데 위에보면 초기화되고 있다. &lt;em&gt;allocmcache&lt;/em&gt; 함수는 &lt;em&gt;fixAlloc_Alloc&lt;/em&gt; 을 호출하여 새로운 &lt;em&gt;mcache&lt;/em&gt; 구조체를 초기화한다. 이미 어떻게 할당이 되었는지 이 구조체의 의미는 무엇인지에 대해서 논한 바 있다 (상위의 내용을 살펴보라).&lt;/p&gt;
+
+&lt;p&gt;조심스런 독자는 저자가 &lt;em&gt;mcache&lt;/em&gt; 가 프로세스마다 부착되어 있다고 얘기한 걸 기억할 것이다. 그런데 이제 보니 프로세서(processor)가 아닌 OS 프로세스(process)에 상응하는 &lt;em&gt;m&lt;/em&gt; 구조체에 부착되어 있는 것이었다. 그게 맞는 말이다-mcache는 현재 실행중인 쓰레드에 대해서만 초기화되며 프로세스가 바뀔때(process switch) 마다 또 다른 쓰레드로 재배치된다.&lt;/p&gt;
+
+&lt;h1 id=&#34;곧-추가될-go-부트스트래핑에-대한-포스트&#34;&gt;곧 추가될 Go 부트스트래핑에 대한 포스트&lt;/h1&gt;
+
+&lt;p&gt;다음 포스트에서는 어떻게 가비지 컬랙터가 초기화되는지 긔고 어떻게 main 고루틴이 시작되는지를 살펴보며 부트스트랩 과정을 더 논하겠다. 그때까지 아래 코멘트란에 독자의 생각이나 의견을 공유하는데 주저하지 말라.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;원문: &lt;a href=&#34;http://blog.altoros.com/golang-internals-part-6-bootstrapping-and-memory-allocator-initialization.html&#34;&gt;Golang Internals, Part 6: Bootstrapping and Memory Allocator Initialization&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;저자: Siarhei Matsiukevich&lt;/li&gt;
+&lt;li&gt;번역자: Jhonghee Park&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Golang의 내부, 5부: 런타임 부트스트랩</title>
+      <link>https://golangkorea.github.io/post/golang-internals/part5/</link>
+      <pubDate>Mon, 19 Sep 2016 16:20:29 -0400</pubDate>
+      
+      <guid>https://golangkorea.github.io/post/golang-internals/part5/</guid>
+      <description>
+
+&lt;p&gt;부트스트래핑 과정은 Go의 런타임이 어떻게 작동하는지를 이해하는데 열쇠와 같은 구실을 한다. Go와 함께 앞으로 나아가고자 한다면 반드시 배워야한다. 그래서 Golang의 내부 시리즈의 다섯번째는 Go의 런타임, 특히 Go의 부트스트래핑 과정에 바치겠다. 이번에 독자가 배울 항목들은:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;Go 부트스트래핑&lt;/li&gt;
+&lt;li&gt;가변 스택 구현&lt;/li&gt;
+&lt;li&gt;TLS 내부 구현&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;이 포스트에 어셈블러 코드가 많이 포함되어 있는 점을 주목하라. 진행하기 위해 적어도 어셈블러의 기본 지식은 필요할 것이다. (속성 &lt;a href=&#34;https://golang.org/doc/asm&#34;&gt;Go 어셈블러 가이드&lt;/a&gt;가 여기 있다.) 이제 시작해 보자!&lt;/p&gt;
+
+&lt;h1 id=&#34;프로그램-시작점-찾기&#34;&gt;프로그램 시작점 찾기&lt;/h1&gt;
+
+&lt;p&gt;우선, Go 프로그램이 시작된 후 즉시 실행되는 함수가 무엇인지 찾아보자. 그러기 위해, 간단한 Go 앱을 제작할 것이다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;1 package main
+2
+3 func main() {
+4     print(123)
+5 }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;그런 다음 컴파일하고 링크 할 필요가 있다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 go tool 6g test.go
+2 go tool 6l test.6
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 과정을 통해 &lt;em&gt;6.out&lt;/em&gt; 이라고 불리는 실행 파일이 현재 디렉토리에 만들어 진다. 다음 단계는 &lt;a href=&#34;https://sourceware.org/binutils/docs/binutils/objdump.html&#34;&gt;objdump&lt;/a&gt; 툴을 사용한다. 이 툴은 리눅스에만 해당되는 툴이어서 윈도우나 맥 사용자들은 유사한 툴을 찾던지 이 단계를 그냥 건너 뛰어야 한다. 이제 다음 명령을 실행하라:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 objdump -f 6.out
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이것을 통해 시작 주소를 담고 있는 출력을 얻을 것이다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 6.out:     file format elf64-x86-64
+2 architecture: i386:x86-64, flags 0x00000112:
+3 EXEC_P, HAS_SYMS, D_PAGED
+4 start address 0x000000000042f160
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;다음은, 실행파일을 역어셈블하고 이 주소에 위치한 함수가 무엇인지 알아 낸다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 objdump -d 6.out &amp;gt; disassemble.txt
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;그런 다음 &lt;em&gt;disassemble.txt&lt;/em&gt; 파일을 열어서 “&lt;em&gt;42f160&lt;/em&gt;.”를 검색하여 다음과 같은 결과를 얻는다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 000000000042f160 &amp;lt;_rt0_amd64_linux&amp;gt;:
+2   42f160:   48 8d 74 24 08              lea    0x8(%rsp),%rsi
+3   42f165:   48 8b 3c 24                 mov    (%rsp),%rdi
+4   42f169:   48 8d 05 10 00 00 00    lea    0x10(%rip),%rax        # 42f180 &amp;lt;main&amp;gt;
+5   42f170:   ff e0                           jmpq   *%rax
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;좋아! 찾았다! 저자의 OS와 아키텍쳐에 해당하는 시작점은 &lt;em&gt;_rt0_amd64_linux&lt;/em&gt; 라는 함수이다.&lt;/p&gt;
+
+&lt;h1 id=&#34;시작하는-순서&#34;&gt;시작하는 순서&lt;/h1&gt;
+
+&lt;p&gt;이제 이 함수를 Go 런타임 소스코드에서 찾을 필요가 있다. 위치한 곳은 &lt;a href=&#34;https://github.com/golang/go/blob/master/src/runtime/rt0_linux_amd64.s&#34;&gt;rt0_linux_amd64.s&lt;/a&gt; 파일이다. Go runtime 패키지속을 들여다 보면, 많은 파일의 이름들이 OS와 아키텍쳐 이름에 연관된 어미들(postfixes)로 되어 있음을 발견할 수 있다. runtime 패키지가 빌드될 때, 현재 OS와 아키텍쳐에 상응하는 파일들만 선택되고 나머지는 건너뛴다. &lt;a href=&#34;https://github.com/golang/go/blob/master/src/runtime/rt0_linux_amd64.s&#34;&gt;rt0_linux_amd64.s&lt;/a&gt;를 더 자세히 들여다 보자:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 TEXT _rt0_amd64_linux(SB),NOSPLIT,$-8
+2     LEAQ    8(SP), SI // argv
+3     MOVQ    0(SP), DI // argc
+4     MOVQ    $main(SB), AX
+5     JMP AX
+6
+7 TEXT main(SB),NOSPLIT,$-8
+8     MOVQ    $runtime·rt0_go(SB), AX
+9     JMP AX
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;em&gt;_rt0_amd64_linux&lt;/em&gt; 함수는 매우 단순하다. main 함수를 부르고 인수값 (&lt;em&gt;argc&lt;/em&gt; and &lt;em&gt;argv&lt;/em&gt;) 을 레지스터 (&lt;em&gt;DI&lt;/em&gt; and &lt;em&gt;SI&lt;/em&gt;)에 저장한다. 인수들은 스택에 위치하고 &lt;em&gt;SP&lt;/em&gt; (스택 포인터) 레지스터를 통해 접근할 수 있다. main 함수 역시 매우 간단하다. &lt;em&gt;runtime.rt0_go&lt;/em&gt; 를 호출한다. &lt;em&gt;runtime.rt0_go&lt;/em&gt; 함수는 좀 길고 더 복잡하다. 그래서 작은 부분들로 분해한 다음 하나씩 따로 설명할 것이다.&lt;/p&gt;
+
+&lt;p&gt;첫번째 섹션은 이러하다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 MOVQ    DI, AX      // argc
+2 MOVQ    SI, BX      // argv
+3 SUBQ    $(4*8+7), SP        // 2args 2auto
+4 ANDQ    $~15, SP
+5 MOVQ    AX, 16(SP)
+6 MOVQ    BX, 24(SP)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이전에 저장해 두었던 코맨드라인 인수값을 &lt;em&gt;AX&lt;/em&gt; 와 &lt;em&gt;BX&lt;/em&gt; 에 두고 스택 포인터를 감소시킨다. 두개의 4 바이트 변수를 위한 공간을 추가하고 16 비트로 정렬되게 조정한다. 마지막으로 인수값은 다시 스택에 이동시킨다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 // create istack out of the given (operating system) stack.
+2 // _cgo_init may update stackguard.
+3 MOVQ    $runtime·g0(SB), DI
+4 LEAQ    (-64*1024+104)(SP), BX
+5 MOVQ    BX, g_stackguard0(DI)
+6 MOVQ    BX, g_stackguard1(DI)
+7 MOVQ    BX, (g_stack+stack_lo)(DI)
+8 MOVQ    SP, (g_stack+stack_hi)(DI)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;두번째 부분은 좀 더 까다롭다. 우선, 전역 변수 &lt;em&gt;runtime.g0&lt;/em&gt; 의 주소를 DI 레지스터에 올린다. 이 변수는 &lt;a href=&#34;https://github.com/golang/go/blob/master/src/runtime/proc1.go&#34;&gt;proc1.go&lt;/a&gt; 파일에 정의되어 있고 &lt;em&gt;runtime,g&lt;/em&gt; 타입에 속한다. 이 타입의 변수들은 시스템내 각 고루틴(goroutine)마다 만들어 진다. 독자가 추측할 수도 있듯이, &lt;em&gt;runtime.g0&lt;/em&gt; 는 루트 고루틴(root goroutine)을 나타낸다. 그런 다음 이 루트 고루틴의 스택을 묘사하는 필드들을 초기화한다. &lt;em&gt;stack.lo&lt;/em&gt; 와 &lt;em&gt;stack.hi&lt;/em&gt; 가 뜻하는 바는 분명하다. 이것들은 현재 고루틴의 시작과 끝을 가리키는 포인터 들이다. 그런데 &lt;em&gt;stackguard0&lt;/em&gt; 와 &lt;em&gt;stackguard1&lt;/em&gt; 필드는 무엇일까? 이 것들을 이해하기 위해서는 &lt;em&gt;runtime.rt0_go&lt;/em&gt; 함수를 분석하는 일을 잠시 접어 두고 Go 언어에서 스택 크기 변화에 대해 좀 더 자세히 알아 보아야 한다.&lt;/p&gt;
+
+&lt;h1 id=&#34;go-언어에서-크기를-조정할-수-있는-스택의-구현&#34;&gt;Go 언어에서 크기를 조정할 수 있는 스택의 구현&lt;/h1&gt;
+
+&lt;p&gt;Go 언어는 크기를 조정할 수 있는 스택을 사용한다. 각 고루틴은 작은 스택으로 시작해서 한계치에 도달하면 크기를 바꾼다. 물론 이 한계치에 도달했는지를 알아보는 방법이 있다. 사실 각 함수는 시작할 때 스택이 한계에 도달했는지를 확인한다. 이것이 어떻게 작동하는지 알아보기 위해 샘플 프로그램을 &lt;em&gt;-S&lt;/em&gt; 플래그를 이용해 다시 한번 컴파일 하자. 어셈블리 코드을 보게 될 것 이다. main 함수의 시작부분은 다음과 같다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 &amp;quot;&amp;quot;.main t=1 size=48 value=0 args=0x0 locals=0x8
+2     0x0000 00000 (test.go:3)    TEXT    &amp;quot;&amp;quot;.main+0(SB),$8-0
+3     0x0000 00000 (test.go:3)    MOVQ    (TLS),CX
+4     0x0009 00009 (test.go:3)    CMPQ    SP,16(CX)
+5     0x000d 00013 (test.go:3)    JHI ,22
+6     0x000f 00015 (test.go:3)    CALL    ,runtime.morestack_noctxt(SB)
+7     0x0014 00020 (test.go:3)    JMP ,0
+8     0x0016 00022 (test.go:3)    SUBQ    $8,SP
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;우선 쓰레드 로컬 스토리지 (TLS)에서 한 값을 CX 레지스터에 올린다(TLS가 무엇인지는 &lt;a href=&#34;https://golangkorea.github.io/post/golang-internals/part3/&#34;&gt;이전 포스트&lt;/a&gt;에서 이미 설명한 바 있다). 이 값은 항상 현재 고루틴에 상응하는  &lt;em&gt;runtime.g&lt;/em&gt; 구조에 대한 포인터를 담고 있다. 그런 다음 스택포인터를 &lt;em&gt;runtime.g&lt;/em&gt; 구조내 16 바이트의 오프셋에 위치한 값과 비교한다. 계산해 보면 이 값이 &lt;em&gt;stackguard0&lt;/em&gt; 필드에 상응한다는 것을 쉽게 알 수 있다.&lt;/p&gt;
+
+&lt;p&gt;바로 이것이 스택 한계치에 도달했는지를 확인하는 방식이다. 아직 도달하지 않았다면, 확인은 실패로 간주되어서 스택에 충분한 메모리가 할당될 때 까지 &lt;em&gt;runtime.morestack_noctxt&lt;/em&gt; 함수를 반복적으로 호출한다. &lt;em&gt;stackguard1&lt;/em&gt; 필드는 &lt;em&gt;stackguard0&lt;/em&gt; 와 매우 유사하게 작동한다. 하지만 Go 대신 C 스택 성장 프롤로그 (C stack growth prologue)내에서 사용된다. &lt;em&gt;runtime.morestack_noctxt&lt;/em&gt; 의 내부 작동 원리 또한 매우 흥미로운 주제이긴 하지만 나중에 논하기로 하겠다. 지금은 부트스트랩 과정으로 다시 돌아가기로 하자.&lt;/p&gt;
+
+&lt;h1 id=&#34;계속되는-go-부트스트래핑에-대한-조사&#34;&gt;계속되는 Go 부트스트래핑에 대한 조사&lt;/h1&gt;
+
+&lt;p&gt;시작하는 순서에 대해 더 나아가기 위해서 &lt;em&gt;runtime.rt0_go&lt;/em&gt; 함수내 다음 부분에 있는 코드를 살펴보기로 하자:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;01     // find out information about the processor we&#39;re on
+02     MOVQ    $0, AX
+03     CPUID
+04     CMPQ    AX, $0
+05     JE  nocpuinfo
+06
+07     // Figure out how to serialize RDTSC.
+08     // On Intel processors LFENCE is enough. AMD requires MFENCE.
+09     // Don&#39;t know about the rest, so let&#39;s do MFENCE.
+10     CMPL    BX, $0x756E6547  // &amp;quot;Genu&amp;quot;
+11     JNE notintel
+12     CMPL    DX, $0x49656E69  // &amp;quot;ineI&amp;quot;
+13     JNE notintel
+14     CMPL    CX, $0x6C65746E  // &amp;quot;ntel&amp;quot;
+15     JNE notintel
+16     MOVB    $1, runtime·lfenceBeforeRdtsc(SB)
+17 notintel:
+18
+19     MOVQ    $1, AX
+20     CPUID
+21     MOVL    CX, runtime·cpuid_ecx(SB)
+22     MOVL    DX, runtime·cpuid_edx(SB)
+23 nocpuinfo:
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 부분은 Go의 주요한 컨셉트들을 이해하는데 반드시 알아야 할 필요는 없다. 그래서 짧게 보고 넘어 가겠다. 여기에서는 지금 사용되고 있는 프로세서가 무엇인지 알아내려는 시도가 있다. 만약 인텔이면 &lt;em&gt;runtime·lfenceBeforeRdtsc&lt;/em&gt; 변수에 값을 매긴다. &lt;em&gt;runtime·cputicks&lt;/em&gt; 메서드에만 사용된 변수이다. 이 메서드는 &lt;em&gt;runtime·lfenceBeforeRdtsc&lt;/em&gt; 값에 의존하여 cpu 마다 다른 어셈블러 명령을 통해 tick을 알아낸다. 마지막으로 CPUID 어셈블러 명령을 호출하고, 실행하고, 결과를 &lt;em&gt;runtime·cpuid_ecx&lt;/em&gt; 와 &lt;em&gt;runtime·cpuid_edx&lt;/em&gt; 변수에 저장한다. 이 변수들은 &lt;a href=&#34;https://github.com/golang/go/blob/master/src/runtime/alg.go&#34;&gt;alg.go&lt;/a&gt; 파일에서 컴퓨터의 아키텍쳐에 따라 기본적으로 지원되는 적합한 헤쉬잉 알고리즘을 선택하는데 사용된다.&lt;/p&gt;
+
+&lt;p&gt;자, 다음 코드로 이동하자.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;01 // if there is an _cgo_init, call it.
+02 MOVQ    _cgo_init(SB), AX
+03 TESTQ   AX, AX
+04 JZ  needtls
+05 // g0 already in DI
+06 MOVQ    DI, CX  // Win64 uses CX for first parameter
+07 MOVQ    $setg_gcc&amp;lt;&amp;gt;(SB), SI
+08 CALL    AX
+09
+10 // update stackguard after _cgo_init
+11 MOVQ    $runtime·g0(SB), CX
+12 MOVQ    (g_stack+stack_lo)(CX), AX
+13 ADDQ    $const__StackGuard, AX
+14 MOVQ    AX, g_stackguard0(CX)
+15 MOVQ    AX, g_stackguard1(CX)
+16
+17 CMPL    runtime·iswindows(SB), $0
+18 JEQ ok
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 코드 조각은 &lt;em&gt;cgo&lt;/em&gt; 가 활성화되어 있을 때 만 실행된다. &lt;em&gt;cgo&lt;/em&gt; 는 따로 다루어야 할 주제이고 앞으로 나올 포스트에서 다룰지도 모르겠다. 지금 이 시점에서는 기본적인 부트스트랩 작업의 흐름만을 이해하고 자 하기 때문에, 건너 뛸 것이다.&lt;/p&gt;
+
+&lt;p&gt;다음 코드 조각은 TLS를 설정하는 장본인이다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;01 needtls:
+02     // skip TLS setup on Plan 9
+03     CMPL    runtime·isplan9(SB), $1
+04     JEQ ok
+05     // skip TLS setup on Solaris
+06     CMPL    runtime·issolaris(SB), $1
+07     JEQ ok
+08
+09     LEAQ    runtime·tls0(SB), DI
+10     CALL    runtime·settls(SB)
+11
+12     // store through it, to make sure it works
+13     get_tls(BX)
+14     MOVQ    $0x123, g(BX)
+15     MOVQ    runtime·tls0(SB), AX
+16     CMPQ    AX, $0x123
+17     JEQ 2(PC)
+18     MOVL    AX, 0   // abort
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;TLS에 대해서는 이미 언급한 바 있고, 이제는 어떻게 구현되었는지를 알아보자.&lt;/p&gt;
+
+&lt;h1 id=&#34;tls-내부-구현&#34;&gt;TLS 내부 구현&lt;/h1&gt;
+
+&lt;p&gt;이전 코드 조각을 자세히 들여다 보면, 실제로 작업을 하는 부분은 한 줄에 불과하다는 것을 쉽게 이해할 수 있다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 LEAQ    runtime·tls0(SB), DI
+2     CALL    runtime·settls(SB)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;다른 부분들은 TLS가 os에서 지원되지 않을 때 건너 뛰거나 TLS가 정확하게 작동하는지 확인하는데 사용된다. 위의 두 줄은 &lt;em&gt;runtime.tls0&lt;/em&gt; 변수의 주소를 DI 레지스터에 저장하고 &lt;em&gt;runtime.settls&lt;/em&gt; 함수를 호출한다. 아래에서 이 함수의 코드를 살펴 보자:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;01 // set tls base to DI
+02 TEXT runtime·settls(SB),NOSPLIT,$32
+03     ADDQ    $8, DI  // ELF wants to use -8(FS)
+04
+05     MOVQ    DI, SI
+06     MOVQ    $0x1002, DI // ARCH_SET_FS
+07     MOVQ    $158, AX    // arch_prctl
+08     SYSCALL
+09     CMPQ    AX, $0xfffffffffffff001
+10     JLS 2(PC)
+11     MOVL    $0xf1, 0xf1  // crash
+12     RET
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;코멘트를 보면 이 함수가 &lt;em&gt;arch_prctl&lt;/em&gt; 시스템 호출을 하며 &lt;em&gt;ARCH_SET_FS&lt;/em&gt; 를 인수로 전달한다는 것을 알 수 있다. 또 이 시스템 호출이 &lt;em&gt;FS&lt;/em&gt; 세그먼트 레지스터의 시작점(base)을 정하는 것을 볼 수 있다. 위의 경우, TLS는 &lt;em&gt;runtime.tls0&lt;/em&gt; 변수를 가리킨다.&lt;/p&gt;
+
+&lt;p&gt;main 함수의 어셈블러 코드의 시작부분에서 본 명령을 기억하는가?&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 0x0000 00000 (test.go:3)    MOVQ    (TLS),CX
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이전에 설명한 바 있듯이 이 명령은 &lt;em&gt;runtime.g&lt;/em&gt; 구조체 인스턴스의 주소를 CX 레지스터에 올린다. 이 구조체는 현재 고루틴에 대한 서술이고 쓰레드 로컬 스토리지 (thread local storage)에 저장된다. 이제 이 명령이 어떻게 기계어로 번역되는지 밝혀내고 이해할 수 있다. 이전에 만든 &lt;em&gt;disassembly.txt&lt;/em&gt; 파일을 열고 &lt;em&gt;main.main&lt;/em&gt; 함수를 찾아보면, 첫번째 명령은 다음과 같이 생겼다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 400c00:       64 48 8b 0c 25 f0 ff    mov    %fs:0xfffffffffffffff0,%rcx
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;(&lt;em&gt;%fs:0xfffffffffffffff0&lt;/em&gt;) 명령의 콜론이 의미하는 바는 세그멘테이션의 주소화이다 (자세한 내용은 &lt;a href=&#34;http://thestarman.pcministry.com/asm/debug/Segments.html&#34;&gt;여기&lt;/a&gt;를 참조하라).&lt;/p&gt;
+
+&lt;h1 id=&#34;시작하는-순서로-다시-돌아가서&#34;&gt;시작하는 순서로 다시 돌아가서&lt;/h1&gt;
+
+&lt;p&gt;마지막으로 &lt;em&gt;runtime.rt0_go&lt;/em&gt; 함수의 마지막 두 부분을 살펴보자:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;01 ok:
+02     // set the per-goroutine and per-mach &amp;quot;registers&amp;quot;
+03     get_tls(BX)
+04     LEAQ    runtime·g0(SB), CX
+05     MOVQ    CX, g(BX)
+06     LEAQ    runtime·m0(SB), AX
+07
+08     // save m-&amp;gt;g0 = g0
+09     MOVQ    CX, m_g0(AX)
+10     // save m0 to g0-&amp;gt;m
+11     MOVQ    AX, g_m(CX)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;TLS 주소를 BX 레지스터에 올리고 &lt;em&gt;runtime·g0&lt;/em&gt; 변수의 주소를 TLS에 저장한다. &lt;em&gt;runtime.m0&lt;/em&gt; 변수를 초기화한다. 만약 &lt;em&gt;runtime.g0&lt;/em&gt; 가 루트 고루틴을 뜻하면 &lt;em&gt;runtime.m0&lt;/em&gt; 는 이 고루틴을 실행하는 루트 오퍼레이팅 시스템 쓰레드에 상응한다. &lt;em&gt;runtime.g0&lt;/em&gt; 와 &lt;em&gt;runtime.m0&lt;/em&gt; 구조를 앞으로 나올 포스트에서 자세히 살펴볼지도 모르겠다.&lt;/p&gt;
+
+&lt;p&gt;시작하는 순서의 마지막 부분은 인수를 초기화하고 여러 함수를 호출하는 것이다. 하지만 이 주제는 따로 다루어야 할 토론거리이다.&lt;/p&gt;
+
+&lt;h1 id=&#34;golang-에-대한-더-알아보기&#34;&gt;Golang 에 대한 더 알아보기&lt;/h1&gt;
+
+&lt;p&gt;이제 부트스트랩 과정의 내부 메커니즘에 대해 배웠고 어떻게 스택이 구현되었는지 알아 보았다. 계속 나아가기 위해서는 시작하는 순서의 마지막 부분에 대한 분석이 필요하다. 이것이 저자의 다음 포스트의 주제가 될 것이다. 언제 나올지 연락받고 싶은 독자는 밑의 subscribe 버튼을 누르던지 &lt;a href=&#34;http://www.twitter.com/altoros&#34;&gt;@altoros&lt;/a&gt;를 팔로우하기 바란다.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;원문: &lt;a href=&#34;http://blog.altoros.com/golang-internals-part-5-runtime-bootstrap-process.html&#34;&gt;Golang Internals, Part 5: the Runtime Bootstrap Process&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;저자: Siarhei Matsiukevich&lt;/li&gt;
+&lt;li&gt;번역자: Jhonghee Park&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Golang의 내부, 4부: 오브젝트 파일, 그리고 함수 메타데이터</title>
+      <link>https://golangkorea.github.io/post/golang-internals/part4/</link>
+      <pubDate>Sun, 18 Sep 2016 16:20:29 -0400</pubDate>
+      
+      <guid>https://golangkorea.github.io/post/golang-internals/part4/</guid>
+      <description>
+
+&lt;p&gt;오늘은, Func 구조에 대해 좀 더 자세히 들여다 보고 어떻게 가비지 컬렉션이 작동하는지 몇가지 자세한 내용을 논하겠다.&lt;/p&gt;
+
+&lt;p&gt;이 포스트는 &lt;a href=&#34;https://golangkorea.github.io/post/golang-internals/part3/&#34;&gt;Golang의 내부, 3부: 링커, 오브젝트 파일, 그리고 재배치&lt;/a&gt;의 연속이어서, 독자가 아직 읽지 않았다면 이 포스트를 소화하기 전에 읽기를 적극 권장한다.&lt;/p&gt;
+
+&lt;h1 id=&#34;함수-메타데이터의-구조&#34;&gt;함수 메타데이터의 구조&lt;/h1&gt;
+
+&lt;p&gt;재배치에 대한 주요한 아이디어는 3부를 통해 분명해 졌을 것이다. 이제 main 메서드의 Func 구조를 살펴보자:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;01 Func: &amp;amp;goobj.Func{
+02     Args:    0,
+03     Frame:   8,
+04     Leaf:    false,
+05     NoSplit: false,
+06     Var:     {
+07     },
+08     PCSP:   goobj.Data{Offset:255, Size:7},
+09     PCFile: goobj.Data{Offset:263, Size:3},
+10     PCLine: goobj.Data{Offset:267, Size:7},
+11     PCData: {
+12         {Offset:276, Size:5},
+13     },
+14     FuncData: {
+15         {
+16             Sym:    goobj.SymID{Name:&amp;quot;gclocals·3280bececceccd33cb74587feedb1f9f&amp;quot;, Version:0},
+17          Offset: 0,
+18     },
+19     {
+20          Sym:    goobj.SymID{Name:&amp;quot;gclocals·3280bececceccd33cb74587feedb1f9f&amp;quot;, Version:0},
+21                Offset: 0,
+22            },
+23        },
+24        File: {&amp;quot;/home/adminone/temp/test.go&amp;quot;},
+25    },
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 구조체는 Go언어의 런타임이 사용하는, 컴파일러가 오브젝트 파일에 방출한 함수 메타데이터로 생각해 볼 수 있다. &lt;a href=&#34;https://docs.google.com/document/d/1lyPIbmsYbXnpNj57a261hgOYVpNRcgydurVQIyZOz_o/pub&#34;&gt;이 문서&lt;/a&gt;를 통해 Func내 정확한 포맷과 여러 필드들의 의미에 대한 설명을 접할 수 있다. 이제, 런타임에서 이 메타데이터가 어떻게 사용되는지 보겠다.&lt;/p&gt;
+
+&lt;p&gt;runtime 패키지 안에서 이 메타데이터는 다음 구조체에 매핑되어 있다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;01 type _func struct {
+02     entry   uintptr // start pc
+03     nameoff int32   // function name
+04
+05     args  int32 // in/out args size
+06     frame int32 // legacy frame size; use pcsp if possible
+07
+08     pcsp      int32
+09     pcfile    int32
+10     pcln      int32
+11     npcdata   int32
+12     nfuncdata int32
+13 }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;오브젝트 파일 안에 있는 정보가 모두 다 직접적으로 매핑되어 있는 것은 아니다. 몇몇 필드들은 링커에만 사용된다. 그렇다 해도 여기에서 가장 흥미로운 필드들은 &lt;em&gt;pcsp&lt;/em&gt;, &lt;em&gt;pcfile&lt;/em&gt;, 그리고 &lt;em&gt;pcln&lt;/em&gt; 이다. 이 필드들은 &lt;a href=&#34;http://en.wikipedia.org/wiki/Program_counter&#34;&gt;프로그램 카운터&lt;/a&gt;가 stack pointer, filename, 그리고 line으로 번역될 때 사용된다.&lt;/p&gt;
+
+&lt;p&gt;예를 들면, &lt;em&gt;panic&lt;/em&gt; 이 발생할 경우 이 메타데이터 필드들이 필요할 것이다. 그 순간에 런타임이 알고 있는 바는 오직 &lt;em&gt;panic&lt;/em&gt; 을 야기한 현재의 어셈블리 명령의 프로그램 카운터이다. 그래서 런타임은 그 카운터를 이용해 현재 파일과 라인 번호, 그리고 stack trace 전부를 얻는 것이다. 파일과 라인 번호는 &lt;em&gt;pcfile&lt;/em&gt; 과 &lt;em&gt;pcln&lt;/em&gt; 필드를 이용하면 바로 해결된다. stack trace는 &lt;em&gt;pcsp&lt;/em&gt; 를 이용하여 재귀적으로 해결한다.&lt;/p&gt;
+
+&lt;p&gt;이제 프로그램 카운터를 가지고 어떻게 상응하는 라인 번호를 얻을 수 있는지에 대한 질문에 답을 하자. 답을 얻기 위해서는 어셈블리 코드를 들여다 보고 오브젝트 파일에 라인 번호가 어떻게 저장되어 있는 지를 이해해야 한다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 0x001a 00026 (test.go:4)    MOVQ    $1,(SP)
+2     0x0022 00034 (test.go:4)    PCDATA  $0,$0
+3     0x0022 00034 (test.go:4)    CALL    ,runtime.printint(SB)
+4     0x0027 00039 (test.go:5)    ADDQ    $8,SP
+5     0x002b 00043 (test.go:5)    RET ,
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;프로그램 카운터 26에서 38까지는 라인 번호 4에 상응하고 카운터 39에서 &lt;em&gt;next_function_program_counter - 1&lt;/em&gt; 까지는 라인 번호 5에 해당된다. 효율적 공간사용을 생각하면 다음과 같은 맵을 저장하는 것으로 충분하다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 26 - 4
+2 39 - 5
+3 …
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이것은 컴파일러가 하는 일과 거의 일치한다. &lt;em&gt;pcln&lt;/em&gt; 필드는 현재 실행중인 함수의 첫번째 프로그램 카운터에 상응하는 특정한 오프셋을 맵안에서 가리키고 있다. 이 오프셋과 또 다음 함수의 첫번째 프로그램 카운터의 오프셋을 알고, 런타임은 바이너리 검색을 이용해 주어진 프로그램 카운터에 상응하는 라인 번호를 찾는다.&lt;/p&gt;
+
+&lt;p&gt;Go 언어에서 이런 아이디어는 일반화 되어 있다. 라인 번호와 스택 포인터만 프로그램 카운터에 맵팅되어 있는게 아니라 어떤 정수 값도 매핑될 수 있다. &lt;em&gt;PCDATA&lt;/em&gt; 명령을 통해서 가능한 것이다. 매번 링커는 다음 명령을 찾는다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 0x0022 00034 (test.go:4)    PCDATA  $0,$0
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 명령은 실제로 어셈블러 명령을 생산하지 않는다. 대신, 이 명령의 두번째 인수를 맵안에서 현재의 프로그램 카운터를 사용해 저장하고, 첫번째 인수는 어떤 맵이 사용되는 지를 나타낸다. 이 첫번째 인수를 통해, 새로운 맵을 쉽게 첨가할 수 있는데, 컴파일러와 런타임에는 그 의미가 알려지지만 링커에게는 보이지 않는다.&lt;/p&gt;
+
+&lt;h1 id=&#34;가비지-컬렉터는-어떻게-함수-메타데이터를-사용하는가&#34;&gt;가비지 컬렉터는 어떻게 함수 메타데이터를 사용하는가&lt;/h1&gt;
+
+&lt;p&gt;마지막으로 아직 설명을 더 명확하게 해야할 함수 메타데이터의 내용은 FuncData 배열인데, 가비지 컬렉션에 필요한 정보를 담고 있다. Go 언어는 &lt;a href=&#34;http://www.brpreiss.com/books/opus5/html/page424.html&#34;&gt;mark-and-sweep&lt;/a&gt; 가비지 컬렉터 (GC)를 사용하는데 두 단계를 거쳐 동작한다. 첫번째 단계인 (mark)에서는, 모든 객체를 섭렵하면서 아직 사용중인 것들은 &amp;ldquo;reachable&amp;rdquo;로 표시한다. 표시되지 않은 모든 객체는 두번째 단계인 (sweep)에서 제거된다.&lt;/p&gt;
+
+&lt;p&gt;그래서, 가비지 컬렉터는 전역 변수, 프로세서 레지스터, 스택 프레임, 그리고 이미 위치가 알려진 객체내 포인터들과 같이 잘 알려진 위치들내 도달할 수 있는(reachable) 객체를 찾아보면서 시작한다. 하지만 곰곰히 생각해 보면, 스택 프레임안에서 포인터를 찾아내는 것이 그렇게 쉽지는 않는 일이다. 그렇다면 런타임이 가비지 컬렉션을 실행할때 스택안에서 어떻게 포인터와 포인터가 아닌 타입의 변수들을 알아 내는 것일까? 바로 여기에서 &lt;em&gt;FuncData&lt;/em&gt; 가 등장하는 것이다.&lt;/p&gt;
+
+&lt;p&gt;각 함수마다 컴파일러는 두개의 변수를 만든다. 하나는 스택 프레임의 인수들을 위한 비트맵 벡터를 담고 있다. 다른 하나는 나머지 프레임을 위한 비트맵으로 함수에 정의된 포인터 타입의 모든 지역 변수들을 포함한다. 이 변수들은 각자 가비지 컬렉터에게 스택 프레임안에 포인터들이 어디에 위치하는지 정확하게 알려주고 이는 가비지 컬렉터가 일을 하는 데 충분한 정보이다.&lt;/p&gt;
+
+&lt;p&gt;&lt;em&gt;PCDATA&lt;/em&gt; 와 같이 &lt;em&gt;FUNCDATA&lt;/em&gt; 역시 의사-Go 어셈블리 명령(pseudo-Go assembly instruction)에 의해 발생된 것임을 언급할 가치가 있겠다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;1 0x001a 00026 (test.go:3)    FUNCDATA    $0,gclocals·3280bececceccd33cb74587feedb1f9f+0(SB)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 명령의 첫번째 인수는 이것이 인수들을 위한 함수 데이터인지 아니면 지역 변수 공간인지를 나타낸다. 두번째 인수는 실제로 GC 마스크를 담고 있는 숨겨진 변수에 대한 참조 값이다.&lt;/p&gt;
+
+&lt;h1 id=&#34;golang에-대해-더-알아보기&#34;&gt;Golang에 대해 더 알아보기&lt;/h1&gt;
+
+&lt;p&gt;앞으로 나올 포스트에서는 Go 언어의 부트 스트랩 과정을 얘기하겠다. 런타임이 어떻게 작동하는지를 이해하는데 중요한 단서이다. 일주일 뒤에 보자.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;원문: &lt;a href=&#34;http://blog.altoros.com/golang-part-4-object-files-and-function-metadata.html&#34;&gt;Golang Internals, Part 4: Object Files and Function Metadata&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;저자: Siarhei Matsiukevich&lt;/li&gt;
+&lt;li&gt;번역자: Jhonghee Park&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Golang의 내부, 3부: 링커, 오브젝트 파일, 그리고 재배치</title>
+      <link>https://golangkorea.github.io/post/golang-internals/part3/</link>
+      <pubDate>Sat, 17 Sep 2016 16:20:29 -0400</pubDate>
+      
+      <guid>https://golangkorea.github.io/post/golang-internals/part3/</guid>
+      <description>
+
+&lt;p&gt;오늘은 Go 링커와 오브젝트 파일, 그리고 재배치(relocations)에 대해 얘기해 보자.&lt;/p&gt;
+
+&lt;p&gt;이런 것들이 독자들과 무슨 상관이 있을까? 만약 독자가 어떤 대형 프로젝트의 내부에 대해 배우고자 한다면, 첫번째 할 일이 그 것을 콤포넌트나 모듈로 자를 필요가 있다. 둘째로 이 모듈들이 서로에게 어떤 인터페이스를 제공하는지 이해할 필요가 있다. Go 언어 프로젝트의 경우, 이런 상위 모듈들이 컴파일러, 링커, 그리고 런타임이다. 컴파일러가 제공하고 링커가 사용하는 것이 오프젝트 파일인데, 오늘은 그 것으로 조사를 시작해 보자.&lt;/p&gt;
+
+&lt;h1 id=&#34;go-오브젝트-파일-생성하기&#34;&gt;Go 오브젝트 파일 생성하기&lt;/h1&gt;
+
+&lt;p&gt;실용적인 실험을 하나 해 보자-아주 간단한 프로그램을 하나 만들고, 컴파일하고, 어떤 오브젝트 파일이 만들어 지는지 관찰하자. 저자의 경우, 프로그램은 다음과 같다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;1: package main
+2:
+3: func main() {
+4:  print(1)
+5: }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;너무 쉽지 않은가? 이제 컴파일을 한다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;go tool 6g test.go
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 명령은 &lt;em&gt;test.6&lt;/em&gt; 오브젝트 파일을 생산한다. 이 파일의 내부 구조를 조사하기 위해, &lt;a href=&#34;https://github.com/golang/go/tree/master/src/cmd/internal/goobj&#34;&gt;goobj&lt;/a&gt; 라이브러리를 사용하겠다. 이 라이브러리는 내부적으로 Go 소스 코드에 채택되어 주로 유닛 테스트를 구현하는데 쓰인다. 이 유닛 테스트는 여러 상황에서 오브젝트 파일이 정확히 생성되었는지를 테스트한다. 이 블로그 포스트를 위해 &lt;em&gt;goobj&lt;/em&gt; 라이브러리를 통해 생성된 출력을 콘솔로 프린트하는 매우 간단한 프로그램을 만들었다. 이 프로그램의 소스코드는 &lt;a href=&#34;https://github.com/s-matyukevich/goobj_explorer&#34;&gt;여기&lt;/a&gt;에서 살펴볼 수 있다.&lt;/p&gt;
+
+&lt;p&gt;무엇보다도 우선, 저자의 프로그램을 다운받아 설치해야 한다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;go get github.com/s-matyukevich/goobj_explorer
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;그런 후에 다음의 명령을 실행하라:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;goobj_explorer -o test.6
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이제 &lt;em&gt;goob.Package&lt;/em&gt; 구조를 콘솔안에서 살펴 볼 수 있을 것이다.&lt;/p&gt;
+
+&lt;h1 id=&#34;오브젝트-파일-조사하기&#34;&gt;오브젝트 파일 조사하기&lt;/h1&gt;
+
+&lt;p&gt;이 오브젝트 파일에서 가장 흥미로운 부분은 &lt;em&gt;Syms&lt;/em&gt; 배열이다. 이것은 실제로 심볼 테이블이다. 프로그램안에 정의된 모든 것들, 함수, 전역 변수, 타입, 상수, 등이 이 테이블에 적혀있다. &lt;em&gt;main&lt;/em&gt; 함수에 상응하는 엔트리에 대해 살펴보자. (Roloc 과 Func 필드는 출력에서 생략되었음을 주목하라. 이 필드들은 나중에 논하겠다.)&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;&amp;amp;goobj.Sym{
+            SymID: goobj.SymID{Name:&amp;quot;main.main&amp;quot;, Version:0},
+            Kind:  1,
+            DupOK: false,
+            Size:  48,
+            Type:  goobj.SymID{},
+            Data:  goobj.Data{Offset:137, Size:44},
+            Reloc: ...,
+            Func:  ...,
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;em&gt;goobj.Sum&lt;/em&gt; 구조내 필드의 이름들은 따로 설명이 필요 없다:&lt;/p&gt;
+
+&lt;style type=&#34;text/css&#34;&gt;&lt;!--
+.myTable { background-color:white;border-collapse:collapse; } .myTable th { background-color:#E0E0E0;color:black; } .myTable td, .myTable th { padding:5px;border:1px solid #989898; }
+--&gt;&lt;/style&gt;
+
+&lt;table class=&#34;myTable&#34;&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;center&gt;필드&lt;/center&gt;&lt;/th&gt;
+&lt;th style=&#34;width: 530px;&#34; width=&#34;70%&#34;&gt;&lt;center&gt;설명&lt;/center&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;SumID&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;독특한 심볼 아이디로 심볼의 이름과 버전으로 구성된다. 버전을 통해 동일한 이름에 차이를 부여한다.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;Kind&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;어떤 종류의 심볼에 속하는지를 나타낸다 (상세한 내용은 나중에).&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;DupOK&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;이 필드는 중복된 이름(같은 이름의 심볼들)이 허락되는지를 나타낸다.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;Size&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;심볼 데이터의 크기.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;Type&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;만약 있는 경우, 심볼 타입을 대표하는 또 다른 심볼에 대한 레퍼런스.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;Data&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;바이너리 데이터를 가진다. 다른 종류의 심볼에 따라 다른 의미를 갖고 있다. 예를 들어, 함수에는 어셈블리 코드를, 문자열 심볼에는 원자재 문자열 콘텐트, 기타 등등.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;Reloc&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;재배치 리스트 (더 상세한 내용은 나중에 제공될 것이다.)&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;strong&gt;Func&lt;/strong&gt;&lt;/td&gt;
+&lt;td&gt;함수 심볼에 대한 특별한 함수 메타 데이터를 갖고 있다. (자세한 내용은 아래를 보라).&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;이제, 다른 종류의 심볼들을 살펴보자. 모든 사용 가능한 종류의 심볼들이 상수로서 &lt;em&gt;goobj&lt;/em&gt; 패키지 (&lt;a href=&#34;https://github.com/golang/go/blob/master/src/cmd/internal/goobj/read.go#L30&#34;&gt;여기&lt;/a&gt;)에서 찾아 볼수 있)안에 정의되어 있다. 아래에, 이러한 상수들의 첫번째 부분을 복사해 놓았다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;const (
+	_ SymKind = iota
+
+	// readonly, executable
+	STEXT
+	SELFRXSECT
+
+	// readonly, non-executable
+	STYPE
+	SSTRING
+	SGOSTRING
+	SGOFUNC
+	SRODATA
+	SFUNCTAB
+	STYPELINK
+	SSYMTAB // TODO: move to unmapped section
+	SPCLNTAB
+	SELFROSECT
+	...
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;보다시피, main.main 심볼은 종류 1에 속하고 &lt;em&gt;STEXT&lt;/em&gt; 상수에 상응한다. &lt;em&gt;STEXT&lt;/em&gt; 는 실행 가능한 코드를 갖는 심볼이다. 이제, &lt;em&gt;Reloc&lt;/em&gt; 배열을 살펴보자. 다음과 같은 struct들로 구성되어 있다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;type Reloc struct {
+    Offset int
+    Size   int
+    Sym    SymID
+    Add    int
+    Type int
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;각 재배치는 &lt;em&gt;[Offset, Offset+Size]&lt;/em&gt; 간격에 위치한 바이트들이 특정 주소로 교체되어야 함을 암시한다. 이 주소는 &lt;em&gt;Sym&lt;/em&gt; 심볼의 위치에 &lt;em&gt;Add&lt;/em&gt; 바이트 숫자를 더하여 계산된다.&lt;/p&gt;
+
+&lt;h1 id=&#34;재배치-이해하기&#34;&gt;재배치 이해하기&lt;/h1&gt;
+
+&lt;p&gt;이제 예를 통해 재배치가 어떻게 작동하는지를 알아보자. 그러기 위해서, &lt;em&gt;-S&lt;/em&gt; 스위치를 이용해 프로그램을 컴파일 할 필요가 있다. &lt;em&gt;-s&lt;/em&gt; 스위치는 생성된 어셈블리 코드를 출력할 것이다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;go tool 6g -S test.go
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;어셈블러를 들여다 보면서 main 함수를 찾아보자.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;&amp;quot;&amp;quot;.main t=1 size=48 value=0 args=0x0 locals=0x8
+    0x0000 00000 (test.go:3)    TEXT    &amp;quot;&amp;quot;.main+0(SB),$8-0
+    0x0000 00000 (test.go:3)    MOVQ    (TLS),CX
+    0x0009 00009 (test.go:3)    CMPQ    SP,16(CX)
+    0x000d 00013 (test.go:3)    JHI ,22
+    0x000f 00015 (test.go:3)    CALL    ,runtime.morestack_noctxt(SB)
+    0x0014 00020 (test.go:3)    JMP ,0
+    0x0016 00022 (test.go:3)    SUBQ    $8,SP
+    0x001a 00026 (test.go:3)    FUNCDATA    $0,gclocals·3280bececceccd33cb74587feedb1f9f+0(SB)
+    0x001a 00026 (test.go:3)    FUNCDATA    $1,gclocals·3280bececceccd33cb74587feedb1f9f+0(SB)
+    0x001a 00026 (test.go:4)    MOVQ    $1,(SP)
+    0x0022 00034 (test.go:4)    PCDATA  $0,$0
+    0x0022 00034 (test.go:4)    CALL    ,runtime.printint(SB)
+    0x0027 00039 (test.go:5)    ADDQ    $8,SP
+    0x002b 00043 (test.go:5)    RET ,
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;나중에 올 블로그 포스트에서 이 코드에 대해 더 자세히 살펴보며 Go의 런타임이 어떻게 작동하는지를 이해하기 위한 시도들 할 것이다. 지금은 다음 한줄에 관심이 있다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;0x0022 00034 (test.go:4)	CALL	,runtime.printint(SB)
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 명령은 함수 데이터내 (16진수로는) 0x0022의 오프셋 이나 (10진수로는) 00034 오프셋에 위치한다. 이 줄은 실제로 &lt;em&gt;runtime.printint&lt;/em&gt; 함수를 호출하는 책임을 진다. 문제는 컴파일러가 컴파일이 진행되는 동안 &lt;em&gt;runtime.printint&lt;/em&gt; 함수의 정확한 주소를 모른다는 것이다. 이 함수는 컴파일러가 전혀 모르는 다른 오브젝트 파일내에 위치한다. 그런 경우, 컴파일러는 재배치를 사용한다. 아래는 이 메서드 호출에 상응하는 정확한 재배치이다. (저자가 &lt;em&gt;goobj_explorer&lt;/em&gt; 유틸리티의 첫번째 출력에서 복사해 왔다.):&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;{
+    Offset: 35,
+    Size:   4,
+    Sym:    goobj.SymID{Name:&amp;quot;runtime.printint&amp;quot;, Version:0},
+    Add:    0,
+    Type:   3,
+},
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 재배치는 링커에게 35 바이트의 오프셋에서 시작하면서, 4 바이트의 데이터를 &lt;em&gt;runtime.printint&lt;/em&gt; 심볼의 시작점 주소로 교체할 필요가 있다고 말한다. 하지만 메인 함수 데이터로 부터 35 바이트의 오프셋는 실제로 이전에 본적이 있는 호출 명령(call instruction)의 인수이다. (이 (호출) 명령은 34 바이트의 오프셋에서 시작한다. 1 바이트는 호출 명령 코드이고 4 바이트는 이 명령의 주소를 가리킨다.)&lt;/p&gt;
+
+&lt;h1 id=&#34;링커는-어떻게-작동하는가&#34;&gt;링커는 어떻게 작동하는가&lt;/h1&gt;
+
+&lt;p&gt;이제 위의 설명을 이해한다면, 링커가 어떻게 작동하는 지를 알아낼 수 있다. 다음의 개요는 매우 단순화 시킨 것이긴 하지만 주요한 아이디어를 반영한다:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;링커는 메인 패키지로 부터 참조된 모든 패키지의 심볼을 모아서 하나의 긴 바이트 배열(혹은 바이너리 이미지)에 실는다.&lt;/li&gt;
+&lt;li&gt;각 심볼에 대해서는, 링커가 이러한 이미지내의 주소를 계산한다.&lt;/li&gt;
+&lt;li&gt;그런다음, 모든 심볼에 대해 정의된 재배치를 적용한다. 링커가 그런 재배치에서 참조된 모든 다른 심볼들의 정확한 주소들들 알고 있기 때문에 매우 쉬운 일이다.&lt;/li&gt;
+&lt;li&gt;링커는 (리눅스의) Executable and Linkable (ELF) 포맷이나 (윈도우의) Portable Executable (PE) 포맷에 필요한 모든 헤더를 준비한다. 그런 다음, 그 결과물로 링커는 실행파일을 발생시킨다.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&#34;tls-이해하기&#34;&gt;TLS 이해하기&lt;/h1&gt;
+
+&lt;p&gt;조심성 있는 독자는 main 메서드에 대해 &lt;em&gt;goobj_explorer&lt;/em&gt; 유틸리티 출력속에 이상한 재배치가 있음을 알아챌 것이다. 어떤 메서드 호출에도 상응하지 않고 심지어 빈 심볼을 가리키고 있다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;{
+    Offset: 5,
+    Size:   4,
+    Sym:    goobj.SymID{},
+    Add:    0,
+    Type:   9,
+},
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;과연, 이 재배치가 하는 것이 무엇일까? 5 바이트의 오프셋을 가지고 있고 크기가 4 바이트임을 알 수 있다. 이 오프셋에는 다음 명령이 있다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;0x0000 00000 (test.go:3)    MOVQ    (TLS),CX
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;0 오프셋에서 시작하고 9 바이트을 차지한다 (다음 명령이 9 바이트 오프셋애서 시작하는 걸로 알 수 있다). 추측컨대, 이 재배치는 낯선 &lt;em&gt;(TLS)&lt;/em&gt; 구문을 어떤 주소로 교체한다. 그러면 TLS는 무엇이며, 무슨 주소를 사용하는가?&lt;/p&gt;
+
+&lt;p&gt;TLS는 쓰레드 지역 저장 공간(Thread Local Storage)의 축약형이다. 이 기술은 많은 프로그래밍 언어에 사용되었는데 상세한 내용은 &lt;a href=&#34;https://en.wikipedia.org/wiki/Thread-local_storage&#34;&gt;여기&lt;/a&gt;를 참조하라. 간단하게 설명하면, 다른 쓰레드에 의해 사용될 때, 다른 메모리 장소를 가리키는 변수의 사용을 가능하게 한다.&lt;/p&gt;
+
+&lt;p&gt;Go 언어에서 TLS는 &lt;em&gt;G 구조체&lt;/em&gt; 를 가리키는 포인터를 저장하는 데 사용된다. &lt;em&gt;G 구조체&lt;/em&gt; 는 특정한 Go 루틴 내부의 상세한 내용을 담고 있는데 나중에 올 블로그 포스트에서 더 자세히 다룰 것이다. 그러므로, 다른 Go 루틴들이 어떤 한 Go 루틴을 접근할 때, 이 Go 루틴 내부의 자세한 정보를 담고 있는 구조체를 가리키는 변수가 항상 존재한다는 얘기다. 이 변수의 위치는 링커에게 알려져 있어서 (우리가) 분석중인 명령안에서 이 변수가 CX 레지스터에 이동된다는 것을 알 수 있다. TLS는 아키텍쳐마다 다르게 구현될 수 있다. AMD64에서는, &lt;em&gt;FS&lt;/em&gt; 레지스터를 통해 구현되어서, 이 명령은 &lt;em&gt;MOVQ FS, CX&lt;/em&gt; 로 번역될 수 있다.&lt;/p&gt;
+
+&lt;p&gt;재배치에 대한 토론을 마감하기 위해, 모든 재배치 타입을 담고 있는 열거형 타입(enum) 을 소개하겠다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;// Reloc.type
+enum
+{
+	R_ADDR = 1,
+	R_SIZE,
+	R_CALL, // relocation for direct PC-relative call
+	R_CALLARM, // relocation for ARM direct call
+	R_CALLIND, // marker for indirect call (no actual relocating necessary)
+	R_CONST,
+	R_PCREL,
+	R_TLS,
+	R_TLS_LE, // TLS local exec offset from TLS segment register
+	R_TLS_IE, // TLS initial exec offset from TLS base pointer
+	R_GOTOFF,
+	R_PLT0,
+	R_PLT1,
+	R_PLT2,
+	R_USEFIELD,
+};
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 enum에서 볼 수 있듯이, 재배치 타입 3는 R_CALL 이고 재배치 타입 9은 R_TLS이다. 이 enum 이름들은 방금 설명한 행동들을 완벽하게 설명한다.&lt;/p&gt;
+
+&lt;h1 id=&#34;go-오브젝트-파일에-대한-부연-설명&#34;&gt;Go 오브젝트 파일에 대한 부연 설명&lt;/h1&gt;
+
+&lt;p&gt;다음 포스트에서 오브젝트 파일에 대한 설명을 계속해 나가겠다. 또한 Go 런타임이 어떻게 작동하는 지를 이해하는데 필요한 정보들을 더 제공하겠다. 질문이 있다면 코멘트란에 부담없이 해 주길 바란다.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;원문: &lt;a href=&#34;http://blog.altoros.com/golang-internals-part-3-the-linker-and-object-files.html&#34;&gt;Golang Internals, Part 3: The Linker, Object Files, and Relocations&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;저자: Siarhei Matsiukevich&lt;/li&gt;
+&lt;li&gt;번역자: Jhonghee Park&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Golang의 내부, 2부: Go 컴파일러 들여다 보기</title>
+      <link>https://golangkorea.github.io/post/golang-internals/part2/</link>
+      <pubDate>Thu, 15 Sep 2016 05:53:48 -0400</pubDate>
+      
+      <guid>https://golangkorea.github.io/post/golang-internals/part2/</guid>
+      <description>
+
+&lt;p&gt;독자는 인터페이스 레퍼런스를 통해 변수를 사용할 경우 Go 런타임내에서 어떤 일이 있는지 정확하게 알고 있는가? 이 질문에 쉽게 답할 수 없는 이유는 어떤 인터페이스를 구현하는 타입의 경우 그 인터페이스를 가리키는 어떤 레퍼런스도 갖고 있지 않기 때문이다. 하지만 여전히 시도는 해 볼 수 있는데 &lt;a href=&#34;https://golangkorea.github.io/post/golang-internals/part1/&#34;&gt;이전 블로그 포스트&lt;/a&gt;에서 논했던 Go 컴파일러의 지식을 이용하는 것이다.&lt;/p&gt;
+
+&lt;p&gt;그러면, Go 컴파일러속으로 잠수해 들어가자: 간단한 Go 프로그램을 제작하고 Go 타입캐스팅(typecasting)이 내부적으로 어떻게 동작하는 지 살펴보겠다. 이 것을 예로 들면서, 어떻게 노드 트리가 생성되고 사용되는지 설명하겠다. 이렇게 함으로써 독자도 이 지식을 다른 Go 컴파일러 기능에 적용할 수 있을 것이다.&lt;/p&gt;
+
+&lt;h1 id=&#34;시작하기-전에&#34;&gt;시작하기 전에&lt;/h1&gt;
+
+&lt;p&gt;실험을 하기 전에, (Go 툴을 쓰는 것이 아니라) Go 컴파일러를 직접 사용할 필요가 있다. 다음 명령을 사용해 이 기능에 접근할 수 있다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;go tool 6g test.go
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 명령으로 &lt;em&gt;test.go&lt;/em&gt; 소스파일은 컴파일되고 오브젝트 파일(object file)이 만들어 진다. 여기서 &lt;em&gt;6g&lt;/em&gt; 는 AMD64 아키텍쳐인 저자의 머신을 위한 컴파일러의 이름이다. 다른 아키텍쳐에서는 상응하는 컴파일러를 사용해야 함을 주목하라.&lt;/p&gt;
+
+&lt;p&gt;컴파일러를 직접 사용할 때 유용한 커맨드 라인 인수들을 사용할 수 있는데, 자세한 내용은 &lt;a href=&#34;https://golang.org/cmd/gc/#hdr-Command_Line&#34;&gt;여기&lt;/a&gt;를 참고하라. 이 실험을 위해서, 노드 트리의 레이아웃을 출력해 주는 &lt;em&gt;-W&lt;/em&gt; 플래그를 사용하겠다.&lt;/p&gt;
+
+&lt;h1 id=&#34;간단한-go-프로그램-만들기&#34;&gt;간단한 Go 프로그램 만들기&lt;/h1&gt;
+
+&lt;p&gt;우선 간단한 Go 프로그램을 만들자. 저자의 버전은 다음과 같다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;  1  package main
+  2
+  3  type I interface {
+  4          DoSomeWork()
+  5  }
+  6
+  7  type T struct {
+  8          a int
+  9  }
+ 10
+ 11  func (t *T) DoSomeWork() {
+ 12  }
+ 13
+ 14  func main() {
+ 15          t := &amp;amp;T{}
+ 16          i := I(t)
+ 17          print(i)
+ 18  }
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;정말 간단하지 않은가? 불필요하게 생각되는 단 하나는 17째 줄인데, &lt;em&gt;i&lt;/em&gt; 변수를 출력하는 부분이다. 불필요하다고 판단됨에도 불구하고 이 줄이 없다면, &lt;em&gt;i&lt;/em&gt; 는 사용하지 않은 변수로 간주되어 프로그램은 컴파일 되지 않을 것이다. 다음 단계는 이 프로그램을 &lt;em&gt;-W&lt;/em&gt; 를 사용해 컴파일 하는 것이다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;go tool 6g -W test.go
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 명령을 실행한 후에, 프로그램내 정의된 각 메서드에 해당하는 노드 트리를 포함한 출력을 보게 될 것이다. 이 경우, &lt;em&gt;main&lt;/em&gt; 과 &lt;em&gt;init&lt;/em&gt; 메서드가 있다. &lt;em&gt;init&lt;/em&gt; 메서드가 언급된 이유는 모든 프로그램에 암시적으로 정의되어 있기 때문인데, 실제로 여기에서는 다루지 않겠다.&lt;/p&gt;
+
+&lt;p&gt;각 메서드마다, 컴파일러는 두개의 노드트리 버전을 출력한다. 첫번째는 소스파일을 파싱하고 얻는 노드 트리의 원본이고 두번째는 타입체킹후 모든 필요한 수정을 거친 버전이다.&lt;/p&gt;
+
+&lt;h1 id=&#34;main-메서드의-노드-트리에-대한-이해&#34;&gt;main 메서드의 노드 트리에 대한 이해&lt;/h1&gt;
+
+&lt;p&gt;우선 main 메서드에서 나온 노드 트리의 원본을 자세히 들여다 보고 정확하게 무슨 일이 일어나고 있는지를 이해하기 위한 시도를 해보자.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;DCL l(15)
+.   NAME-main.t u(1) a(1) g(1) l(15) x(0+0) class(PAUTO) f(1) ld(1) tc(1) used(1) PTR64-*main.T
+
+AS l(15) colas(1) tc(1)
+.   NAME-main.t u(1) a(1) g(1) l(15) x(0+0) class(PAUTO) f(1) ld(1) tc(1) used(1) PTR64-*main.T
+.   PTRLIT l(15) esc(no) ld(1) tc(1) PTR64-*main.T
+.   .   STRUCTLIT l(15) tc(1) main.T
+.   .   .   TYPE &amp;lt;S&amp;gt; l(15) tc(1) implicit(1) type=PTR64-*main.T PTR64-*main.T
+
+DCL l(16)
+.   NAME-main.i u(1) a(1) g(2) l(16) x(0+0) class(PAUTO) f(1) ld(1) tc(1) used(1) main.I
+
+AS l(16) tc(1)
+.   NAME-main.autotmp_0000 u(1) a(1) l(16) x(0+0) class(PAUTO) esc(N) tc(1) used(1) PTR64-*main.T
+.   NAME-main.t u(1) a(1) g(1) l(15) x(0+0) class(PAUTO) f(1) ld(1) tc(1) used(1) PTR64-*main.T
+
+AS l(16) colas(1) tc(1)
+.   NAME-main.i u(1) a(1) g(2) l(16) x(0+0) class(PAUTO) f(1) ld(1) tc(1) used(1) main.I
+.   CONVIFACE l(16) tc(1) main.I
+.   .   NAME-main.autotmp_0000 u(1) a(1) l(16) x(0+0) class(PAUTO) esc(N) tc(1) used(1) PTR64-*main.T
+
+VARKILL l(16) tc(1)
+.   NAME-main.autotmp_0000 u(1) a(1) l(16) x(0+0) class(PAUTO) esc(N) tc(1) used(1) PTR64-*main.T
+
+PRINT l(17) tc(1)
+PRINT-list
+.   NAME-main.i u(1) a(1) g(2) l(16) x(0+0) class(PAUTO) f(1) ld(1) tc(1) used(1) main.I
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;아래 설명할 때는 불필요한 부분을 모두 제거한 요약한 버전을 사용하겠다.&lt;/p&gt;
+
+&lt;p&gt;첫번째 노드는 꽤 단순하다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;DCL l(15)
+.   NAME-main.t l(15) PTR64-*main.T
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;첫번째 노드는 선언 노드이다. &lt;em&gt;l(15)&lt;/em&gt; 는 노드가 줄 15에 정의되어 있음을 알려준다. 선언 노드는 &lt;em&gt;main.t&lt;/em&gt; 변수를 나타내는 이름 노드(name node)에 레퍼런스를 갖는다. 변수가 정의된 곳은 main 패키지이고 실제로 &lt;em&gt;main.T&lt;/em&gt; 타입를 가리키는 64비트 포인터이다. 15째 줄을 보면 어떤 선언이 되어 있는지 쉽게 이해할 수 있다.&lt;/p&gt;
+
+&lt;p&gt;다음 것은 약간 까다롭다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;AS l(15)
+.   NAME-main.t l(15) PTR64-*main.T
+.   PTRLIT l(15) PTR64-*main.T
+.   .   STRUCTLIT l(15) main.T
+.   .   .   TYPE l(15) type=PTR64-*main.T PTR64-*main.T
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;최상위 노드(root node)는 할당(assignment) 노드이다. 첫번째 자식노드는 이름 노드(name node)로 &lt;em&gt;main.t&lt;/em&gt; 변수를 대표한다. 두번째 자식노드는 &lt;em&gt;main.t&lt;/em&gt; 에 할당되는, 포인터 리터럴 노드이다: &amp;amp;를 생각하라. 이 노드는 struct 리터럴 노드를 자식으로 갖고 있고, 그 노드는 또 실제 타입인 (&lt;em&gt;main.T&lt;/em&gt;)를 대표하는 타입 노드를 포인터로 가리킨다.&lt;/p&gt;
+
+&lt;p&gt;다음 노드는 또 다른 선언이다. 이번에는 &lt;em&gt;main.I&lt;/em&gt; 타입에 속하는 &lt;em&gt;main.i&lt;/em&gt; 변수의 선언이다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;DCL l(16)
+.   NAME-main.i l(16) main.I
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;그런 다음, 컴파일러는 또 다른 변수, &lt;em&gt;autotmp_0000&lt;/em&gt; 를 만들고, &lt;em&gt;main.t&lt;/em&gt; 변수를 할당한다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;AS l(16) tc(1)
+.   NAME-main.autotmp_0000 l(16) PTR64-*main.T
+.   NAME-main.t l(15) PTR64-*main.T
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;마침내, 흥미로운 노드들에 도착했다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;AS l(16)
+.   NAME-main.i l(16)main.I
+.   CONVIFACE l(16) main.I
+.   .   NAME-main.autotmp_0000 PTR64-*main.T
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;여기를 보면, 컴파일러가 &lt;em&gt;CONVIFACE&lt;/em&gt; 라고 불리는 특별한 노드를 &lt;em&gt;main.i&lt;/em&gt; 에 할당하는 것을 볼 수 있다. 하지만 이것만으로는 실제로 내부에서 어떤 일이 일어나는지 알 수 없다. 한가지 방법은 모든 모드 트리 수정이 적용되고 난 후에 main 메서드의 노드 트리속을 들여다 보는 것인데, 출력된 내용 중 &amp;ldquo;after walk main&amp;rdquo; 라는 섹션내의 정보를 통해 알아보는 것이다.&lt;/p&gt;
+
+&lt;h1 id=&#34;컴파일러는-어떻게-할당노드를-번역하는가&#34;&gt;컴파일러는 어떻게 할당노드를 번역하는가&lt;/h1&gt;
+
+&lt;p&gt;아래를 보면 컴파일러가 어떻게 할당 노드(assignment node)를 번역하는 지 알 수 있다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;AS-init
+.   AS l(16)
+.   .   NAME-main.autotmp_0003 l(16) PTR64-*uint8
+.   .   NAME-go.itab.*&amp;quot;&amp;quot;.T.&amp;quot;&amp;quot;.I l(16) PTR64-*uint8
+
+.   IF l(16)
+.   IF-test
+.   .   EQ l(16) bool
+.   .   .   NAME-main.autotmp_0003 l(16) PTR64-*uint8
+.   .   .   LITERAL-nil I(16) PTR64-*uint8
+.   IF-body
+.   .   AS l(16)
+.   .   .   NAME-main.autotmp_0003 l(16) PTR64-*uint8
+.   .   .   CALLFUNC l(16) PTR64-*byte
+.   .   .   .   NAME-runtime.typ2Itab l(2) FUNC-funcSTRUCT-(FIELD-
+.   .   .   .   .   NAME-runtime.typ·2 l(2) PTR64-*byte, FIELD-
+.   .   .   .   .   NAME-runtime.typ2·3 l(2) PTR64-*byte PTR64-*byte, FIELD-
+.   .   .   .   .   NAME-runtime.cache·4 l(2) PTR64-*PTR64-*byte PTR64-*PTR64-*byte) PTR64-*byte
+.   .   .   CALLFUNC-list
+.   .   .   .   AS l(16)
+.   .   .   .   .   INDREG-SP l(16) runtime.typ·2 G0 PTR64-*byte
+.   .   .   .   .   ADDR l(16) PTR64-*uint8
+.   .   .   .   .   .   NAME-type.*&amp;quot;&amp;quot;.T l(11) uint8
+
+.   .   .   .   AS l(16)
+.   .   .   .   .   INDREG-SP l(16) runtime.typ2·3 G0 PTR64-*byte
+.   .   .   .   .   ADDR l(16) PTR64-*uint8
+.   .   .   .   .   .   NAME-type.&amp;quot;&amp;quot;.I l(16) uint8
+
+.   .   .   .   AS l(16)
+.   .   .   .   .   INDREG-SP l(16) runtime.cache·4 G0 PTR64-*PTR64-*byte
+.   .   .   .   .   ADDR l(16) PTR64-*PTR64-*uint8
+.   .   .   .   .   .   NAME-go.itab.*&amp;quot;&amp;quot;.T.&amp;quot;&amp;quot;.I l(16) PTR64-*uint8
+AS l(16)
+.   NAME-main.i l(16) main.I
+.   EFACE l(16) main.I
+.   .   NAME-main.autotmp_0003 l(16) PTR64-*uint8
+.   .   NAME-main.autotmp_0000 l(16) PTR64-*main.T
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;출력을 통해 볼 수 있듯이, 컴파일러는 우선 초기화 노드 리스트 (&lt;em&gt;AS-init&lt;/em&gt;) 를 할당 노드에 첨가한다. &lt;em&gt;AS-init&lt;/em&gt; 내에서는, &lt;em&gt;go.itab.*””.T.””&lt;/em&gt;.I 변수 값을 새로 만든 변수 &lt;em&gt;main.autotmp_0003&lt;/em&gt; 에 할당한다. 그런 다음, 변수가 &lt;em&gt;nil&lt;/em&gt; 인지를 검사한다. 만약에 &lt;em&gt;nil&lt;/em&gt; 이면, 컴파일러는 &lt;em&gt;runtime.typ2Itab&lt;/em&gt; 함수를 다음의 인수들을 사용해 호출한다:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;em&gt;main.T&lt;/em&gt; 타입의 포인터,&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;main.I&lt;/em&gt; 인터페이스 타입의 포인터,&lt;/li&gt;
+&lt;li&gt;&lt;em&gt;go.itab.*””.T.””.I&lt;/em&gt; 변수를 가리키는 포인터.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;코드에서 보면, 이 변수가 &lt;em&gt;main.T&lt;/em&gt; 에서 &lt;em&gt;main.I&lt;/em&gt; 로 타입변환된 결과를 저장하는데 사용되고 있음이 명백하다.&lt;/p&gt;
+
+&lt;h1 id=&#34;getitab-메서드의-내부&#34;&gt;&lt;em&gt;getitab&lt;/em&gt; 메서드의 내부&lt;/h1&gt;
+
+&lt;p&gt;논리적인 다음 단계는 &lt;em&gt;runtime.typ2Itab&lt;/em&gt; 를 찾아보는 것이다. 아래에 이 함수를 나열해 놓았다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;func typ2Itab(t *_type, inter *interfacetype, cache **itab) *itab {
+    tab := getitab(inter, t, false)
+    atomicstorep(unsafe.Pointer(cache), unsafe.Pointer(tab))
+    return tab
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;확실해 보이는 것은 실제 작업은 &lt;em&gt;getitab&lt;/em&gt; 메서드 내부에서 진행된다는 점인데, 두번째 줄에서 단순히 tab 변수를 cache 변수에 저장하는 점을 통해 알 수 있다. 그럼 &lt;em&gt;getitab&lt;/em&gt; 내부를 들여다 보자. 꽤 긴 내용이라 가장 들여다 볼 가치가 있는 부분만 복사했다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;m =
+    (*itab)(persistentalloc(unsafe.Sizeof(itab{})+uintptr(len(inter.mhdr)-1)*ptrSize, 0,
+    &amp;amp;memstats.other_sys))
+    m.inter = interm._type = typ
+
+ni := len(inter.mhdr)
+nt := len(x.mhdr)
+j := 0
+for k := 0; k &amp;lt; ni; k++ {
+	i := &amp;amp;inter.mhdr[k]
+	iname := i.name
+	ipkgpath := i.pkgpath
+	itype := i._type
+	for ; j &amp;lt; nt; j++ {
+		t := &amp;amp;x.mhdr[j]
+		if t.mtyp == itype &amp;amp;&amp;amp; t.name == iname &amp;amp;&amp;amp; t.pkgpath == ipkgpath {
+			if m != nil {
+				*(*unsafe.Pointer)(add(unsafe.Pointer(&amp;amp;m.fun[0]), uintptr(k)*ptrSize)) = t.ifn
+			}
+		}
+	}
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;우선 결과를 저장할 메모리를 할당한다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;(*itab)(persistentalloc(unsafe.Sizeof(itab{})+uintptr(len(inter.mhdr)-1)*ptrSize, 0, &amp;amp;memstats.other_sys))
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Go 언어에서 왜 메모리를 할당하는지 그리고 왜 이렇게 이상한 방식으로 하는지 궁금해 진다. 이 질문에 답하기 위해 &lt;em&gt;itab&lt;/em&gt; struct 정의를 들여다 보아야 할 필요가 있다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;type itab struct {
+	inter  *interfacetype
+	_type  *_type
+	link   *itab
+	bad    int32
+	unused int32
+	fun    [1]uintptr // variable sized
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;마지막 특성인 &lt;em&gt;fun&lt;/em&gt; 은 요소가 하나인 배열로 정의되어 있다. 하지만 실제로 배열의 크기는 변할 수 있다고 코멘트되어 있다. 나중에 보겠지만 이 특성은 특정한 타입내 정의된 메서드들을 가리키는 포인터 배열를 가지고 있다. 이 메서드들은 인터페이스 타입의 메서드에 상응한다. Go 언어의 저자들은 이 특성을 위해 동적 메로리 할당을 사용한다. (그렇다, unsafe 패키지를 사용하면 이런 일들이 가능하다.) 메모리를 얼마나 할당해야 하는지는 struct 자체의 크기에 인터페이스내 메서드의 숫자에 포인터 크기를 곱한 값을 더해 계산할 수 있다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;unsafe.Sizeof(itab{})+uintptr(len(inter.mhdr)-1)*ptrSize
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;다음으로 두개의 중첩된 루프를 볼 수 있다. 첫째로 인터페이스의 모든 메서드를 차례로 처리한다. 인터페이스의 각 메서드에 대해서 특정한 타입내에 상응하는 메서드를 찾으려 한다. (메서드는 &lt;em&gt;mhdr&lt;/em&gt; 컬렉션에 저장되어 있다.) 두 메서드가 서로 같은지를 비교하는 과정은 굳이 설명할 필요가 없겠다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;if t.mtyp == itype &amp;amp;&amp;amp; t.name == iname &amp;amp;&amp;amp; t.pkgpath == ipkgpath
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;만약 매치를 찾으면, 결과값의 &lt;em&gt;fun&lt;/em&gt; 에 메서드를 가리키는 포인터를 저장한다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;*(*unsafe.Pointer)(add(unsafe.Pointer(&amp;amp;m.fun[0]), uintptr(k)*ptrSize)) = t.ifn
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;성능에 대해 짧게 언급하면: 인터페이스와 사전에 설정된 타입 정의에 대해 메서드는 알파벳 순서로 정렬되어 있어서, 이 중첩 루프는 *O(n * m)* 대신 &lt;em&gt;O(n + m)&lt;/em&gt; 으로 반복한다. n 과 m 은 상응하는 메서드 숫자들&lt;/p&gt;
+
+&lt;p&gt;마지막으로, 할당의 마지막 부분을 기억하는가?&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;AS l(16)
+.   NAME-main.i l(16) main.I
+.   EFACE l(16) main.I
+.   .   NAME-main.autotmp_0003 l(16) PTR64-*uint8
+.   .   NAME-main.autotmp_0000 l(16) PTR64-*main.T
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;여기에서 &lt;em&gt;EFACE&lt;/em&gt; 노드를 &lt;em&gt;main.i&lt;/em&gt; 변수에 할당한다. &lt;em&gt;EFACE&lt;/em&gt; 노드는 &lt;em&gt;main.autotmp_0003&lt;/em&gt; 와 &lt;em&gt;main.autotmp_0000&lt;/em&gt; 변수들에 대한 레퍼런스를 가지고 있는데 - &lt;em&gt;main.autotmp_0003&lt;/em&gt; 는 &lt;em&gt;runtime.typ2Itab&lt;/em&gt; 에 의해 반환된 itab struct를 가리키는 포인터이고, &lt;em&gt;main.autotmp_0000&lt;/em&gt; 변수는 &lt;em&gt;main.t&lt;/em&gt; 와 같은 값을 가지고 있다. 인터페이스 레퍼런스를 통해 메서드를 호출하는데 필요한 것은 이게 전부이다.&lt;/p&gt;
+
+&lt;p&gt;그래서, &lt;em&gt;main.i&lt;/em&gt; 변수는 런타임 &lt;a href=&#34;https://godoc.org/runtime&#34;&gt;runtime&lt;/a&gt; 패키지내 정의된 &lt;a href=&#34;https://golang.org/src/runtime/iface.go&#34;&gt;iface&lt;/a&gt; struct의 인스턴스를 가지고 있다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;type iface struct {
+    tab  *itab
+    data unsafe.Pointer
+}
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;h1 id=&#34;다음에-살펴볼-내용은&#34;&gt;다음에 살펴볼 내용은?&lt;/h1&gt;
+
+&lt;p&gt;저자가 지금까지 Go 컴파일러와 런타임에 대해 아주 작은 부분만 설명했다는 점을 이해한다. 얘기해 볼만한 흥미로운 주제들이 여전히 많이 남아있다. 예를 들면, 오브젝트 파일, 링커, 재배치(relocations), 등에 대해서는 다음 블로그 포스트에서 살펴보기로 하겠다.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;원문: &lt;a href=&#34;http://blog.altoros.com/golang-internals-part-2-diving-into-the-go-compiler.html&#34;&gt;Golang Internals, Part 2: Diving Into the Go Compiler&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;저자: Siarhei Matsiukevich&lt;/li&gt;
+&lt;li&gt;번역자: Jhonghee Park&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Golang의 내부, 1부: 주요 컨셉트와 프로젝트 구조</title>
+      <link>https://golangkorea.github.io/post/golang-internals/part1/</link>
+      <pubDate>Tue, 13 Sep 2016 13:18:28 -0400</pubDate>
+      
+      <guid>https://golangkorea.github.io/post/golang-internals/part1/</guid>
+      <description>
+
+&lt;p&gt;이 블로그 시리즈는 기본적인 Go 언어특성에 이미 익숙하며 좀 더 심도있게 내부구조를 알고자 하는 독자들을 위해 쓰여졌다. 이 포스트는 Go언어의 소스코드의 구조와 Go 컴파일러의 내부를 어느 정도 상세히 살펴보겠다. 이 글을 읽고 난 후, 독자는 다음과 같은 질문에 답을 얻을 것이다.&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;Go의 소스코드는 어떤 구조를 가지고 있는가?&lt;/li&gt;
+&lt;li&gt;Go의 컴파일러는 어떻게 동작하는가?&lt;/li&gt;
+&lt;li&gt;Go의 노드 트리(node treee)의 기본 구조는 무엇인가?&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h1 id=&#34;시작하며&#34;&gt;시작하며&lt;/h1&gt;
+
+&lt;p&gt;새로운 프로그래밍 언어를 배우기 시작할 때, 보통은 &amp;ldquo;hello-world&amp;rdquo;와 같은 튜토리얼이나, 초보자 가이드, 그리고 언어의 주요한 컨셉트, 문법, 심지어 표준 라이브러리에 대한 상세한 정보들 많이 접하게 된다. 하지만, 언어가 런타임 도중에 할당하는 주요한 데이터 구조의 레이아웃이라던지, 내장 함수를 호출할 때 어떤 어셈블리 코드가 발생하는지와 같은 정보를 얻는 것은 쉽지 않다. 물론, 답은 소스코드내에 자리잡고 있지만, 저자의 경험에 비추어 보면, 이렇다 할 성과없이 수많은 시간을 허비하는 일도 가능하다.&lt;/p&gt;
+
+&lt;p&gt;이런 주제에 대해 전문가인 척 하지도 않을 거고, 모든 가능한 측면을 설명하려는 시도 또한 하지 않겠다. 대신, 목표하는 바는 독자들 스스로 Go 소스코드를 어떻게 해독해 나갈 수 있는 지를 보여주는 것이다.&lt;/p&gt;
+
+&lt;p&gt;시작하기 전에, 반드시 필요한 것은 각자의 Go 소스코드 복사본을 갖는 것이다. 소스코드를 다운 받는데 특별할 게 전혀 없다. 다음 명령을 실행해 보자.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;git clone https://github.com/golang/go
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;메인 브랜치의 코드는 상시 변하는 점을 주목하자. 그래서 저자는 이 블로그에서 release-branch.go1.4 브랜치를 사용한다.&lt;/p&gt;
+
+&lt;h1 id=&#34;프로젝트-구조-이해하기&#34;&gt;프로젝트 구조 이해하기&lt;/h1&gt;
+
+&lt;p&gt;Go 레포의 &lt;code&gt;/src&lt;/code&gt; 폴더를 보게 되면, 많은 폴더를 발견하게 된다. 대부분은 Go의 표준 라이브러리 소스 파일을 갖고 있다. 여기에도 표준 이름짓기 관행이 항상 적용되는데, 각 패키지는 그 이름에 상응하는 이름의 폴더 아래 있다. 표준 라이브러리외에 다른 것들을 살펴보자. 저자의 견해로는, 아래 폴더들이 가장 중요하고 유용하다.&lt;/p&gt;
+
+&lt;style type=&#34;text/css&#34;&gt;&lt;!--
+.myTable { background-color:white;border-collapse:collapse; } .myTable th { background-color:#E0E0E0;color:black; } .myTable td, .myTable th { padding:5px;border:1px solid #989898; }
+--&gt;&lt;/style&gt;
+
+&lt;table class=&#34;myTable&#34;&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;center&gt;폴더&lt;/center&gt;&lt;/th&gt;
+&lt;th style=&#34;width: 530px;&#34; width=&#34;70%&#34;&gt;&lt;center&gt;설명&lt;/center&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/golang/go/tree/release-branch.go1.4/src/cmd&#34; target=&#34;golangsrc&#34;&gt;/src/cmd/&lt;/a&gt;&lt;/td&gt;
+&lt;td&gt;코멘드 라인 툴들을 보관한다.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/golang/go/tree/release-branch.go1.4/src/cmd/go&#34; target=&#34;golangsrc&#34;&gt;/src/cmd/go/&lt;/a&gt;&lt;/td&gt;
+&lt;td&gt;Go 툴의 소스 파일이 있는데, 이 툴들은 Go 소스코드를 다운받거나, 빌드하고, 설치하는데 사용된다. 툴이 실행되면서 전체 소스를 수집하고, Go 링커와 컴파일러 코멘드 라인 툴들을 호출한다.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/golang/go/tree/release-branch.go1.4/src/cmd/dist&#34; target=&#34;golangsrc&#34;&gt;/src/cmd/dist/ &lt;/a&gt;&lt;/td&gt;
+&lt;td&gt;다른 코멘트 라인 툴과 표준 라이브러리의 모든 패키지를 빌드하는 툴을 보관한다. 모든 특정한 툴이나 패키지에서 어떤 라이브러리가 사용되었는지를 알아 보려면 이 소스를 분석하고 싶을 것이다.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/golang/go/tree/release-branch.go1.4/src/cmd/gc&#34; target=&#34;golangsrc&#34;&gt;/src/cmd/gc/&lt;/a&gt;&lt;/td&gt;
+&lt;td&gt;Go 컴파일러내 (프로세서) 아키텍쳐에 의존하지 않는 부분이다.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/golang/go/tree/release-branch.go1.4/src/cmd/ld&#34; target=&#34;golangsrc&#34;&gt;/src/cmd/ld/&lt;/a&gt;&lt;/td&gt;
+&lt;td&gt;Go 링커내 (프로세서) 아키텍쳐에 의존하지 않는 부분이다. 아키텍쳐에 의존적인 부분들은 &#34;l&#34;로 끝나는 이름의 폴더에 위치하며 컴파일러와 같은 이름짓기 관행을 따른다.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/golang/go/tree/release-branch.go1.4/src/cmd/5a&#34; target=&#34;golangsrc&#34;&gt;/src/cmd/5a/&lt;/a&gt;, 6a, 8a, and 9a&lt;/td&gt;
+&lt;td&gt;여러 아키텍쳐에 맞춘 Go 어셈블러 컴파일러들을 발견할 수 있다. Go 어셈블러는 일종의 어셈블리 언어로 하층 기계어와는 딱 맞아 떨어지는 것은 아니다. 대신 각 아키텍쳐마다 독특한 컴파일러들이 있어 Go의 어셈블러를 기계의 어셈블러도 번역한다. 더 자세한 내용은 다음 링크를 참조하라. &lt;a href=&#34;https://golang.org/doc/asm&#34; target=&#34;golangsrc&#34;&gt;여기&lt;/a&gt;.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/golang/go/tree/release-branch.go1.4/src/lib9&#34; target=&#34;golangsrc&#34;&gt;/src/lib9/&lt;/a&gt;, &lt;a href=&#34;https://github.com/golang/go/tree/release-branch.go1.4/src/libbio&#34; target=&#34;golangsrc&#34;&gt;/src/libbio&lt;/a&gt;, &lt;a href=&#34;https://github.com/golang/go/tree/release-branch.go1.4/src/liblink&#34; target=&#34;golangsrc&#34;&gt;/src/liblink&lt;/a&gt;&lt;/td&gt;
+&lt;td&gt;컴파일러, 링커, 그리고 런타임 패키지에 사용된 각종 라이브러리들.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/golang/go/tree/release-branch.go1.4/src/runtime&#34; target=&#34;golangsrc&#34;&gt;/src/runtime/&lt;/a&gt;&lt;/td&gt;
+&lt;td&gt;가장 중요한 Go 패키지로 모든 프로그램에 간접적으로 포함된다. 메모리 관리, 가비지 콜렉션, Go 루틴 생산등, 런타임 기능 전체를 포함하고 있다.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;h1 id=&#34;컴파일러-내부&#34;&gt;컴파일러 내부&lt;/h1&gt;
+
+&lt;p&gt;위에서 언급한 것 처럼, 아키텍쳐에 무관한 Go 컴파일러는 &lt;code&gt;/src/cmd/gc&lt;/code&gt; 폴더에 위치 한다. 시작 점은 &lt;code&gt;lex.c&lt;/code&gt; 파일에 있다. 코멘드 라인 인수 파싱 같은 보편적인 기능들을 차치하고 들여다 보면, 컴파일러는 다음과 같은 일들을 한다.&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;&lt;p&gt;어떤 공통의 데이터 구조를 초기화 한다.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;주어진 모든 Go 파일을 차례로 읽어서 각 파일에 yyparse 메서드를 호출한다. 이때 실제로 파싱이 작동한다. Go 컴파일러는 &lt;code&gt;Bison&lt;/code&gt;을 파서 발생기(parser generator)로 사용한다. 언어의 문법은 &lt;a href=&#34;https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.y&#34;&gt;go.y&lt;/a&gt;에 완전히 서술되어 있다. (자세한 내용은 나중에 더 제공될 예정이다) 결과로, 이 단계는 완전한 파스트리(parse tree)를 생성하는데, 이때 트리의 각 노드는 컴파일된 프로그램의 요소들을 대표한다.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;생성된 트리를 재귀적으로(Recursively) 방문하면서 약간의 수정을 가한다, 예를 들어, 암시적으로 타입이 주어진 노드에 타입 정보를 정의하거나, 타입 케스팅과 같은 언어요소들을 런타임 패키지내 어떤 함수을 호출하는 식으로 다시 재구성하기도 한다 그외 다른 일들도 실행한다.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;파스트리(parse tree)가 완성되고 난 뒤 실제 컴파일을 실행한다. 노드들은 어셈블리 코드로 번역된다.&lt;/p&gt;&lt;/li&gt;
+
+&lt;li&gt;&lt;p&gt;생성된 어셈블리 코드에 심볼 테이블과 같은 부수적인 데이터 구조를 함께 오브젝트 파일 (object file)에 담아 만들고 디스크에 저장한다.&lt;/p&gt;&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h1 id=&#34;go-문법-들여다-보기&#34;&gt;Go 문법 들여다 보기&lt;/h1&gt;
+
+&lt;p&gt;이제 두번째 단계를 좀 더 가까이 살펴보자. &lt;a href=&#34;https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.y&#34;&gt;go.y&lt;/a&gt; 파일은 언어 문법(grammar)을 가지고 있어 Go 컴파일러를 조사하고 언어의 구문론(syntax)을 이해하는 데 좋은 출발점이다. 파일의 주요한 부분은 선언문들로 구성되며, 다음과 유사하다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;xfndcl:
+     LFUNC fndcl fnbody
+
+fndcl:
+     sym &#39;(&#39; oarg_type_list_ocomma &#39;)&#39; fnres
+| &#39;(&#39; oarg_type_list_ocomma &#39;)&#39; sym &#39;(&#39; oarg_type_list_ocomma &#39;)&#39; fnres
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;이 선언에서는, &lt;em&gt;xfndcl&lt;/em&gt; 와 &lt;em&gt;fundcl&lt;/em&gt; 노드가 정의된다. &lt;em&gt;fundcl&lt;/em&gt; 노드는 두가지 형식중에 하나이다. 첫번째는 다음의 언어 구성소(construct)에 상응하는 형식이다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;somefunction(x int, y int) int
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;그리고 두번째는 다음의 언어 구성소에 상응한다:&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;(t *SomeType) somefunction(x int, y int) int.
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;&lt;em&gt;xfndcl&lt;/em&gt; 노드는 상수인 &lt;em&gt;LFUNC&lt;/em&gt; 에 저장된 키워드 &lt;em&gt;func&lt;/em&gt; 를 뒤 따르는 &lt;em&gt;fndcl&lt;/em&gt; 와 &lt;em&gt;fnbodynodes&lt;/em&gt; 로 구성되어 있다.&lt;/p&gt;
+
+&lt;p&gt;Bison(혹은 Yacc) 문법의 중요한 기능중에 하나는 무작위의 C 코드를 각 노드 정의옆에 갖다 붙일 수 있다는 것이다. 소스 코드안에 이런 노드의 정의가 매치될 때 마다 C 코드는 실행된다. 여기서, (실행된)결과의 노드는 $$ 사용해 표시하고 $1, $2 등등으로 자식 노드를 나타낸다.&lt;/p&gt;
+
+&lt;p&gt;예제를 통해 보면 다 쉽게 이해할 수 있다. 다음은 실제코드를 간소한 예다.&lt;/p&gt;
+
+&lt;blockquote&gt;
+&lt;pre&gt;&lt;code&gt;fndcl:
+      sym &#39;(&#39; oarg_type_list_ocomma &#39;)&#39; fnres
+        {
+          t = nod(OTFUNC, N, N);
+          t-&amp;gt;list = $3;
+          t-&amp;gt;rlist = $5;
+
+          $$ = nod(ODCLFUNC, N, N);
+          $$-&amp;gt;nname = newname($1);
+          $$-&amp;gt;nname-&amp;gt;ntype = t;
+          declare($$-&amp;gt;nname, PFUNC);
+      }
+| &#39;(&#39; oarg_type_list_ocomma &#39;)&#39; sym &#39;(&#39; oarg_type_list_ocomma &#39;)&#39; fnres
+&lt;/code&gt;&lt;/pre&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;우선, 새로운 노드가 만들어 지고 함수 선언을 위한 타입 정보를 갖는다. $3는 인수 리스트로 $5는 결과 리스트로 이 노드에서 레퍼런스된다. 그런 다음, $$ 결과 노드가 만들어 져서, 함수 이름과, 타입 노드를 저장한다. 보다시피 &lt;a href=&#34;https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.y&#34;&gt;go.y&lt;/a&gt;내 정의된 것들과 노드 구조사이에 직접적인 연결이 있을 수 없다.&lt;/p&gt;
+
+&lt;h1 id=&#34;노드-이해하기&#34;&gt;노드 이해하기&lt;/h1&gt;
+
+&lt;p&gt;이제 노드가 실제로 무엇인지 알아 볼 시간이다. 첫번째로, 노드는 struct이고, &lt;a href=&#34;https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.h#L245&#34;&gt;여기&lt;/a&gt;에 정의되어 있다. 이 struct는 굉장히 많은 특성들을 갖고 있는데 그 이유는 다른 종류의 노드를 지원해야 하고 노드종류마다 다른 속성들을 가지고 있기 때문이다.&lt;/p&gt;
+
+&lt;table class=&#34;myTable&#34;&gt;
+&lt;tbody&gt;
+&lt;tr&gt;
+&lt;th&gt;&lt;center&gt;노드 struct 필드&lt;/center&gt;&lt;/th&gt;
+&lt;th style=&#34;width: 530px;&#34; width=&#34;70%&#34;&gt;&lt;center&gt;설명&lt;/center&gt;&lt;/th&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.h#L259&#34; target=&#34;golangsrc&#34;&gt;op&lt;/a&gt;&lt;/td&gt;
+&lt;td&gt;이 필드는 각 노드마다 존재하며 노드의 연산이 무엇이지를 나타낸다. 이 필드를 통해 노드의 종류를 분간할 수 있다. 이전 예제에서 본 &lt;em&gt;OTFUNC&lt;/em&gt; (연산 타입 함수) 과 &lt;em&gt;ODCLFUNC&lt;/em&gt; (연산 선언 함수)같은 것 들이다.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.h#L295&#34; target=&#34;golangsrc&#34;&gt;type&lt;/a&gt;&lt;/td&gt;
+&lt;td&gt;노드가 타입정보를 보유할 때 (때로 타입이 없는 노드도 있다. 예를 들면, &lt;em&gt;if&lt;/em&gt;, &lt;em&gt;switch&lt;/em&gt;, 혹은 &lt;em&gt;for&lt;/em&gt;와 같은 제어 흐름문들), 이 필드는 타입정보를 가지고 있는 또 다른 struct를 가리키는 레퍼런스이다.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;tr&gt;
+&lt;td&gt;&lt;a href=&#34;https://github.com/golang/go/blob/release-branch.go1.4/src/cmd/gc/go.h#L309&#34; target=&#34;golangsrc&#34;&gt;val&lt;/a&gt;&lt;/td&gt;
+&lt;td&gt;이 필드는 리터럴 노드의 실제 값을 갖는다.&lt;/td&gt;
+&lt;/tr&gt;
+&lt;/tbody&gt;
+&lt;/table&gt;
+
+&lt;p&gt;독자는 이제 노드 트리의 기본적 구조를 이해했으므로, 그 지식을 실전에 투여할 수 있다. 다음 포스트에서는, Go 컴파일러가 과연 무엇을 생산하는지를 간단한 Go 애플리케이션을 통해 살펴보겠다.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;원문: &lt;a href=&#34;http://blog.altoros.com/golang-part-1-main-concepts-and-project-structure.html&#34;&gt;Golang Internals, Part 1: Main Concepts and Project Structure&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;저자: Siarhei Matsiukevich&lt;/li&gt;
+&lt;li&gt;번역자: Jhonghee Park&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>Golang의 내부, 0부: 부록</title>
+      <link>https://golangkorea.github.io/post/golang-internals/resources/</link>
+      <pubDate>Mon, 12 Sep 2016 13:18:28 -0400</pubDate>
+      
+      <guid>https://golangkorea.github.io/post/golang-internals/resources/</guid>
+      <description>
+
+&lt;h1 id=&#34;go-언어의-최신-컴파일러에-대한-내용&#34;&gt;Go 언어의 최신 컴파일러에 대한 내용&lt;/h1&gt;
+
+&lt;ul&gt;
+&lt;li&gt;GopherCon 2016: Rob Pike - The Design of the Go Assembler
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.youtube.com/watch?v=KINIAgRpkDA&#34;&gt;Video&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://talks.golang.org/2016/asm.slide&#34;&gt;Slides&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;GopherCon 2014 Go from C to Go by Russ Cox
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.youtube.com/watch?v=QIE5nV5fDwA&#34;&gt;Video&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://talks.golang.org/2014/c2go.slide&#34;&gt;Slides&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;GopherFest 2015: Rob Pike on the move from C to Go in the toolchain
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.youtube.com/watch?v=cF1zJYkBW4A&#34;&gt;Video&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://talks.golang.org/2015/gogo.slide&#34;&gt;Slides&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&#34;go의-어셈블러&#34;&gt;Go의 어셈블러&lt;/h1&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://golang.org/doc/asm&#34;&gt;A Quick Guide to Go&amp;rsquo;s Assembler&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
     
     <item>
       <title>Go의 주요 특징들</title>
@@ -60,7 +1567,7 @@
 
 &lt;p&gt;하지만 메서드를 만들 수 있으며, interface를 이용해서 다형성을 구현 할 수도 있다. &lt;strong&gt;composition&lt;/strong&gt;으로 상속을 대신 할 수도 있다. 뭔가 편법을 동원한다는 느낌이 들 수도 있겠지만, 객체지향에 있어서 반드시 무엇을 해야 한다는 어떤 규칙은 없다. Sandi Metz은 이렇게 말하고 있다. &amp;ldquo;객체지향에 있어서 클래스와 상속은 옵션이며, 한 문제는 다양한 방법으로 풀 수 있다.&amp;rdquo;&lt;/p&gt;
 
-&lt;p&gt;struct는 하나이 상의 필드들로 구성된 데이터 타입으로 레코드 형식의 데이터 그룹을 만들기 위해서 사용한다. 개인 정보를 다루는 애플리케이션을 개발한다면 아래와 같은 &lt;strong&gt;person&lt;/strong&gt; 스트럭처를 만들 수 있을 것이다.&lt;/p&gt;
+&lt;p&gt;struct는 하나 이상의 필드들로 구성된 데이터 타입으로 레코드 형식의 데이터 그룹을 만들기 위해서 사용한다. 개인 정보를 다루는 애플리케이션을 개발한다면 아래와 같은 &lt;strong&gt;person&lt;/strong&gt; 스트럭처를 만들 수 있을 것이다.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;type person struct {
     name string
@@ -68,7 +1575,7 @@
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;소프트웨어 공학에서 기본적으로 클래스는 속성과 메서드의 모음으로 표현된다. 파이슨의 경우를 보자.&lt;/p&gt;
+&lt;p&gt;소프트웨어 공학에서 기본적으로 클래스는 속성과 메서드의 모음으로 표현된다. 파이썬의 경우를 보자.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-python&#34;&gt;class Person:
     minAge = 0
@@ -84,7 +1591,7 @@
 
 &lt;p&gt;minAge와 self.name, self.age라는 속성과 Hello, MyAge라는 메서드를 가지는 Person 클래스를 만들었다. 일반적으로 알고 있는 클래스의 모습이다.&lt;/p&gt;
 
-&lt;p&gt;반면 go는 struct와 메서드가 서로 분리된다. 위의 파이슨 코드를 go 코드로 만들어 봤다.&lt;/p&gt;
+&lt;p&gt;반면 go는 struct와 메서드가 서로 분리된다. 위의 파이썬 코드를 go 코드로 만들어봤다.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package main
 
@@ -115,7 +1622,7 @@ func main() {
 
 &lt;p&gt;&lt;a href=&#34;https://play.golang.org/p/Slj3hhovW4&#34;&gt;Playground&lt;/a&gt;&lt;/p&gt;
 
-&lt;p&gt;뭔가 굉장히 낯설어 보인다. 일단 캡슐화는 지원한다. 보통 &lt;strong&gt;private, public&lt;/strong&gt; 키워드를 이용하는데, Go언어는 그런 거 없다. 대신 대/소 문자로 구분을 한다. 대문자로 시작하면 public, 소문자로 시작하면 private가 되는 식이다.  private 변수나 메서드는 패키지 내에서만 사용 할 수 있다.&lt;/p&gt;
+&lt;p&gt;뭔가 굉장히 낯설어 보인다. 일단 캡슐화는 지원한다. 보통 &lt;strong&gt;private, public&lt;/strong&gt; 키워드를 이용하는데, Go언어에는 이런게 없다. 대신 대/소 문자로 구분을 한다. 대문자로 시작하면 public, 소문자로 시작하면 private가 되는 식이다.  private 변수나 메서드는 패키지 내에서만 사용 할 수 있다.&lt;/p&gt;
 
 &lt;p&gt;메서드가 구조체와 분리되기 때문에, 이 메서드가 어느 구조체에 연결된 것인지를 구분해야 한다. &lt;strong&gt;수신자(receiver - func 키워드와 함수명 사이에 위치한다)&lt;/strong&gt;를 이용해서, 연결된 구조체를 확인 할 수 있다. 메서드는 &lt;strong&gt;.&lt;/strong&gt; 연산자를 이용해서 호출 할 수 있다.&lt;/p&gt;
 
@@ -275,7 +1782,7 @@ func Check(n int) {
 -1 is negative
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;문제없이 작동하지만 좋은 코드는 아니다. 일단 직관적이지 않다. 코드를 열어 보기 전에는 두 개의 boolean 반환 값이 무엇을 의미하는지 알 수가 없다. error를 이용해서 0 값을 예외처리하도록 바꿔보자.&lt;/p&gt;
+&lt;p&gt;문제없이 작동하지만 좋은 코드는 아니다. 일단 직관적이지 않다. 코드를 열어 보기 전에는 두 개의 boolean 반환 값이 무엇을 의미하는지 알 수가 없다. error를 이용해서 0 값을 예외처리 하도록 바꿔보자.&lt;/p&gt;
 
 &lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func Positive(n int) (bool, error) {
     if n == 0 {
@@ -298,7 +1805,7 @@ func Check(n int) {
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;하는 일은 차이가 없으나 코드가 명료해 졌다.&lt;/p&gt;
+&lt;p&gt;하는 일은 차이가 없으나 코드가 명료해졌다.&lt;/p&gt;
 
 &lt;h2 id=&#34;동시성-프로그래밍&#34;&gt;동시성 프로그래밍&lt;/h2&gt;
 
@@ -321,16 +1828,21 @@ func main() {
 }
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;go 키워드 뒤에 동시 실행할 함수를 두면, 해당 함수를 실행하는 고루틴이 만들어진다. 고루틴은 main 함수는 서로 독립적으로 진행이 된다. main 함수가 고루틴 보다 먼저 종료 할 수 있기 때문에 &lt;strong&gt;Scanln&lt;/strong&gt; 함수를 이용해서 기다리게 했다.&lt;/p&gt;
+&lt;p&gt;go 키워드 뒤에 동시 실행할 함수를 두면, 해당 함수를 실행하는 고루틴이 만들어진다. 고루틴과 main함수는 서로 독립적으로 진행이 된다. main 함수가 고루틴 보다 먼저 종료 할 수 있기 때문에 &lt;strong&gt;Scanln&lt;/strong&gt; 함수를 이용해서 기다리게 했다.&lt;/p&gt;
 
 &lt;p&gt;10개의 고루틴을 만들어보자. 그냥 go를 열번 호출하면 된다.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;# go run goroutine.go 
-4 : 0
-6 : 0
-4 : 1
-4 : 2
-4 : 3
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;$ go run goroutine.go 
+0 : 0
+0 : 1
+0 : 2
+0 : 3
+0 : 4
+0 : 5
+0 : 6
+0 : 7
+0 : 8
+0 : 9
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;채널(channel)은 고루틴들 간에 데이터를 교환하기 위해서 사용한다. Go도 공유 잠금을 지원하기는 하지만 메시지 교환방식을 선호한다. 아래는 고루틴간 ping 메시지를 교환하는 간단한 프로그램이다.&lt;/p&gt;
@@ -436,7 +1948,7 @@ Area : 452.3893421169302
 
 &lt;h3 id=&#34;웹-프로그래밍&#34;&gt;웹 프로그래밍&lt;/h3&gt;
 
-&lt;p&gt;Go는 특히 MSA모델의 웹 애플리케이션 개발을 잘 지원한다. 기본으로 지원하는 &lt;strong&gt;net/http&lt;/strong&gt;와 &lt;a href=&#34;http://www.gorillatoolkit.org/&#34;&gt;gorilla&lt;/a&gt;만으로도 훌륭하게 작동하는 웹 애플리케이션 서버를 개발 할 수 있다. 다른 프레임워크 사용 할 필요 없다. &lt;a href=&#34;http://www.joinc.co.kr/w/man/12/golang/HTTPPerf&#34;&gt;그리고 성능도 매우 뛰어나다&lt;/a&gt;.&lt;/p&gt;
+&lt;p&gt;Go는 특히 MSA모델의 웹 애플리케이션 개발을 잘 지원한다. 기본으로 지원하는 &lt;strong&gt;net/http&lt;/strong&gt;와 &lt;a href=&#34;http://www.gorillatoolkit.org/&#34;&gt;gorilla&lt;/a&gt;만으로도 훌륭하게 작동하는 웹 애플리케이션 서버를 개발 할 수 있다. 다른 프레임워크를 사용할 필요가 없다. &lt;a href=&#34;http://www.joinc.co.kr/w/man/12/golang/HTTPPerf&#34;&gt;그리고 성능도 매우 뛰어나다&lt;/a&gt;.&lt;/p&gt;
 
 &lt;p&gt;아래는 net/http와 gorilla를 이용해서 만든 간단한 웹 애플리케이션 서버다.&lt;/p&gt;
 
@@ -1621,904 +3133,6 @@ $ cd ..
 &lt;br/&gt;
 &lt;br/&gt;
 &lt;br/&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Hugo 입문 - 개요</title>
-      <link>https://golangkorea.github.io/post/hugo-intro/overview/</link>
-      <pubDate>Tue, 23 Aug 2016 22:35:57 -0400</pubDate>
-      
-      <guid>https://golangkorea.github.io/post/hugo-intro/overview/</guid>
-      <description>&lt;p&gt;Hugo는 현존하는 가장 빠른 정적 사이트 제너레이터(Static Site Generator)로 알려져 있습니다. 기능적인 측면에서도 여타 동적 사이트 제너레이터(Static Site Generator)에 비해 손색이 없을 뿐더러 설치가 간편하고 Go언어에 친숙한 개발자들에게는 최고의 컨텐츠 제작 환경을 제공한다고 생각합니다. &lt;a href=&#34;https://golangkorea.github.io&#34;&gt;Golang Korean Community&lt;/a&gt; 사이트도 Hugo로 제작되고 있습니다. &lt;strong&gt;Hugo 입문&lt;/strong&gt; 시리즈를 통해 이 사이트에 기여하시고자 하는 분들에게 가이드라인을 제공할 뿐만 아니라 자신만의 블로그 사이트를 쉽게 제작하고자 하는 분들에게도 도움이 되길 기원하는 마음으로 시리즈를 준비했습니다.&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/getting-started/&#34;&gt;Hugo 시작하기&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/content-basic/&#34;&gt;컨텐츠 제작 기초&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/theme-customizing/&#34;&gt;사이트 테마 커스터마이징 하기&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/taxonomy-basic/&#34;&gt;분류(Taxonomy)기능 사용하기&lt;/a&gt;&lt;/li&gt;
-&lt;li&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/how-to-contribute-content/&#34;&gt;사이트에 블로그 올리는 방법&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Sangbae Yun</title>
-      <link>https://golangkorea.github.io/author/sangbae-yun/</link>
-      <pubDate>Mon, 22 Aug 2016 23:39:23 -0400</pubDate>
-      
-      <guid>https://golangkorea.github.io/author/sangbae-yun/</guid>
-      <description>&lt;p&gt;This is a placehoder for personal profile of Sangbae Yun.&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Jhonghee Park</title>
-      <link>https://golangkorea.github.io/author/jhonghee-park/</link>
-      <pubDate>Mon, 22 Aug 2016 22:09:34 -0400</pubDate>
-      
-      <guid>https://golangkorea.github.io/author/jhonghee-park/</guid>
-      <description>&lt;p&gt;This is a placeholder for personal profile of Jhonghee Park&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>vim-go를 이용한 go 개발 환경 구축</title>
-      <link>https://golangkorea.github.io/post/vim-go/</link>
-      <pubDate>Mon, 22 Aug 2016 22:57:14 +0900</pubDate>
-      
-      <guid>https://golangkorea.github.io/post/vim-go/</guid>
-      <description>
-
-&lt;h2 id=&#34;vim&#34;&gt;Vim&lt;/h2&gt;
-
-&lt;p&gt;&lt;strong&gt;Vim&lt;/strong&gt;은 Emacs와 함께 (적어도 리눅스에서는) 가장 널리 사용하는 에디터일 것이다. 가볍고 빠르며, 어디에서나 실행되기 때문에 그 단순함에도 불구하고 여전히 사랑받고 있다. GUI 환경에서 사용하는 IDE에 익숙한 개발자라면 &amp;ldquo;요즘 같은 시대에 왠 구닥다리 터미널 기반 에디터냐&amp;rdquo;라고 생각할 지도 모르겠다. 아래 그래프를 보자.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://i.redditmedia.com/Zemj1bdTRcBwW8bF_UFEVSNZ9S1VrS4tsD4HC1b9jeI.jpg?w=844&amp;amp;s=1fbbaa5fe7f8ba1ba0942191327ffd70&#34; alt=&#34;Go 에디터 사용율&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;Go언어를 대상으로 조사한 결과인데, Vim이 거의 40% 정도를 차지하고 있다. Emacs까지 하면 터미널 기반 에디터를 사용하는 개발자가 절반이 넘는다. 물론 Go 언어가 시스템과 네트워크 분야의  백앤드 프로그램의 개발에 특화된 측면을 고려해야 겠지만 말이다.&lt;/p&gt;
-
-&lt;h2 id=&#34;vim-go&#34;&gt;Vim-go&lt;/h2&gt;
-
-&lt;p&gt;Vim은 다양한 플러그인을 제공한다. &lt;strong&gt;Vim-go&lt;/strong&gt;는 Go 개발환경을 지원하는 플러그인이다. 지원하는 기능은 아래와 같다.&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;함수, 오퍼레이터, 메서드들에 대한 Syntax highlighting&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;gocode&lt;/strong&gt;를 이용한 자동완성&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;:GoDef&lt;/strong&gt;를 이용해서 메서드, 변수들의 선언 위치를 네비게이션 할 수 있다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;:GoImport&lt;/strong&gt;를 이용한 패키지 임포트&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;:GoTest&lt;/strong&gt;와 &lt;strong&gt;:GoTestFunc&lt;/strong&gt;를 이용한 유닛 테스트&lt;/li&gt;
-&lt;li&gt;테스트 커버리지를 위한 &lt;strong&gt;:GoCoverage&lt;/strong&gt;&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;:GoBuild&lt;/strong&gt;, &lt;strong&gt;:GoInstall&lt;/strong&gt;을 이용한 패키지 컴파일과 설치&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;:GoRun&lt;/strong&gt;을 이용한 빠른 실행&lt;/li&gt;
-&lt;li&gt;소스 분석을 위한 &lt;strong&gt;:GoImplements&lt;/strong&gt;, &lt;strong&gt;:GoCallee&lt;/strong&gt;, &lt;strong&gt;:GoReferrer&lt;/strong&gt;&lt;/li&gt;
-&lt;li&gt;Lint툴 &lt;strong&gt;:GoLint&lt;/strong&gt;&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;:GoPlay&lt;/strong&gt;로 코드를 &lt;a href=&#34;https://play.golang.org&#34;&gt;play.golang.org&lt;/a&gt; 로 공유
-등 개발 환경을 만들기 위한 거의 모든 기능들을 제공한다. 여기에 파일 네비게이션 플러그인, 자동완성 플러그인들을 추가로 설치하면, IDE 부럽지 않은 개발 환경을 만들 수 있다.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&#34;vim-go-설치&#34;&gt;Vim-go 설치&lt;/h2&gt;
-
-&lt;p&gt;Vim의 플러그인들을 편리하게 관리하기 위해서 몇 가지 패키지 매니저들이 있다. 보통 Vundle 이나 &lt;strong&gt;pathogen&lt;/strong&gt;을 사용한다. 나는 pathogen을 사용하고 있다. 아래와 같이 설치하자.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# mkdir -p ~/.vim/autoload ~ 
-/.vim/bundle
-# cd ~/.vim/autoload
-# curl -LSso pathogen.vim https://tpo.pe/pathogen.vim
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;.vimrc 파일을 수정한다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;cat ~/.vimrc
-execute pathogen#infect()
-syntax on
-filetype plugin indent on
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;이제 vim-go를 설치하자.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# cd ~/.vim/bundle
-# git clone https://github.com/fatih/vim-go.git
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Go 개발을 위한 환경 설정은 다음과 같다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# export GOPATH=$HOME/golang 
-# export PATH=$PATH:$GOPATH/bin
-# mkdir $HOME/golang
-# echo $GOPATH
-/home/yundream/golang
-# echo $PATH
-/usr/local/sbin:/usr/local/bin:/usr/sbin:/usr/bin:/sbin:/bin:/home/yundream/golang/bin....
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;vim-go 프로젝트는 구글의 mercurial에서 관리하고 있다. mercurial도 설치해야 vim-go를 빌드 할 수 있다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# apt-get install mercurial
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;vim을 실행 한후 명령모드에서 &lt;strong&gt;:GoInstallBinaries&lt;/strong&gt;를 수행하면, 자동으로 vim-go를 빌드해서 설치해준다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;# vim
-~
-~
-:GoInstallBinaries
-vim-go: gocode not found. Installing github.com/nsf/gocode to folder /home/yundream/.vim-go/
-vim-go: goimports not found. Installing code.google.com/p/go.tools/cmd/goimports to folder /home/yundream/.vim-go/
-vim-go: godef not found. Installing code.google.com/p/rog-go/exp/cmd/godef to folder /home/yundream/.vim-go/
-vim-go: oracle not found. Installing code.google.com/p/go.tools/cmd/oracle to folder /home/yundream/.vim-go/
-vim-go: golint not found. Installing github.com/golang/lint/golint to folder /home/yundream/.vim-go/
-vim-go: errcheck not found. Installing github.com/kisielk/errcheck to folder /home/yundream/.vim-go/
-vim-go: gotags not found. Installing github.com/jstemmer/gotags to folder /home/yundream/.vim-go/
-계속하려면 엔터 혹은 명령을 입력하십시오
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&#34;vim-go-기능-빠르게-살펴보기&#34;&gt;Vim-go 기능 빠르게 살펴보기&lt;/h2&gt;
-
-&lt;p&gt;Go 코드의 실행&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;:GoRun
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;빌드&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;:make
-:GoBuild
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;에러체크&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;:GoErrCheck
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;패키지 임포트&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;:GoImport fmt
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;심볼에 대한 정의로 이동. 해동 심볼에서 :GoDef&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;:GoDef
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;대략 이런 식이다. 나머지 명령들은 직접 실행해 보자.&lt;/p&gt;
-
-&lt;h2 id=&#34;자동완성&#34;&gt;자동완성&lt;/h2&gt;
-
-&lt;p&gt;자동완성은 IDE의 가장 쓸만한 기능 중 하나일 것이다. vim의  &lt;strong&gt;YCM(YouCompleteMe)&lt;/strong&gt;를 이용해서 자동완성 기능을 추가 할 수 있다. 컴파일을 하기 때문에 python-dev와 cmake 패키지를 미리 설치해야 한다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# cd ~/.vim/bundle
-# git clone https://github.com/Valloric/YouCompleteMe.git
-# cd YouCompleteMe
-# ./install.sh
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;이제 자동완성 기능을 사용 할 수 있다. 아래 화면을 보자.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://lh5.googleusercontent.com/-n9eUbylZw50/U_C_wglq1aI/AAAAAAAAEQI/IsIWi6MYrdc/s640/golang-2.png&#34; alt=&#34;YCM 자동완성&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;YCM은 C, C++, Python, Java 등에도 사용 할 수 있다.&lt;/p&gt;
-
-&lt;h2 id=&#34;tagbar-설치&#34;&gt;TagBar 설치&lt;/h2&gt;
-
-&lt;p&gt;ctags는 코드에 포함된 패키지, struct, 메서드의 목록을 한눈에 보여주는 애플리케이션이다. ctags를 설치하자. tagbar는 ctags를 기반으로 작동하는 플러그인이다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# apt-get install ctags
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;tagbar 플러그인을 설치한다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# cd ~/.vim/bundle
-# git clone https://github.com/majutsushi/tagbar.git
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;이제 &lt;strong&gt;:TagbarToggle&lt;/strong&gt; 명령으로 tagbar 네비게이션 창을 열고 닫을 수 있다.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://lh5.googleusercontent.com/-xO-ZcWBjqfQ/U_NybrcP-FI/AAAAAAAAEQ8/VjcKCUsrIE0/s640/golang-3.png&#34; alt=&#34;TagBar 적용&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;명령어를 입력하기 귀찮다면, 단축 키를 만들자.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# cat .vimrc
-......
-map &amp;lt;F8&amp;gt; :TagbarToggle&amp;lt;CR&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&#34;nerdtree-설치&#34;&gt;NerdTree 설치&lt;/h2&gt;
-
-&lt;p&gt;NerdTree는 파일 네비게이션을 만들어주는 플러그인다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# cd ~/.vim/bundle
-# git clone https://github.com/scrooloose/nerdtree.git 
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;NerdTree와 TagBar를 적용한 화면이다.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://lh6.googleusercontent.com/-yfhTJc0-xMc/U_N0PxZXmEI/AAAAAAAAERE/2n5LUOmtQGw/s640/golang-4.png&#34; alt=&#34;NerdTree와 TagBar 적용&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;명령을 일일이 입력하기가 귀찮아서 단축키를 등록했다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# cat ~/.vimrc
-set ts=4
- 
-map &amp;lt;F8&amp;gt; :NERDTreeToggle&amp;lt;CR&amp;gt;
-map &amp;lt;F2&amp;gt; :GoDef&amp;lt;CR&amp;gt;
-map &amp;lt;F4&amp;gt; :TagbarToggle&amp;lt;CR&amp;gt;
-&lt;/code&gt;&lt;/pre&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>ReadMe First</title>
-      <link>https://golangkorea.github.io/post/readme-first/</link>
-      <pubDate>Fri, 19 Aug 2016 23:35:49 -0400</pubDate>
-      
-      <guid>https://golangkorea.github.io/post/readme-first/</guid>
-      <description>
-
-&lt;h1 id=&#34;the-slow-hunch&#34;&gt;The Slow Hunch&lt;/h1&gt;
-
-&lt;p&gt;&lt;a href=&#34;https://www.amazon.com/Where-Good-Ideas-Come-Innovation/dp/1594487715&#34;&gt;Where Good Ideas Come From: The Natural History of Innovation&lt;/a&gt;의 저자 Steven B. Johnson에 따르면 인류의 역사를 바꾼 혁신들은 번뜩이는 아이디어에서 시작된 경우가 매우 드물다고 합니다. 대개는 개개인의 작은 아이디어들이 오랜 시간에 걸쳐 다른 사람이 갖고 있는 비슷하거나 전혀 다른 아이디어들과 충돌하고 결합하면서 커뮤니티의 지능으로 진화하고 어느 순간 돌이킬 수 없는 변화의 모멘텀을 형성하며 세상을 바꿉니다. 커뮤니티내에 공유되고 있는 지능이 다시 역으로 개개인에게 영감과 비젼을 제시하는 상호작용을 일으키게 되는데 그런 과정은 통해 아이디어의 생산을 가능케하는 현상을 slow hunch라고 부릅니다.&lt;/p&gt;
-
-&lt;p&gt;새로 시작하는 Golang Korean 커뮤니티 웹사이트(이하 GoSudaWeb)은 프로그래밍 언어인 Go와 퉅들, 글로벌 개발자 커뮤니티내의 트랜드와 최선의 개발방식에 대한 소개를 블로그와 뉴스레터의 형식을 통해 공유하고자 첫발을 내딛었습니다. 지속적인 지식의 축적과 폭 넗은 공유가 이루어지는 웹사이트로 성장하여 미래의 킬러앱과 킬러 아이디어를 만들어내는 slow hunch에 기여할 수 있기를 기대해 봅니다. 많은 성원 부탁드립니다.&lt;/p&gt;
-
-&lt;h1 id=&#34;콘텐트-제작-및-웹사이트-개발-참여-신청&#34;&gt;콘텐트 제작 및 웹사이트 개발 참여 신청&lt;/h1&gt;
-
-&lt;p&gt;GosudaWeb은 &lt;a href=&#34;https://pages.github.com/&#34;&gt;Github Page&lt;/a&gt;로 제작되고 모든 소스와 제작과정이 공개로 이루어 집니다: &lt;a href=&#34;https://github.com/golangkorea&#34;&gt;https://github.com/golangkorea&lt;/a&gt;.&lt;/p&gt;
-
-&lt;p&gt;사이트에 포스트하기를 원하시는 분들은 &lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/how-to-contribute-content/&#34;&gt;사이트에 블로그 올리는 방법&lt;/a&gt;을 참조하시길 바랍니다.&lt;/p&gt;
-
-&lt;p&gt;Hugo를 이용해 사이트 개발에 참여하거나 golangkorea Organization에 오픈소스 프로젝트를 시작하시고 싶으신 분들은 멤버 신청을 하실 수 있습니다. 멤버 신청은 &lt;a href=&#34;mailto:golanginkorea@gmail.com&#34;&gt;golanginkorea@gmail.com&lt;/a&gt; 이나 &lt;a href=&#34;https://gitter.im/golang-korean-community/Lobby?utm_source=share-link&amp;amp;utm_medium=link&amp;amp;utm_campaign=share-link&#34;&gt;Golang Korean Community / Lobby&lt;/a&gt;로 해 주시면 됩니다. 일단 멤버로 등록되면 &lt;a href=&#34;https://github.com/orgs/golangkorea/teams/golangkorea-website&#34;&gt;golangkorea-website team&lt;/a&gt;을 통해 개발에 참여하실 수 있습니다.&lt;/p&gt;
-
-&lt;h1 id=&#34;토론방&#34;&gt;토론방&lt;/h1&gt;
-
-&lt;p&gt;&lt;a href=&#34;https://golangkorea.github.io&#34;&gt;golangkorea.github.io&lt;/a&gt; 개발, 유지 보수 및 지원에 대한 토론은 &lt;a href=&#34;https://gitter.im/golang-korean-community/golangkorea.github.io?utm_source=share-link&amp;amp;utm_medium=link&amp;amp;utm_campaign=share-link&#34;&gt;Gitter Room&lt;/a&gt;을 통해 하고 있으니 많은 동참 바라겠습니다.&lt;/p&gt;
-
-&lt;p&gt;&lt;br/&gt;
-&lt;br/&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>Golang 프로젝트에 TDD 도입하기</title>
-      <link>https://golangkorea.github.io/post/tdd-with-golang/</link>
-      <pubDate>Sat, 20 Aug 2016 12:15:44 +0900</pubDate>
-      
-      <guid>https://golangkorea.github.io/post/tdd-with-golang/</guid>
-      <description>
-
-&lt;p&gt;여기에서 사용한 테스트 코드는 &lt;a href=&#34;https://bitbucket.org/dream_yun/handlertest&#34;&gt;Bitbucket&lt;/a&gt; 에서 다운로드 할 수 있다.&lt;/p&gt;
-
-&lt;h2 id=&#34;tdd&#34;&gt;TDD&lt;/h2&gt;
-
-&lt;p&gt;클라우드와 &lt;strong&gt;MSA&lt;/strong&gt;와 &lt;strong&gt;REST&lt;/strong&gt;의 등장으로 TDD가 재조명 받고 있다. TDD를 제대로 적용하려면 상당히 많은 시간과 노력이 필요하다. 특히 여기 저기 연동되는 라이브러리나 소프트웨어가 많은 경우 테스트가 굉장히 복잡해지는데, 복잡해지는 만큼 테스트의 신뢰성도 함께 떨어진다.&lt;/p&gt;
-
-&lt;p&gt;TDD는 &lt;strong&gt;유닛 테스트&lt;/strong&gt;를 기본으로 하는데, 애플리케이션이 복잡해지면 유닛테스트에 간섭하는 객체들이 많아진다. 이렇게 늘어난 객체들에 대해서 테스트를 진행하다 보면 테스트를 위한 설계로 변질되는 경우가 있다.&lt;/p&gt;
-
-&lt;p&gt;데이터베이스, 소켓, UI가 서로 엉켜있는 소프트웨어를 테스트 한다고 생각해보라. 머리 좀 아플 것이다. 물론 TDD가 테스트를 쉽게 할 수 있는 설계를 지향하긴 하지만, 테스트를 쉽게 할 수 있는 설계와 테스트를 위한 설계는 엄연히 다른 것이다.&lt;/p&gt;
-
-&lt;p&gt;TDD의 단점은 아래와 같이 정리 할 수 있다.&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;&lt;strong&gt;개발 기간이 늘어난다.&lt;/strong&gt; TDD에 익숙해졌다고 가정 할 경우 약 20% 정도 구현시간이 늘어난다. 복잡한 소프트웨어의 경우 더 구현시간은 더 늘어날 것이다.&lt;br /&gt;&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;복잡성 증가.&lt;/strong&gt; 테스트시나리오가 길어질 경우, 시나리오 자체를 관리하는 것도 작업이 된다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;디자인 변경.&lt;/strong&gt; 종종 TDD에 어울리지 않는 디자인의 소프트웨어를 개발 해야 하는 경우도 있다. TDD는 &lt;strong&gt;좋은 코드는 테스트하기 좋은 코드다&lt;/strong&gt;라고 주장한다. 하지만 항상 그런건 아니다. TDD에 맞추다 보니 디자인이 이상해지는 경우가 종종 생긴다.&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;요약하자면 실행관점에서 TDD를 위한 기본 요소는 &lt;strong&gt;유닛 테스트&lt;/strong&gt;인데, 소프트웨어가 복잡해지면 굉장히 힘들어 지는게 TDD의 문제다.&lt;/p&gt;
-
-&lt;p&gt;달리 생각하면 소프트웨어가 단순해지면 TDD를 하기 좋은 환경이 된다는 이야기가 되겠다.&lt;strong&gt;MSA와 REST&lt;/strong&gt; 바로 그런 환경이다.&lt;/p&gt;
-
-&lt;p&gt;MSA는 작업 서비스(애플리케이션)들을 결합해서 하나의 큰 서비스를 만드는 서비스 디자인 스타일이다. 각 MSA 서비스들은 다른 서비스들과 독립적으로 구성되고 단순한 기능을 가지도록 설계되기 때문에 유닛 테스트가 큰 효과를 발휘 할 수 있다.&lt;/p&gt;
-
-&lt;p&gt;Go언어는 범용 시스템언어로 개발이 됐지만 &lt;strong&gt;net/http&lt;/strong&gt;와 &lt;strong&gt;gorilla&lt;/strong&gt;를 비롯해서 MSA+REST(이하 MSA) 스타일의 웹 애플리케이션을 효과적으로 만들 수 있도록 지원하고 있다. 나는 Go 언어에서 MSA 애플리케이션을 TDD로 개발하고 테스트 하는 방법을 정리 하려 한다. 이 문서에서 다룰 내용은 아래와 같다.&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;Go 언어에서 제공하는 유닛테스트 프레임워크를 살펴본다.&lt;/li&gt;
-&lt;li&gt;HTTP 핸들러 테스트 : HTTP 웹 서버 핸들러를 테스트하려면, 서버가 실행 중이어야 하기 때문에 메서드 단위의 유닛 테스트로는 테스트가 어렵다. &lt;strong&gt;net/http/httptest&lt;/strong&gt;패키지를 이용해서 HTTP 핸들러를 테스트할 수 있다.&lt;/li&gt;
-&lt;li&gt;TDD는 유닛테스만 의미하지 않는다. 개발 에서 배포까지의 전 과정을 &lt;strong&gt;테스트&lt;/strong&gt;를 기반으로 통합하는 일련의 과정들이다. 젠킨스(Jenkins)를 이용해서 TDD를 완성해 본다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;테스트 커버리지는&lt;/strong&gt; 유닛테스트가 얼마나 잘 이루어졌는지를 측정하기 위해서 사용한다. 테스트 커버리지를 계산하고 그 결과를 문서로 출력한다. 이 문서를 젠킨스와 통합해보자.&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;h2 id=&#34;go-유닛-테스트-개요&#34;&gt;Go 유닛 테스트 개요&lt;/h2&gt;
-
-&lt;p&gt;Go 는 테스트 프레임워크를 내장(build-in)하고 있다. &lt;strong&gt;testing&lt;/strong&gt;페키지를 이용해서 유닛 테스트 코드를 만들고 &lt;strong&gt;go test&lt;/strong&gt;명령으로 테스트를 수행하면 된다. 유닛 테스트를 위한 간단한 예제 코드를 만들었다. 코드의 이름은 math.go 다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package math
-
-import (
-    &amp;quot;errors&amp;quot;
-)   
-
-// 값들을 모두 더한다.
-func Sum(nums ...int) int {
-    total := 0 
-    for _, num := range nums {
-        total += num
-    }
-    return total
-}   
-
-// a를 b로 나눈다.
-func Div(a float64, b float64) (float64, error) {
-    if b == 0 {
-        return 0.0, errors.New(&amp;quot;Can&#39;t divide by zero&amp;quot;)
-    }
-    return a / b, nil
-}
-
-// 문자열을 count만큼 반복하고 결과를 반화한다.
-func StrRept(s string, count int) string {
-    b := make([]byte, len(s)*count)
-    bp := copy(b, s)
-    for bp &amp;lt; len(b) {
-        copy(b[bp:], b[bp:])
-        bp *= 2
-    }
-    return string(b)
-}   
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;유닛 테스트 파일을 만든다. 파일의 이름은 &lt;strong&gt;math_test.go&lt;/strong&gt;다. 참고로 유닛 테스트 파일의 이름은 반드시 &lt;strong&gt;_test.go&lt;/strong&gt;로 끝나야 한다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package math
-
-import (
-    &amp;quot;testing&amp;quot;
-)
-
-func Test_Sum(t *testing.T) {
-    v0 := Sum(1, 2, 3)
-    if v0 != 6 {
-        t.Fatal(&amp;quot;1+2+3 == 6&amp;quot;)
-    }
-
-    v1 := Sum(6, 5)
-    if v1 != 11 {
-        t.Fatal(&amp;quot;6+5 == 11 &amp;quot;)
-    }
-}
-
-func Test_Div(t *testing.T) {
-    v2, _ := Div(0, 2)
-    t.Log(&amp;quot;0/2 =&amp;quot;,v2)
-}
-
-func Test_StrRept(t *testing.T) {
-    str := StrRept(&amp;quot;a&amp;quot;, 3)
-    if len(str) != 3 {
-        t.Fatal(&amp;quot;Repeat fail&amp;quot;)
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;go test를 실행해보자.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# go test
-PASS
-ok  	_/home/yundream/workspace/golang/unitTest	0.001s
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;strong&gt;-v&lt;/strong&gt; 옵션을 주면 자세한 테스트 정보를 확인 할 수 있다. 로그(t.Log) 정보도 함께 출력한다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# go test -v
-=== RUN   Test_Sum
---- PASS: Test_Sum (0.00s)
-=== RUN   Test_Div
---- PASS: Test_Div (0.00s)
-	math_test.go:21: 0/2 = 0
-=== RUN   Test_StrRept
---- PASS: Test_StrRept (0.00s)
-PASS
-ok  	_/home/yundream/workspace/golang/unittest	0.002s
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;strong&gt;Test_StrRept&lt;/strong&gt;테스트를 아래와 같이 수정 한 다음에 테스트해보자.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func Test_StrRept(t *testing.T) {
-    str := StrRept(&amp;quot;ab&amp;quot;, 3)
-    if len(str) != 3 {
-        t.Fatal(&amp;quot;Repeat fail&amp;quot;)
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;테스트 조건을 바꿨는데, 실수로 예상 결과를 수정하지 않았다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;# go test -v
-=== RUN   Test_Sum
---- PASS: Test_Sum (0.00s)
-=== RUN   Test_Div
---- PASS: Test_Div (0.00s)
-	math_test.go:21: 0/2 = 0
-=== RUN   Test_StrRept
---- FAIL: Test_StrRept (0.00s)
-	math_test.go:27: Repeat fail
-FAIL
-exit status 1
-FAIL	_/home/yundream/workspace/golang/unittest	0.002s
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;테스트 실패를 확인 할 수 있다.&lt;/p&gt;
-
-&lt;h2 id=&#34;testing-패키지&#34;&gt;testing 패키지&lt;/h2&gt;
-
-&lt;p&gt;함수가 실행 된 결과가 예측한 결과와 맞아 떨어지는 지를 검사하는 방식으로 테스트를 진행 한다. &lt;strong&gt;t.Fatal()&lt;/strong&gt;, &lt;strong&gt;t.Fail()&lt;/strong&gt;등을 이용해서 테스트를 제어 할 수 있다.&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;FailNow()&lt;/strong&gt;이 호출되면, 테스트 함수를 즉시 종료하고 다음 테스트 함수를 실행한다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Fatal()&lt;/strong&gt;는 로그를 출력하는 걸 제외하고 &lt;strong&gt;FailNow&lt;/strong&gt; 메서드와 같은 일을 한다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Fail()&lt;/strong&gt;이 호출되면, 테스트가 실패하더라도 함수를 종료하지 않고 다음 코드를 계속 실행한다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Error()&lt;/strong&gt;는 로그를 출력하는 걸 제외하고 &lt;strong&gt;Fail&lt;/strong&gt; 메서드와 같은 일을 한다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Errorf()&lt;/strong&gt; 형식화된 로그를 출력한다. Fila 메서드와 같은 일을 한다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Log()&lt;/strong&gt; 테스트 로그를 출력한다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Logf()&lt;/strong&gt; 형식화된 테스트 로그를 출력한다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Failed()&lt;/strong&gt; 실패하더라도 레포트하지 않는다.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h2 id=&#34;assertion&#34;&gt;Assertion&lt;/h2&gt;
-
-&lt;p&gt;테스트 코드를 만들다 보면 if 문이 코드의 절반 이상을 차지하는 걸 보게될 것이다. 비교대상도 가지각색이라서 가독성이 떨어진다. assert 함수가 필요하다. 직접 만들어 보고 싶겠지만 그냥 잘 만들어져 있는 테스트 패키지 가져다가 쓰자. 내가 요즘 쓰고 있는 테스트 패키지는 &lt;strong&gt;github.com/stretchr/testify/assert&lt;/strong&gt;이다. 패키지를 설치 한 후 아래 코드를 테스트 했다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;package yours
-
-import (
-    &amp;quot;github.com/stretchr/testify/assert&amp;quot;
-    &amp;quot;testing&amp;quot;
-)
-
-func TestSomething(t *testing.T) {
-    // assert equality
-    assert.Equal(t, 123, 125, &amp;quot;they should be equal&amp;quot;)
-
-    // assert inequality
-    assert.NotEqual(t, 123, 456, &amp;quot;they should not be equal&amp;quot;)
-}
-}}}
-테스트를 돌려보자.
-{{{#!plain
-# go test
---- FAIL: TestSomething (0.00s)
-        Error Trace:    yours_test.go:11
-	Error:		Not equal: 123 (expected)
-			        != 125 (actual)
-	Messages:	they should be equal
-		
-FAIL
-exit status 1
-FAIL	_/home/yundream/workspace/golang/mytest	0.003s
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;테스트 코드와 테스트 결과의 가독성 모두 좋아졌다. 이 패키지는 &lt;strong&gt;assert&lt;/strong&gt;외에도 &lt;strong&gt;mock&lt;/strong&gt;, &lt;strong&gt;http 테스트&lt;/strong&gt;, &lt;strong&gt;suite&lt;/strong&gt;등 테스트를 위한 다양한 툴들을 지원한다.&lt;/p&gt;
-
-&lt;h2 id=&#34;http-핸들러-테스트&#34;&gt;HTTP 핸들러 테스트&lt;/h2&gt;
-
-&lt;p&gt;HTTP 핸들러의 경우 웹 서버를 띄워야 하기 때문에, 메서드보다 테스트가 까다롭다. 아래의 방식으로 테스트 할 수 있다.&lt;/p&gt;
-
-&lt;ol&gt;
-&lt;li&gt;&lt;strong&gt;net/http/httptest&lt;/strong&gt; 패키지를 이용한 테스트. httptest를 이용하면 루프백(127.0.0.1)에 바인드 되는 서버를 띄울 수 있다. 이후 net/http에서 제공하는 클라이언트 메서드들을 이용하면 &lt;strong&gt;서버 &amp;amp; 클라이언트&lt;/strong&gt;모드에서 테스트 할 수 있다.&lt;/li&gt;
-&lt;li&gt;아예 빌드하고 실행하고, HTTP 클라이언트를 이용해서 테스트 한다.
-각각의 장/단점이 있다. 1의 경우 테스트 커버리지를 확인 할 수 있고, 2의 경우에는 통합된 환경에서의 테스트가 가능하다. 나는 1과 2의 방법을 모두 다 사용하고 있다. 여기에서는 &lt;strong&gt;httptest&lt;/strong&gt;를 이용한 테스트를 살펴볼 생각이다.&lt;/li&gt;
-&lt;/ol&gt;
-
-&lt;p&gt;테스트에 사용한 소스코드 트리다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;.
-├── handler
-│   ├── handler.go
-│   └── handler_test.go
-└── main.go
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;net/http, gorilla, 패키지를 이용해서 개발 했다. GET /ping에 대해서 &amp;ldquo;pong&amp;rdquo;를 리턴하는 일을 한다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package handler
-
-import (
-    &amp;quot;encoding/json&amp;quot;
-    &amp;quot;fmt&amp;quot;
-    &amp;quot;github.com/gorilla/mux&amp;quot;
-    &amp;quot;net/http&amp;quot;
-)
-
-type Handler struct {
-    router *mux.Router
-}
-
-func (h Handler) Init() {
-    h.router = mux.NewRouter()
-    h.router.HandleFunc(&amp;quot;/ping&amp;quot;, h.Ping).Methods(&amp;quot;GET&amp;quot;)
-    http.Handle(&amp;quot;/&amp;quot;, h.router)
-}
-func (h Handler) Ping(w http.ResponseWriter, r *http.Request) {
-    fmt.Fprint(w, &amp;quot;pong&amp;quot;)
-}
-func (h Handler) Calc(w http.ResponseWriter, r *http.Request) {
-
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;테스트 코드다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// handler_test.go
-package handler
-
-import (
-    &amp;quot;github.com/gorilla/handlers&amp;quot;
-    &amp;quot;github.com/stretchr/testify/assert&amp;quot;
-    &amp;quot;io/ioutil&amp;quot;
-    &amp;quot;net/http&amp;quot;
-    &amp;quot;net/http/httptest&amp;quot;
-    &amp;quot;os&amp;quot;
-    &amp;quot;testing&amp;quot;
-)
-
-var (
-    server  *httptest.Server
-    testUrl string
-)
-
-type Response struct {
-    Content string
-    Code    int
-}
-
-func Test_Init(t *testing.T) {
-    logfile, err := os.OpenFile(&amp;quot;/tmp/test.log&amp;quot;, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
-    assert.Nil(t, err, &amp;quot;&amp;quot;)
-    h := Handler{}
-    h.Init()
-    server = httptest.NewServer(handlers.CombinedLoggingHandler(logfile, http.DefaultServeMux))
-    testUrl = server.URL
-}
-
-func Test_Ping(t *testing.T) {
-    res, err := DoGet(testUrl + &amp;quot;/ping&amp;quot;)
-    assert.Nil(t, err, &amp;quot;&amp;quot;)
-    assert.Equal(t, 200, res.Code, &amp;quot;PING API&amp;quot;)
-    assert.Equal(t, &amp;quot;pong&amp;quot;, res.Content, &amp;quot;PONG Message&amp;quot;)
-}
-
-func DoGet(url string) (*Response, error) {
-    response, err := http.Get(url)
-    if err != nil {
-        return nil, err
-    }
-    defer response.Body.Close()
-    contents, err := ioutil.ReadAll(response.Body)
-    if err != nil {
-        return nil, err
-    }
-    return &amp;amp;Response{Content: string(contents), Code: response.StatusCode}, nil
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;strong&gt;httptest&lt;/strong&gt;패키지는 테스트를 위해서 내장된 웹 서버를 실행한다. 따라서 핸들러 등록, 데이터베이스 연결과 같이 서비스를 위해서 필요한 자원들을 초기화 해야 한다. &lt;strong&gt;Test_init&lt;/strong&gt;메서드를 이용해서 서비스를 초기화 하고 있다. 테스트 코드에 대한 디버깅은 &lt;strong&gt;testing.T.Log&lt;/strong&gt; 계열의 메서드를 이용해서 모니터에 표준출력하는 방식으로 진행하는데, 웹 서버가 실행되는 방식이라서 로그를 표준출력 할 수 없다. 그래서 /tmp/test.log에 access log를 남기기로 했다.&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;httptest.NewServer&lt;/strong&gt; 메서드를 실행하면, 웹 서버가 실행된다. 웹 서버의 접근 URL은 server.URL에 저장돼 있다.&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;Test_Ping&lt;/strong&gt;에서 ping API를 테스트한다. 테스트는 http client를 이용한다. 200 OK와 &amp;ldquo;pong&amp;rdquo; 메시지를 검사하고 있다. 테스트결과다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;# go test -v
-=== RUN   Test_Init
---- PASS: Test_Init (0.00s)
-=== RUN   Test_Ping
---- PASS: Test_Ping (0.00s)
-PASS
-ok  	bitbucket.org/dream_yun/handlertest/handler	0.003s
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;존재하지 않는 페이지를 요청 할 경우 &lt;strong&gt;404 Page Not Found&lt;/strong&gt;를 반환해야 할테다. 이를 테스트하기 위한 코드를 만들었다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func Test_APINotFound(t *testing.T) {
-    res, err := DoGet(testUrl + &amp;quot;/myfunc&amp;quot;)
-    assert.Nil(t, err, &amp;quot;&amp;quot;)
-    assert.Equal(t, 404, res.Code, &amp;quot;Unknown API&amp;quot;)
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;이렇게 테스트 시나리오에 따라서 테스트 코드를 추가하면 된다.&lt;/p&gt;
-
-&lt;h2 id=&#34;서비스간-연동-테스트&#34;&gt;서비스간 연동 테스트&lt;/h2&gt;
-
-&lt;p&gt;MSA 모델을 따르는 애플리케이션을 만들다 보면, 다른 (REST)애플리케이션과 통신 해야 할 수도 있다.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://docs.google.com/drawings/d/1VaRfN4dntpTqQb_zOZhXMXDxVa49PzXfIOR9KyPO_Co/pub?w=521&amp;amp;h=255&#34; alt=&#34;MSA에서의 REST API를 이용한 서비스 이용&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;App02&lt;/strong&gt;는 서비스에서 발생한 다양한 데이터들을 관리하는 일을 한다. 유저가 업로드한 이미지, 문서 파일은 App-02로 전달된다. App-02는 이 파일들을 유저 설정에 따라서 S3, DropBox, Google Drive 등으로 전송한다.&lt;/p&gt;
-
-&lt;p&gt;나는 App01 서비스도 유저가 입력한 연산과 그 결과를 &lt;strong&gt;App02&lt;/strong&gt;를 이용해서 저장하기로 했다. &amp;ndash; 이게 어떤 쓸모가 있는 기능인지는 묻지도 말고 따지지도 말자 &amp;ndash; &lt;strong&gt;코드의 추가와 추가된 코드에 대한 테스트&lt;/strong&gt;가 필요하다.&lt;/p&gt;
-
-&lt;p&gt;App02를 직접 띄운다음 테스트 하는 방법도 있다. 이 방법에 따라 테스트 하려면 App02를 단순 실행하는 것이 아닌, App02가 제대로 실행 할 수 있는 환경을 만들어야 한다. 그러니까 S3, DropBox, Google Drive 등과 연동할 수 있는 환경을 &lt;strong&gt;개발 서버에 만들어야&lt;/strong&gt; 한다. 애로 사항이 꽃필 것이다. 최종 연동 테스트에서는 이렇게 해야겠지만, 개발단계에서 이렇게 하기는 쉽지 않다.&lt;/p&gt;
-
-&lt;p&gt;나는 입력과 출력만 검사하는 &lt;strong&gt;블랙 박스 테스트&lt;/strong&gt;를 실행하기로 했다. httptest 패키지를 이용해서 &lt;strong&gt;App02 테스트 서버&lt;/strong&gt;를 만들었다. 물론 App02 테스트 서버를 만들기 위해서는 App02의 API 명세서와 App02 패키지가 필요하다. 아래는 테스트 서버 코드다. handler 디렉토리 밑에 만들었다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;//  handler/app02_test_server.go
-package handler
-
-import (
-    &amp;quot;bitbucket.org/dream_yun/app02&amp;quot;
-    &amp;quot;fmt&amp;quot;
-    &amp;quot;github.com/gorilla/handlers&amp;quot;
-    &amp;quot;github.com/gorilla/mux&amp;quot;
-    &amp;quot;net/http&amp;quot;
-    &amp;quot;net/http/httptest&amp;quot;
-    &amp;quot;os&amp;quot;
-)
-
-type TestApiServer struct {
-    router *mux.Router
-}
-
-// 실행 후 테스트 서버의 URL을 반환한다.
-func (api *TestApiServer) Run() string {
-
-    api.router = mux.NewRouter()
-    api.router.HandleFunc(&amp;quot;/save/{serviceName}&amp;quot;, api.Save).Methods(&amp;quot;POST&amp;quot;)
-    api.router.HandleFunc(&amp;quot;/save/{serviceName}/{fileName}&amp;quot;, api.ReadFile).Methods(&amp;quot;GET&amp;quot;)
-
-    logfile, _ := os.OpenFile(&amp;quot;/tmp/app02_test.log&amp;quot;, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0644)
-    server := httptest.NewServer(handlers.CombinedLoggingHandler(logfile, api.router))
-    return server.URL
-}
-
-// Save API다. 여기에 여러가지 테스트 조건들을 코딩하면 된다. 
-func (api TestApiServer) Save(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-    serviceName := vars[&amp;quot;serviceName&amp;quot;]
-    if serviceName != &amp;quot;calc&amp;quot; {
-        w.WriteHeader(http.StatusBadRequest)
-        return
-    }
-    fmt.Fprintf(w, app02.ServiceOK)
-}
-
-// 저장된 파일을 가져온다.
-func (api TestApiServer) ReadFile(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-    serviceName := vars[&amp;quot;serviceName&amp;quot;]
-    fileName := vars[&amp;quot;fileName&amp;quot;]
-    if serviceName != &amp;quot;calc&amp;quot; {
-        w.WriteHeader(http.StatusBadRequest)
-        return
-    }
-
-    if fileName == &amp;quot;my.jpg&amp;quot; {
-        fmt.Fprintf(w, app02.ServiceOK)
-        return
-    }
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;연산을 끝낸 후에 Save API를 호출하도록 Div 메서드를 수정했다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;type Handler struct {
-    router     *mux.Router
-    fileServer string
-}
-
-func (h Handler) Init(fileServer string) {
-    h.router = mux.NewRouter()
-    h.fileServer = fileServer
-    h.router.HandleFunc(&amp;quot;/ping&amp;quot;, h.Ping).Methods(&amp;quot;GET&amp;quot;)
-    h.router.HandleFunc(&amp;quot;/div/{a}/{b}&amp;quot;, h.Div).Methods(&amp;quot;GET&amp;quot;)
-    http.Handle(&amp;quot;/&amp;quot;, h.router)
-}
-
-func (h Handler) Div(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(r)
-    a := vars[&amp;quot;a&amp;quot;]
-    b := vars[&amp;quot;b&amp;quot;]
-
-    ai, err := strconv.Atoi(a)
-    if err != nil {
-        w.WriteHeader(http.StatusInternalServerError)
-        return
-    }
-    bi, err := strconv.Atoi(b)
-    if err != nil {
-        w.WriteHeader(http.StatusInternalServerError)
-        return
-    }
-
-    if bi == 0 {
-        w.WriteHeader(http.StatusNotAcceptable)
-        return
-    }
-    if ai == 0 { 
-        w.WriteHeader(http.StatusNotAcceptable)
-        return
-    }
-    
-    DoPost(h.fileServer+&amp;quot;/save/calc&amp;quot;, &amp;quot;a/b&amp;quot;)
-    fmt.Fprintf(w, &amp;quot;%d&amp;quot;, ai/bi)
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;ul&gt;
-&lt;li&gt;Handler 구조체에 fileServer 변수를 추가했다. 여기에는 app02 서버의 주소가 저장된다.&lt;/li&gt;
-&lt;li&gt;매개변수로 app02 서버를 받도록 Handler.Init() 메서드를 수정했다.&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Test 코드도 수정했다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func Test_Init(t *testing.T) {
-    logfile, err := os.OpenFile(&amp;quot;/tmp/test.log&amp;quot;, os.O_RDWR|os.O_CREATE|os.O_APPEND, 0755)
-    assert.Nil(t, err, &amp;quot;&amp;quot;)
-
-    FileServer := TestApiServer{}
-    fileServerAddr := FileServer.Run()
-    h := Handler{}
-    h.Init(fileServerAddr)
-    server = httptest.NewServer(handlers.CombinedLoggingHandler(logfile, http.DefaultServeMux))
-    testUrl = server.URL
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;TestApiServer의 바인드 주소를 읽어서 Handler.Init() 메서드에 넘기도록 테스트 코드를 수정했다. 이제 테스트를 실행하면 TestAPIServer가 실행되고, Div 메서드가 TestAPIServer의 save api를 호출하는 것을 볼 수 있을 거다.&lt;/p&gt;
-
-&lt;p&gt;이 테스트는 완전하지 않다. Div의 DoPost 호출 부분을 충분히 테스트하지 않았기 때문이다. 테스트 커버리지를 높이려면, DoPost를 호출하는 별도의 메서드를 만들어서 메서드의 입/출력을 테스트 할 수 있도록 해야 한다.&lt;/p&gt;
-
-&lt;p&gt;여기에서 중요한 점은 &lt;strong&gt;테스트를 쉽게 하기 위해서 메서드들을 수정&lt;/strong&gt;했다는 점이다. TDD에서는 코드에 맞는 테스트를 하는게 아니고, 테스트에 맞는 코드를 만든다.&lt;/p&gt;
-
-&lt;h2 id=&#34;목업-vs-직접-구성&#34;&gt;목업 vs 직접 구성&lt;/h2&gt;
-
-&lt;p&gt;예제로 삼았던 ping API 서버는 외부 소프트웨어의 도움 없이 작동한다. 하지만 현실에서 이런 코드를 찾기는 어렵다. 마이에스큐엘(Mysql), 몽고디비(Mongodb), 주키퍼(zookeeper), 레디스(Redis) 등 수많은 다른 애플리케이션들과 통신을 한다. 어떻게 테스트 해야 할까.&lt;/p&gt;
-
-&lt;p&gt;연동 애플리케이션과 서버를 모두 구축해서 테스트 하는 방법이 있다. 마이에스큐엘, 몽고디비, 레디스.. 등등을 모두 설치해서 테스트 하는 거다. 이 방법의 단점은 상당히 귀찮다는 것이다. 혼자 하는 개발하는 하고 있다면 좀 귀찮아도 해볼만 하지만, 여럿이 개발한다면 애로사항이 꽃필 것이다. 이외에도 데이터베이스 오류 상황에서, 소프트웨어가 어떻게 작동할지를 테스트하기가 쉽지 않다는 것도 문제다.&lt;/p&gt;
-
-&lt;p&gt;이 문제는 &lt;strong&gt;mocks/stubs&lt;/strong&gt;으로 모의 객체를 만들어서 테스트하는 것으로 테스트 커버리지는 늘리면서도 테스트 시간을 줄일 수 있다.&lt;/p&gt;
-
-&lt;p&gt;결론부터 말하자면 난 목업을 이용하지 않고 있다. 작동하는 소프트웨어들과 직접 연동해서 테스트 한다. 개발/테스트 환경 구축의 번거로움은.. 글쎄 나는 (데이터베이스를 설치하고 설정하는) 정도의 번거로움은 감수해야 하고, 감수한 만큼 개발자에게 이득이 있다고 생각하는 입장이다. 그리고 세상이 좋아졌다. VM, Container, Vagrant 등을 이용하면 개발환경을 손쉽게 구성하고 배포, 공유 할 수 있다.&lt;/p&gt;
-
-&lt;h2 id=&#34;테스트-커버리지&#34;&gt;테스트 커버리지&lt;/h2&gt;
-
-&lt;p&gt;테스트에 대한 품질은 테스트 커버리지로 측정 할 수 있다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# go test -cover
-PASS
-coverage: 100.0% of statements
-ok  	bitbucket.org/dream_yun/handlertest/handler	0.004s
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;모든 코드를 완전히 테스트 하고 있다. 이 예제로는 테스트 커버리지를 확인하기가 애매모호해서, API를 추가했다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;// package handler
-func (h Handler) Div(w http.ResponseWriter, r *http.Request) {
-    vars := mux.Vars(request)
-    a := vars[&amp;quot;a&amp;quot;]
-    b := vars[&amp;quot;b&amp;quot;]
-
-    if b == 0 {
-        w.WriteHeader(http.StatusNotAcceptable)
-        return
-    }
-    if a == 0 {
-        w.WriteHeader(http.StatusNotAcceptable)
-        return
-    }
-    ia, err := strconv.Atoi(a)
-    ib, err := strconv.Atoi(b)
-    fmt.Fprint(w)
-}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;지금은 코드를 먼저 만들었지만 TDD의 원칙을 정확히 따르려면, 테스트 코드를 먼저 만들고 나서 코드를 만들어야 할 것이다. 다만 MSA의 경우에는 API단위로 하는 일이 특정되기 때문에, 코드를 먼저 만들고 테스트 코드를 만드는 것도 괜찮은 방법이라고 생각한다. &lt;strong&gt;TDD를 위한 TDD&lt;/strong&gt;가 문제다라는 주장이 나오는 이유를 생각해보자. 완전한 방법, 완전한 툴은 없다. 자신의 역량과 환경에 적절하게 응용해서 사용해야 한다.&lt;/p&gt;
-
-&lt;p&gt;유닛 테스트를 돌려보자. 테스트 커버리지가 떨어진 걸 확인 할 수 있을 것이다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# go test -cover
-PASS
-coverage: 21.7% of statements
-ok  	bitbucket.org/dream_yun/handlertest/handler	0.004s
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Div 메서드에 대한 테스트 코드를 만들어서 커버리지를 올리기로 했다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;func Test_Div(t *testing.T) {
-    res, err := DoGet(testUrl + &amp;quot;/div/4/2&amp;quot;)
-    assert.Nil(t, err, &amp;quot;&amp;quot;)
-    assert.Equal(t, http.StatusOK, res.Code)
-    assert.Equal(t, &amp;quot;2&amp;quot;, res.Content)
-    
-    res, err = DoGet(testUrl + &amp;quot;/div/4/a&amp;quot;)
-    assert.Nil(t, err, &amp;quot;&amp;quot;)
-    assert.Equal(t, http.StatusInternalServerError, res.Code, &amp;quot;Invalide argument&amp;quot;)
-    
-    res, err = DoGet(testUrl + &amp;quot;/div/0/4&amp;quot;)
-    assert.Nil(t, err, &amp;quot;&amp;quot;)
-    assert.Equal(t, http.StatusNotAcceptable, res.Code, &amp;quot;Invalide argument&amp;quot;)
-    
-    res, err = DoGet(testUrl + &amp;quot;/div/4/0&amp;quot;)
-    assert.Nil(t, err, &amp;quot;&amp;quot;)
-    assert.Equal(t, http.StatusNotAcceptable, res.Code, &amp;quot;Invalide argument&amp;quot;)
-}   
-```go
-```sh
-# go test -cover
-PASS
-coverage: 91.3% of statements
-ok  	bitbucket.org/dream_yun/handlertest/handler	0.005s
-}}}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;테스트 커버리지는 &amp;ldquo;이 소프트웨어는 적어도 이 정도의 코드 영역에 대해서 테스트 하고 있다&amp;rdquo;는 것을 알려준다. 특히 코드에 대한 리펙토링이나 기능 추가시 필요한 품질을 측정하는데 매우 좋은 자료가 된다. 예를 들어 현재 릴리즈된 소프트웨어의 커버리지가 90%일 경우, 수정된 코드의 커버리지를 90%로 맞춘다면 적어도 이전에 테스트했던 내용들은 모두 테스트 했으며, 이전 수준에서의 품질을 유지 하고 있다고 예상 할 수 있을 것 이다.&lt;/p&gt;
-
-&lt;p&gt;스타트업의 경우 서비스의 품질보다 출시 시기가 중요한 경우가 많다. 이 경우 소위 &lt;strong&gt;기술부채&lt;/strong&gt;라는 명목으로 품질을 희생하는 경우가 많은데,  나중에 기술부채를 제거하기 위해서 엄청난 시간과 노력을 투입해야 할 수 있다. 개발 환경을 갖추지 못한 상태에서 급하게 기술부채를 제거 할 경우 곤욕을 치를 수 있고, 서비스의 발목을 잡을 수도 있다.&lt;/p&gt;
-
-&lt;p&gt;테스트 코드는 리펙토링과 설계변경을 쉽게 할 수 있도록 도와준다. 테스트 커버리지를 관리하는 것으로 일관성 있는 품질을 달성 할 수 있다. 유닛 테스트를 이용해서 기술 부채를 관리 할 수 있다.&lt;/p&gt;
-
-&lt;p&gt;테스트 커버리지의 목표를 90%로 잡았다고 가정해 보자. 91.3 % 이니 이 정도면 충분하다고 생각 할 수 있겠으나 그렇지 않다. &lt;strong&gt;서비스의 보안수준은 가장 약한 보안 고리에 의해서 결정된다.&lt;/strong&gt; 서비스 품질 역시 마찬가지로 가장 약한 고리가 서비스의 전체 품질을 결정 한다. 따라서 테스트 하지 않은 부분이 서비스에 중요한 영향을 미칠 수 있는 지 점검 해야 한다. 위의 정보로는 어느 부분이 테스트가 안됐는지를 확인 할 수 없다.&lt;/p&gt;
-
-&lt;p&gt;테스트 커버리지 레포트를 만들어 보자.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;# go test -coverprofile=coverage.out 
-# go tool cover -html=coverage.out
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;strong&gt;-coverprofile&lt;/strong&gt; 옵션을 이용하면 테스트한 코드 영역에 대한 레포트가 만들어진다. 일반 텍스트 파일인데, &lt;strong&gt;tool cover&lt;/strong&gt; 명령을 이용해서 html 파일로 변환 할 수 있다.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://ryudmq.by3302.livefilestore.com/y3mJYLhYTZWyMa4UE1wfN3H-D-RKFA6M7rnil_bUWKMDXdP86xNzJ77MkFXFGN32oS68Pjw5yDOVed1st1toTzjOtip0WaCuWJhEhT5pN8B7b3s3YVrUT9T2ixkHFWHBpM8IgHKykDGGRg5bo_7KA5p-8Ju9AGn4AX4vE0T8xv3vME?width=660&amp;amp;height=432&amp;amp;cropmode=none&#34; alt=&#34;go cover html 화면&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;strconv.Atoi()&lt;/strong&gt; 메서드에 대한 테스트가 빠져있음을 알 수 있다. 이에 대해서  &amp;ldquo;Div API는 클라이언트가 숫자(0-9)가 아닌 다른 값을 보낼 수도 있으므로, 에러 체크가 필요하다. 그리고 변수 a, b에 대한 타당성(숫자인지, int64 범위의 값인지 등)을 검사하는 코드도 추가해야 한다&amp;rdquo;라는 평가를 할 수 있을 것이다.&lt;/p&gt;
-
-&lt;h2 id=&#34;gocov&#34;&gt;gocov&lt;/h2&gt;
-
-&lt;p&gt;go에서 제공하는 기본 툴도 쓸만하긴 하지만, 레포팅 기능이 썩 맘에 들지 않는다. 그래서 &lt;strong&gt;gocov&lt;/strong&gt;라는 툴을 이용해서 레포트를 만들기로 했다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# go get github.com/axw/gocov/gocov
-# go get github.com/matm/gocov-html
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;strong&gt;gocov test&lt;/strong&gt;를 이용해서 커버리지 데이터파일을 만든다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# gocov test ./ &amp;gt; handler.json
-ok  	bitbucket.org/dream_yun/handlertest/handler	0.005s	coverage: 91.3% of statements
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;handler.json을 html 파일로 변환한다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# gocov-html handler.json &amp;gt; handler.html
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;브라우저로 읽어보자.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://ryscvq.by3302.livefilestore.com/y3miXS8j97x5BezCReIZYH2BNOnlXESm33jhcUAzj_wBD2JzF_k12xyAOv0aKwUj1EhFHkdVZ4bDYFR9Jgvk3TxacSU-W-TU0Xg2MUm1C_i4F-rtt0OqVQr2aDwtRToqAXndvtyN8u6aQHEN8DWVFneg32NSTz71iH8RhcDyMmmqZU?width=660&amp;amp;height=477&amp;amp;cropmode=none&#34; alt=&#34;gocov 이미지 1&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://rytnsa.by3302.livefilestore.com/y3mdq3P4WAWJGSzJnwg1NuQ0Ck4zue-ttulK2zZ2fPppUVuAe-AMqOLrWK4YVUXoFbQ_rQxH3kL1LEJgSFH8MZP68u57aqPCnxJ3AY9AATwCjtCHHBDc_fV3n6BgAZy_SdNCC57KNiavbNIMchRgDbi0_CbpZYrCMso5989qPFUJSU?width=660&amp;amp;height=477&amp;amp;cropmode=none&#34; alt=&#34;gocov 이미지 2&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;훨씬 보기 좋아졌다.&lt;/p&gt;
-
-&lt;h2 id=&#34;젠킨스와의-통합&#34;&gt;젠킨스와의 통합&lt;/h2&gt;
-
-&lt;p&gt;이미 젠킨스를 통해서 테스트를 자동화 하고 있다. 여기에 레포트만 추가하면 된다.&lt;/p&gt;
-
-&lt;p&gt;젠킨스에 웹 서버를 설치하고 gocov test, gocov-html 과정에서 나온 html 결과물을 웹 서버 디렉토리에 저장해서 레포팅 하는 방법도 있다. 하지만 레포팅 결과물이 젠킨스 대시보드와 분리된다는 점이 썩 맘에 들지 않는다. 그리고 gocov-html은 &lt;strong&gt;현재 상태&lt;/strong&gt;만 보여준다는 문제가 있다. 테스트 결과를 평가 하기 위해서는 이전 테스트 결과도 함께 볼 수 있어야 한다. 그래서 젠킨스의 코드 테스트 커버리지 레포팅 플러그인인 &lt;a href=&#34;http://cobertura.github.io/cobertura&#34;&gt;Cobertura&lt;/a&gt;를 사용하기로 했다. Cobertura는 자바코드의 커버리지를 측정하기 위해서 만들어진 툴이지만 XML 포멧만 맞춘다면 다른 언어에도 문제없이 사용 할 수 있다.&lt;/p&gt;
-
-&lt;p&gt;gocov의 결과를 xml로 출력하기 위해서 gocov-xml을 설치했다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# go get github.com/AlekSi/gocov-xml
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;아래와 같이 테스트커버리지 결과를 xml 문서로 출력할 수 있다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-sh&#34;&gt;# gocov test ./ | gocov-xml &amp;gt; coverage.xml
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;젠킨스에 cobertura 플러그인을 설치하는 과정은 &lt;a href=&#34;http://www.joinc.co.kr/w/man/12/jenkins&#34;&gt;Go언어와 Jenkins&lt;/a&gt;문서를 참고하자. 아래는 적용 결과다.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;http://marcelog.github.io/articles/cobertura_example_covertool.png&#34; alt=&#34;coberatura 레포팅&#34; /&gt;&lt;/p&gt;
-
-&lt;h2 id=&#34;tdd-통합-프로세스&#34;&gt;TDD 통합 프로세스&lt;/h2&gt;
-
-&lt;p&gt;MSA 모델을 따르는 소프트웨어의 개발에서 배포 단계까지의 테스트 방식을 정리해 보자.&lt;/p&gt;
-
-&lt;p&gt;&lt;img src=&#34;https://docs.google.com/drawings/d/18iqVYcMa8_en8Ro2OjwhnTIujD7cdPCPwxtoNNtNHy0/pub?w=882&amp;amp;h=469&#34; alt=&#34;TDD 통합 프로세스&#34; /&gt;&lt;/p&gt;
-
-&lt;p&gt;개발 단계에서는 &lt;strong&gt;화이트 박스 테스트&lt;/strong&gt;와 &lt;strong&gt;블랙 박스 테스트&lt;/strong&gt;를 함께 사용한다. 직접 제어하고 테스트 할 수 있는 코드들은 화이트 박스 테스트의 대상이다. 애플리케이션을 구성하고 있는 핸들러와 핸들러에서 호출하는 메서드들이다.&lt;/p&gt;
-
-&lt;p&gt;다른 애플리케이션과 (REST API로) 연결된 코드의 경우에는 블랙 박스 테스트를 진행한다. 해당 애플리케이션 개발자로 부터 API 규격을 받아서, 입력과 출력을 테스트 하는 방식이다. &lt;strong&gt;httptesting&lt;/strong&gt;을 이용해서 블랙 박스 테스트를 위한 웹 서버를 띄우면 된다. 입력과 출력의 사양은 연동 애플리케이션의 패키지를 그대로 사용할테니, 문서의 내용과 코드가 맞지 않는다고 해도 문제될게 없다. 그냥 패키지를 참고해서 개발해도 된다. 연동 애플리케이션의 규격이 변경될 경우 테스트에러가 떨어질테니 개발단계에서 문제를 해결 할 수 있게 된다.&lt;/p&gt;
-
-&lt;p&gt;통합 단계에서는 연동 테스트까지 진행한다. 최신 버전의 애플리케이션을 실행 하고, 직접 API를 전송해서 테스트 하는 방식이다.&lt;/p&gt;
 </description>
     </item>
     

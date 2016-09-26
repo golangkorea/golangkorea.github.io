@@ -1,0 +1,52 @@
+<?xml version="1.0" encoding="utf-8" standalone="yes" ?>
+<rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
+  <channel>
+    <title>Assembler on Golang Korean Community</title>
+    <link>https://golangkorea.github.io/tags/assembler/</link>
+    <description>Recent content in Assembler on Golang Korean Community</description>
+    <generator>Hugo -- gohugo.io</generator>
+    <language>en-us</language>
+    <lastBuildDate>Mon, 12 Sep 2016 13:18:28 -0400</lastBuildDate>
+    <atom:link href="https://golangkorea.github.io/tags/assembler/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Golang의 내부, 0부: 부록</title>
+      <link>https://golangkorea.github.io/post/golang-internals/resources/</link>
+      <pubDate>Mon, 12 Sep 2016 13:18:28 -0400</pubDate>
+      
+      <guid>https://golangkorea.github.io/post/golang-internals/resources/</guid>
+      <description>
+
+&lt;h1 id=&#34;go-언어의-최신-컴파일러에-대한-내용&#34;&gt;Go 언어의 최신 컴파일러에 대한 내용&lt;/h1&gt;
+
+&lt;ul&gt;
+&lt;li&gt;GopherCon 2016: Rob Pike - The Design of the Go Assembler
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.youtube.com/watch?v=KINIAgRpkDA&#34;&gt;Video&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://talks.golang.org/2016/asm.slide&#34;&gt;Slides&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;GopherCon 2014 Go from C to Go by Russ Cox
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.youtube.com/watch?v=QIE5nV5fDwA&#34;&gt;Video&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://talks.golang.org/2014/c2go.slide&#34;&gt;Slides&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;li&gt;GopherFest 2015: Rob Pike on the move from C to Go in the toolchain
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://www.youtube.com/watch?v=cF1zJYkBW4A&#34;&gt;Video&lt;/a&gt;&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://talks.golang.org/2015/gogo.slide&#34;&gt;Slides&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&#34;go의-어셈블러&#34;&gt;Go의 어셈블러&lt;/h1&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://golang.org/doc/asm&#34;&gt;A Quick Guide to Go&amp;rsquo;s Assembler&lt;/a&gt;&lt;/li&gt;
+&lt;/ul&gt;
+</description>
+    </item>
+    
+  </channel>
+</rss>
