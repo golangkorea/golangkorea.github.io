@@ -1688,7 +1688,7 @@ func main() {
 
 &lt;p&gt;실제 코드에서는 아래와 같이 에러 케이스를 정의해서 사용한다. 위 코드를 약간 수정했다.&lt;/p&gt;
 
-&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;var StatusPointUnberZero = errors.New(&amp;quot;Level: 레벨 값은 0보다 커야 합니다.&amp;quot;)
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;var StatusPointUnderZero = errors.New(&amp;quot;Level: 레벨 값은 0보다 커야 합니다.&amp;quot;)
 var StatusPointOverflow = errors.New(&amp;quot;Level: 레벨 값은 255보다 작아야 합니다.&amp;quot;)
 
 func YourLevel(point int) (int, error) {
