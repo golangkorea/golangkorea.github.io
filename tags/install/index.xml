@@ -1,12 +1,11 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Install on Golang Korean Community</title>
-    <link>https://golangkorea.github.io/tags/install/</link>
-    <description>Recent content in Install on Golang Korean Community</description>
+    <title>Golang Korean Community</title>
+    <link>https://golangkorea.github.io/tags/install/index.xml</link>
+    <description>Recent content on Golang Korean Community</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Sun, 28 Aug 2016 15:10:07 +0830</lastBuildDate>
     <atom:link href="https://golangkorea.github.io/tags/install/index.xml" rel="self" type="application/rss+xml" />
     
     <item>
