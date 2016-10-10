@@ -293,7 +293,7 @@ func (r Rectangle) Area() float64 {
        return this.Width * this.Height
 &lt;/code&gt;&lt;/pre&gt;
 
-&lt;p&gt;Go는 구조체 내에 메서드를 포함 할 수 없다. 구조체 바깥에 만들어지며, &lt;strong&gt;리시버(receiver)&lt;/strong&gt;를 이용해서 어느 구조체의 메서드인지를 정의 할 수 있다. 아래 그럼은 리시버를 이용해서 구조체와 함수가 연결되는 과정을 묘사하고 있다.&lt;/p&gt;
+&lt;p&gt;Go는 구조체 내에 메서드를 포함 할 수 없다. 구조체 바깥에 만들어지며, &lt;strong&gt;리시버(receiver)&lt;/strong&gt;를 이용해서 어느 구조체의 메서드인지를 정의 할 수 있다. 아래 그림은 리시버를 이용해서 구조체와 함수가 연결되는 과정을 묘사하고 있다.&lt;/p&gt;
 
 &lt;p&gt;&lt;img src=&#34;https://docs.google.com/drawings/d/1rBOgYujGOIy9EL6U040nCSCC61pwzFe-BhoWNkVoksU/pub?w=756&amp;amp;h=205&#34; alt=&#34;receiver&#34; /&gt;&lt;/p&gt;
 
