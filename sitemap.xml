@@ -3,7 +3,17 @@
   
   <url>
     <loc>https://golangkorea.github.io/</loc>
-    <lastmod>2016-09-20T16:20:29-04:00</lastmod>
+    <lastmod>2016-10-10T21:11:16+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://golangkorea.github.io/post/structuring-applications-in-go/</loc>
+    <lastmod>2016-10-10T21:11:16+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://golangkorea.github.io/post/go-start/object-oriented/</loc>
+    <lastmod>2016-10-02T00:51:06+09:00</lastmod>
   </url>
   
   <url>

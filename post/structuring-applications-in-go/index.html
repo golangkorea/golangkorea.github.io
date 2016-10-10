@@ -1,0 +1,630 @@
+<!DOCTYPE html>
+<html xmlns="http://www.w3.org/1999/xhtml" xml:lang="en" lang="en-us">
+<head>
+  <link href="http://gmpg.org/xfn/11" rel="profile">
+  <meta http-equiv="content-type" content="text/html; charset=utf-8">
+
+  
+  <meta name="HandheldFriendly" content="True">
+  <meta name="MobileOptimized" content="320">
+  <meta name="viewport" content="width=device-width,minimum-scale=1,maximum-scale=1">
+
+  
+  
+  <link href="//fonts.googleapis.com/css?family=PT+Serif:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+  <link href="//fonts.googleapis.com/css?family=PT+Sans:regular,italic,bold,bolditalic" rel="stylesheet" type="text/css">
+  
+
+  
+  <title>Go에서 애플리케이션 설계하기</title>
+
+  
+  
+  <link rel="stylesheet" href="https://golangkorea.github.io/css/hugo-octopress.css">
+
+  
+  
+    <link rel="stylesheet" href="https://golangkorea.github.io/css/custom.css">
+  
+    <link rel="stylesheet" href="https://golangkorea.github.io/css/custom-font.css">
+  
+
+  
+  <link rel="stylesheet" href="//maxcdn.bootstrapcdn.com/font-awesome/4.3.0/css/font-awesome.min.css">
+
+  
+  <link href="https://golangkorea.github.io/favicon.png" rel="icon">
+
+  
+  
+  
+
+  
+
+  <meta name="description" content="Golang 한국 사용자 모임입니다.">
+  <meta name="keywords" content="Go,Golang,GolangKorea,Gopher">
+
+  <meta name="author" content="">
+
+  
+  <meta name="generator" content="Hugo 0.16" />
+
+  
+  
+
+  
+  <link rel="stylesheet" href="https://golangkorea.github.io/js/highlight/styles/darcula.css">
+<link rel="stylesheet" href="https://golangkorea.github.io/js/jqcloud/jqcloud.min.css">
+<link rel="stylesheet" href="//fonts.googleapis.com/earlyaccess/nanumgothic.css">
+<link rel="stylesheet" href="//fonts.googleapis.com/earlyaccess/nanumgothiccoding.css">
+
+  <script   src="https://code.jquery.com/jquery-1.12.4.min.js"   integrity="sha256-ZosEbRLbNQzLpnKIkEdrPv7lOy9C27hHQ+Xp8a4MxAQ="   crossorigin="anonymous"></script>
+<script src="https://golangkorea.github.io/js/highlight/highlight.pack.js"></script>
+<script src="https://golangkorea.github.io/js/jqcloud/jqcloud.min.js"></script>
+<script>hljs.initHighlightingOnLoad();</script>
+
+  
+
+</head>
+<body>
+
+
+<header role="banner"><hgroup>
+  
+  <h1><a href="https://golangkorea.github.io/">Golang Korean Community</a></h1>
+    <h2>Go에 관련된 수다를 추구하는 개발자들의 세상</h2>
+</hgroup></header>
+
+
+<nav role="navigation">
+
+<ul class="main-navigation">
+  
+  
+</ul>
+
+
+<ul class="subscription">
+  
+    
+        <a href="https://golangkorea.github.io/index.xml" target="_blank" type="application/rss+xml" title="RSS"><i class="fa fa-rss-square fa-lg"></i></a>
+    
+  
+
+</ul>
+
+
+
+<script>
+(function() {
+  var cx = '002661009167463862046:hk6lhiihuma';
+  var gcse = document.createElement('script');
+  gcse.type = 'text/javascript';
+  gcse.async = true;
+  gcse.src = 'https://cse.google.com/cse.js?cx=' + cx;
+  var s = document.getElementsByTagName('script')[0];
+  s.parentNode.insertBefore(gcse, s);
+})();
+</script>
+<form>
+  <fieldset role="search">
+  <gcse:search class="search"></gcse:search>  
+  </fieldset>
+</form>
+</nav>
+
+
+<div id="main">
+  <div id="content">
+    <div>
+      <article class="hentry" role="article">
+
+        
+        
+
+<header>
+    <h1 class="entry-title">
+         Go에서 애플리케이션 설계하기 
+    </h1>
+    <p class="meta">Oct 10, 2016
+         - 6 minute read 
+         - <a href="https://golangkorea.github.io/post/structuring-applications-in-go/#disqus_thread">Comments</a>
+
+        
+        
+        
+            - <a class="label" href="https://golangkorea.github.io/categories/%eb%b2%88%ec%97%ad/">번역</a><a class="label" href="https://golangkorea.github.io/categories/%ec%95%84%ed%82%a4%ed%85%8d%ec%b2%98/">아키텍처</a>
+        
+    </p>
+    <p>Posted by 
+    
+        <a href="https://golangkorea.github.io/authors/mingrammer">mingrammer</a>
+    
+    </p>
+    <p>
+    <ul id="series">
+  
+</ul>
+    </p>    
+</header>
+
+
+        <div class="entry-content">
+          
+          
+          
+          
+
+<blockquote>
+<p><a href="https://medium.com/@benbjohnson/structuring-applications-in-go-3b04be4ff091#.rannpkamk">Structuring Applications in Go</a>을 번역한 글입니다.</p>
+</blockquote>
+
+<h2 id="개요">개요</h2>
+
+<p>Go를 배울 때 가장 어려웠던 부분은 애플리케이션을 어떻게 설계하는가였다. Go 이전에, 나는 Rails 애플리케이션을 만들었었는데 Rails는 애플리케이션을 특정한 방식으로 설계하도록 한다. &ldquo;설정보다는 컨벤션&rdquo;이라는게 그들의 모토였다. 그러나 Go는 그 어떤 프로젝트 구조나 애플리케이션 설계방식을 규정짓고 있지 않으며 Go의 컨벤션은 대개 제각각이다.</p>
+
+<p>나는  Go 애플리케이션의 아키텍쳐를 구성하면서 발견한 정말 많은 도움이 되었던 4가지 패턴을 여러분에게 알려주려고한다. 이들은 공식적인 규칙은 아니며 누군가는 다른 의견을 가질 수 있다고 생각한다. 나는 그런 의견들을 듣고싶다! 제안할만한게 있다면 댓글로 달아줬으면 좋겠다.</p>
+
+<h2 id="1-전역-변수를-사용하지-말라">1. 전역 변수를 사용하지 말라</h2>
+
+<p>내가 읽었던 Go의 net/http 예시들은 다음과 같이 항상 함수들을 <a href="https://golang.org/pkg/net/http/#HandleFunc">http.HandleFunc</a>를 사용하여 등록한다.</p>
+
+<pre><code class="language-go">package main
+
+import (
+    &quot;fmt&quot;
+    &quot;net/http&quot;
+)
+
+func main() {
+    http.HandleFunc(&quot;/hello&quot;, hello)
+    http.ListenAndServe(&quot;:8080&quot;, nil)
+}
+
+func hello(w http.ResponseWriter, r *http.Request) {
+    fmt.Fprintf(w, &quot;hi!&quot;)
+}
+</code></pre>
+
+<p>이 예제는 net/http를 사용하기 위한 쉬운 방법을 제공하지만 이는 나쁜 습관을 가르친다. 함수 핸들러를 사용하게되면, 애플리케이션 상태에 접근하는 유일한 방법은 전역 변수를 사용하는 것이다. 이 때문에, 우리는 전역 데이터베이스 커넥션 또는 전역 설정 변수를 추가할수도 있다. 그러나  유닛 테스트를 작성할 때 이 글로벌 변수들을 사용한다는건 악몽이다.</p>
+
+<p>더 나은 방법은 핸들러에 대해 특정한 타입을 만들어 필요한 변수들을 가질 수 있게 만드는 것이다.</p>
+
+<pre><code class="language-go">type HelloHandler struct {
+    db *sql.DB
+}
+
+func (h *HelloHandler) ServeHTTP(w http.ResponseWriter, r *http.Request) {
+    var name string
+    
+    // 쿼리 실행.
+    row := h.db.QueryRow(&quot;SELECT myname FROM mytable&quot;)
+    if err := row.Scan(&amp;name); err != nil {
+        http.Error(w, err.Error(), 500)
+        return
+    }
+    
+    // 클라이언트에 전송.
+    fmt.Fprintf(w, &quot;hi %s\n&quot;, name)
+}
+</code></pre>
+
+<p>이제 우리는 데이터베이스를 초기화할 수 있으며 글로벌 변수 없이 핸들러를 등록할 수 있다.</p>
+
+<pre><code class="language-go">func main() {
+    // 데이터베이스 커넥션을 연다.
+    db, err := sql.Open(&quot;postgres&quot;, &quot;...&quot;)
+    if err != nil {
+        log.Fatal(err)
+    }
+    
+    // 핸들러 등록.
+    http.Handle(&quot;/hello&quot;, &amp;HelloHandler{db: db}
+    http.ListenAndServe(&quot;:8080&quot;, nil)
+}
+</code></pre>
+
+<p>이 접근법은 또한 핸들러 유닛 테스팅을 자체적으로 할 수 있다는 이점을 가지며 심지어 HTTP 서버도 필요하지않다.</p>
+
+<pre><code class="language-go">func TestHelloHandler_ServeHTTP(t *testing.T) {
+    // 커넥션을 열고 핸들러를 설정한다.
+    db, _ := sql.Open(&quot;postgres&quot;, &quot;...&quot;)
+    defer db.Close()
+    h := HelloHandler{db: db}
+    
+    // 간단한 버퍼를 가지고 핸들러를 실행.
+    rec := httptest.NewRecorder()
+    rec.Body = bytes.NewBuffer()
+    
+}
+</code></pre>
+
+<p><strong><em>UPDATE:</em></strong> Tomás Senart와 Peter Bourgon의 <a href="https://twitter.com/tsenart/status/485920561391239168">트위터 멘션</a>에서 언급된 <a href="https://gist.github.com/tsenart/5fc18c659814c078378d">클로저를 사용한 핸들러 래핑</a>으로 이를 좀 더 간단히 할 수 있다. 이는 핸들러를 쉽게 구성할 수 있게 해준다.</p>
+
+<p><br></p>
+
+<h2 id="2-애플리케이션에서-바이너리를-분리하라">2. 애플리케이션에서 바이너리를 분리하라</h2>
+
+<p>나는 누군가 &ldquo;go get&rdquo;을 실행하면 내 애플리케이션이 자동으로 설치될 수 있도록 <em>main.go</em> 파일을 프로젝트 루트에 넣어 사용한다. 그러나, <em>main.go</em> 파일과 애플리케이션 로직을 같은 패키지로 합치게되면 다음의 두 가지 결과를 갖게된다.</p>
+
+<ol>
+<li>애플리케이션을 라이브러리로써 재사용할 수가 없다.</li>
+<li>오직 하나의 애플리케이션 바이너리만을 가질 수 있다.</li>
+</ol>
+
+<p>이 문제를 해결하기위해 발견한 가장 좋은 방법은 단순히 프로젝트내에서 각 서브 디렉토리가 하나의 애플리케이션 바이너리인 <em>&ldquo;cmd&rdquo;</em> 디렉토리를 사용하는 것이다. 나는 이 접근법을 여러 개의 애플리케이션 바이너리를 사용하는 Brad Fitzpatrick의 <a href="https://camlistore.org/">Camilstore</a> 프로젝트에서 처음으로 발견했다.</p>
+
+<pre><code>camlistore/
+    cmd/
+        camget/
+            main.go
+        cammount/
+            main.go
+        camput/
+            main.go
+        camtool/
+            main.go
+</code></pre>
+
+<p>Camilstore가 설치될 때 빌드되는 4개의 분리된 애플리케이션 바이너리(camget, cammount, camput, camtool)가 있다.</p>
+
+<h3 id="라이브러리-주도-개발-library-driven-development">라이브러리 주도 개발 (Library driven development)</h3>
+
+<p><em>main.go</em> 파일을 루트 밖으로 옮기는 것은 애플리케이션을 라이브러리의 관점에서 구현할 수 있게 해준다. 애플리케이션 바이너리는 단순히 애플리케이션 라이브러리의 클라이언트이다. 나는 이것이 나의 핵심 로직 코드(라이브러리)가 무엇이고 애플리케이션 실행 코드(애플리케이션 바이너리)가 무엇인지에 대한 추상화를 명확히 하도록 도와준다는걸 알 수 있다.</p>
+
+<p>애플리케이션 바이너리는 정말 단순히 사용자가 로직과 상호작용하는 방식에 대한 인터페이스이다. 때때로 당신은 유저가 여러 방법으로 상호작용할 수 있도록 여러개의 바이너리를 생성한다. 예를 들어, 두 수를 더하는 &ldquo;adder&rdquo;라는 패키지가 있을 때, 커맨드 라인 버전뿐만 아니라 웹 버전을 배포하고 싶을 수도 있다. 프로젝트를 다음과 같이 구성하면 이를 쉽게 만들 수 있다.</p>
+
+<pre><code>adder/
+    adder.go
+    cmd/
+        adder/
+            main.go
+        adder-server/
+            main.go
+</code></pre>
+
+<p>유저는 생략 부호(&ldquo;&hellip;&rdquo;)를 사용하여 &ldquo;go get&rdquo;으로 &ldquo;adder&rdquo; 애플리케이션 바이너리를 설치할 수 있다.</p>
+
+<pre><code>$ go get github.com/benbjohnson/adder/...
+</code></pre>
+
+<p>짜잔, 사용자는 설치된 <em>&ldquo;adder&rdquo;</em> 와 <em>&ldquo;adder-server&rdquo;</em> 를 갖게되었다!</p>
+
+<p><br></p>
+
+<h2 id="3-애플리케이션별-컨텍스트를-위한-타입-래핑">3. 애플리케이션별 컨텍스트를 위한 타입 래핑</h2>
+
+<p>내가 발견한 특히 유용한 한 트릭은 애플리케이션 수준의 컨텍스트를 제공하기위해 몇가지 제너릭 타입을 래핑하는 것이다. 한 가지 훌륭한 예는 DB와 Tx (transaction) 타입을 래핑하는것이다. 이 타입들은 database/sql 패키지나 <a href="https://github.com/boltdb/bolt">Bolt</a>같은 다른 데이터베이스 라이브러리에서 찾을  수 있다.</p>
+
+<p>우리는 이 타입들을 다음과 같이 래핑하면서 시작할 수 있다:</p>
+
+<pre><code class="language-go">package myapp
+
+import (
+    &quot;database/sql&quot;
+)
+
+type DB struct {
+    *sql.DB
+}
+
+type Tx struct {
+    *sql.Tx
+}
+</code></pre>
+
+<p>이제 우리의 데이터베이스와 트랜젝션을 위해 초기화 함수를 래핑하자:</p>
+
+<pre><code class="language-go">// Open은 데이터 소스를 위한 DB 레퍼런스를 반환한다.
+func Open(dataSourceName string) (*DB, error) {
+    db, err := sql.Open(&quot;postgres&quot;, dataSourceName)
+    if err != nil {
+        return nil, err
+    }
+    return &amp;DB{db}, nil
+}
+
+// Begin은 새로운 트랜젝션을 반환하기 시작한다.
+func (db *DB) Begin() (*Tx, error) {
+    tx, err := db.DB.Begin()
+    if err != nil {
+        reutnr nil, err
+    }
+    return &amp;Tx{tx}, nil
+}
+</code></pre>
+
+<p>예를 들어, 만약  사용자가 생성하기 전에 다른 시스템에 대한 검증이 필요하다거나 다른 테이블들의 업데이트가 필요할 때 이 함수는 더 복잡한 일을 할 수 있다.</p>
+
+<h3 id="트랜잭션-구성">트랜잭션 구성</h3>
+
+<p>이 함수들을 <em>Tx</em> 에 추가하는 것의 또 다른 이점은 하나의 트랜잭션에서 여러개의 액션을 구성할 수있다는 것이다. 사용자를 추가해야 하는가? 그냥 <em>Tx.CreateUser()</em> 를 한 번 호출하면 된다:</p>
+
+<pre><code class="language-go">tx, _ := db.Begin()
+tx.CreateUser(&amp;User{Name:&quot;susy&quot;})
+tx.Commit()
+</code></pre>
+
+<p>기본 데이터 스토어를 추상화 하는것은 새 데이터베이스로 교환하거나 다수의 데이터베이스의 사용을 쉽게 만들어준다. 그들은 애플리케이션의 <em>DB &amp; Tx</em> 타입을 호출하는 코드로부터 모두 감춰져있다.</p>
+
+<p><br></p>
+
+<h2 id="4-서브패키지로-골머리를-앓지-말라">4. 서브패키지로 골머리를 앓지 말라</h2>
+
+<p>대다수의 언어는 패키지 구조를 원하는대로 구성할 수 있도록 한다. 나는 모든 클래스들이 다른 패키지에  채워지고 이 패키지들은 서로를  모두 포함하고 있는 Java 코드베이스를 가지고 근무했던적이 있다. 정말 엉망이었다!</p>
+
+<p>Go는 패키지를 위한 요구조건이 딱 한가지 있는데, 순환 의존(cyclic dependencies)을 가질 수 없다는 것이다. 처음엔 이 순환 의존 규칙이 조금 이상하게 느껴졌다. 나는 원래 프로젝트를 각 파일은 하나의 타입을 가지고 패키지에는 파일들이 여러개 있도록 구성하며 새로운 서브패키지를 만들려고 했었다. 그러나 이 서브패키지들은 패키지 &ldquo;A&rdquo;를 포함하는 패키지 &ldquo;C&rdquo;를 포함하는 패키지 &ldquo;B&rdquo;를 포함하는 패키지 &ldquo;A&rdquo;를 찾을 수 없었기에 점점 관리하기가 어려워졌다. 이는 순환 의존이 될 것이다. 나는 &ldquo;너무 많은 파일들&rdquo;을 갖게 되는것에 대해서는 제외하고 패키지들을 분리시킬만한 이유가 없다는 걸 깨달았다.</p>
+
+<p>최근 나는 오직 하나의 루트 패키지를 사용하는 방법을 택했다. 보통 내 프로젝트의 타입들은 모두 매우 연관이 많기 때문에 이는 사용성이나 API 관점에서 더 잘 맞았다. 이 타입들은 또한 API를 작고 명확하게 유지하는 사이에 노출되지 않은것들을 호출하는 장점을 가질 수 있다.</p>
+
+<p>여기에 내가 찾아낸 큰 패키지를 만드는데 도움이 되는 몇가지 팁이 있다.</p>
+
+<ol>
+<li>각 파일에 관련있는 타입과 코드를 함께 그룹핑하라. 타입과 함수들이 잘 구성되어 있다면 그 파일은 200에서 500줄의 소스코드를 가지는 경향이 있다는걸 발견했다. 이는 많은 것처럼 들릴 수도 있지만 이는 탐색하기가 쉽다는걸 알아냈다. 나의 경우 보통 한 파일의 대한 상한은 1000줄이다.</li>
+<li>가장 중요한 타입은 파일의 맨 위에 놓고 밑으로 갈수록 중요성이 낮아지는 순서대로 타입을 추가하라.</li>
+<li>애플리케이션이 10,000라인이 넘어가기 시작하면 이 프로젝트를 더 작은 프로젝트들로 나눌 순 없는지를 심각하게 고민해보라.</li>
+</ol>
+
+<p><a href="https://github.com/boltdb/bolt">Bolt</a>는 이에 대한 좋은 예제이다. 각 파일은 하나의 Bold 구조체와 관련 있는 타입들로 그룹핑된다:</p>
+
+<pre><code>bucket.go
+cursor.go
+db.go
+freelist.go
+node.go
+page.go
+tx.go
+</code></pre>
+
+<p><br></p>
+
+<h2 id="결론">결론</h2>
+
+<p>코드 구성은 소프트웨어 개발에 있어 가장 어려운 주제중 하나이며 이것이 가져오는 가치에 초점을 맞추는 일은 드물다. 전역 변수를 적게 사용하고, 애플리케이션 바이너리 코드를 패키지로 옮기고, 애플리케이션별 컨텍스트를 위해 타입을 래핑하고, 서브패키지는 제한하라. 이들은 단지 Go 코드를 쉽게 작성하고 더 나은 유지보수가 가능하도록 도와주는 몇가지 트릭들이다.</p>
+
+<p>Go 프로젝트를 Ruby, Java 또는 Node.js 프로젝트와 같은 방식으로 작성하게되면 아마 언어와 싸우게 될 것이다.</p>
+
+        </div>
+        
+
+<footer>
+  <p class="meta">
+    <span class="byline author vcard">Posted by <span class="fn">
+    
+        <a href="https://golangkorea.github.io/authors/mingrammer">mingrammer</a>
+    
+    </span></span>
+    
+    <time>Oct 10, 2016</time>
+    
+      <span class="categories">
+        Tags:
+        
+          <a class="category" href="https://golangkorea.github.io/tags/%eb%b2%88%ec%97%ad">번역</a>  <a class="category" href="https://golangkorea.github.io/tags/%ec%95%84%ed%82%a4%ed%85%8d%ec%b3%90">아키텍쳐</a>  
+    
+    </span>
+    
+    <span class="edit-in-github">
+      <a class="label" href="https://github.com/golangkorea/golangkorea-hugo/blob/master/content/post/structuring-applications-in-go.md">Edit in GitHub</a>
+    </span>
+    
+  </p>
+
+  
+  
+
+  
+
+  <p class="meta">
+    
+        <a class="basic-alignment left" href="https://golangkorea.github.io/post/go-start/object-oriented/" title="Go와 객체지향">Go와 객체지향</a>
+    
+
+    
+  </p>
+  
+    
+      <div id="disqus_thread"></div>
+<script type="text/javascript">
+
+(function() {
+    
+    
+    
+    
+
+    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
+    var disqus_shortname = 'UA-82835198-1';
+    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
+    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
+})();
+</script>
+<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
+<a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
+
+    
+  
+</footer>
+
+      </article>
+    </div>
+    
+
+
+<aside class="sidebar thirds">
+  <section class="first odd">
+
+    
+      <h1>못 먹어도 Go인 세상</h1>
+    
+
+    <p>
+      
+        새로운 도전과 개발의 재미를 Go를 통해 만끽해 보세요. We love to talk, learn and share our experience. Come join us. Let&rsquo;s have some fun!
+      
+    </p>
+  </section>
+
+
+
+  
+  <ul class="sidebar-nav">
+    <li class="sidebar-nav-item">
+      <a target="_blank" href="https://github.com/golangkorea/golangkorea-hugo/" title="https://github.com/golangkorea/golangkorea-hugo/"><i class="fa fa-github fa-3x"></i></a>
+      
+      
+       
+      
+      
+      <a target="_blank" href="https://plus.google.com/communities/115721275599816202991" title="https://plus.google.com/communities/115721275599816202991"><i class="fa fa-google-plus fa-3x"></i></a>
+      <a target="_blank" href="https://www.facebook.com/groups/golangko/" title="https://www.facebook.com/groups/golangko/"><i class="fa fa-facebook fa-3x"></i></a>
+      
+
+    
+    
+    </li>
+  </ul>
+
+  
+
+  
+    
+      <section class="odd">
+        
+          <h1>Join Us</h1>
+        
+        
+          <li>
+            <a href="https://github.com/golangkorea" title="GitHub Organization"  target="_blank" >GitHub Organization</a>
+          </li>
+        
+          <li>
+            <a href="https://gitter.im/golang-korean-community/golangkorea.github.io?utm_source=share-link&amp;utm_medium=link&amp;utm_campaign=share-link" title="Gitter Room"  target="_blank" >Gitter Room</a>
+          </li>
+        
+      </section>
+    
+  
+
+  
+  
+  
+    
+      <section class="even">
+        <h1>Recent Posts</h1>
+        <ul id="recent_posts">
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/structuring-applications-in-go/">Go에서 애플리케이션 설계하기</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/go-start/object-oriented/">Go와 객체지향</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part6/">Golang의 내부, 6부: 부트스트래핑과 메모리 할당자</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part5/">Golang의 내부, 5부: 런타임 부트스트랩</a>
+            </li>
+          
+            <li class="post">
+              <a href="https://golangkorea.github.io/post/golang-internals/part4/">Golang의 내부, 4부: 오브젝트 파일, 그리고 함수 메타데이터</a>
+            </li>
+          
+        </ul>
+      </section>
+    
+  
+
+  <section class="odd">
+      <h1>Tags</h1>
+      <ul id="tags">
+          <div id="tags-cloud"></div>
+      </ul>
+  </section>
+
+</aside>
+
+<script type="text/javascript">
+
+$(document).ready(function() {
+  var words = [
+    
+      { text: "allocator", weight:  1 , link: "/tags/allocator" },
+    
+      { text: "assembler", weight:  1 , link: "/tags/assembler" },
+    
+      { text: "beginning", weight:  2 , link: "/tags/beginning" },
+    
+      { text: "blog", weight:  7 , link: "/tags/blog" },
+    
+      { text: "bootstrap", weight:  2 , link: "/tags/bootstrap" },
+    
+      { text: "community", weight:  1 , link: "/tags/community" },
+    
+      { text: "compiler", weight:  3 , link: "/tags/compiler" },
+    
+      { text: "development", weight:  2 , link: "/tags/development" },
+    
+      { text: "golang", weight:  7 , link: "/tags/golang" },
+    
+      { text: "hugo", weight:  7 , link: "/tags/hugo" },
+    
+      { text: "install", weight:  1 , link: "/tags/install" },
+    
+      { text: "internals", weight:  7 , link: "/tags/internals" },
+    
+      { text: "linker", weight:  3 , link: "/tags/linker" },
+    
+      { text: "memory", weight:  1 , link: "/tags/memory" },
+    
+      { text: "metadata", weight:  1 , link: "/tags/metadata" },
+    
+      { text: "object-file", weight:  2 , link: "/tags/object-file" },
+    
+      { text: "object-oriented", weight:  1 , link: "/tags/object-oriented" },
+    
+      { text: "relocations", weight:  2 , link: "/tags/relocations" },
+    
+      { text: "runtime", weight:  2 , link: "/tags/runtime" },
+    
+      { text: "struct", weight:  1 , link: "/tags/struct" },
+    
+      { text: "structure", weight:  2 , link: "/tags/structure" },
+    
+      { text: "tdd", weight:  1 , link: "/tags/tdd" },
+    
+      { text: "unittest", weight:  1 , link: "/tags/unittest" },
+    
+      { text: "vim", weight:  1 , link: "/tags/vim" },
+    
+      { text: "번역", weight:  1 , link: "/tags/%EB%B2%88%EC%97%AD" },
+    
+      { text: "아키텍쳐", weight:  1 , link: "/tags/%EC%95%84%ED%82%A4%ED%85%8D%EC%B3%90" },
+    
+  ];
+  $('#tags-cloud').jQCloud(words, {
+      width: 280,
+      height: 300
+    });
+});
+
+</script>
+
+  </div>
+</div>
+
+<footer role="contentinfo">
+  <p>Copyright &copy; 2016  - <a href="https://golangkorea.github.io/license/">License</a> -
+  <span class="credit">Powered by <a target="_blank" href="https://gohugo.io">Hugo</a> and <a target="_blank" href="https://github.com/parsiya/hugo-octopress/">Hugo-Octopress</a> theme.
+</p>
+
+</footer>
+
+
+</body>
+</html>
+
