@@ -3,7 +3,17 @@
   
   <url>
     <loc>https://golangkorea.github.io/</loc>
-    <lastmod>2016-10-10T21:11:16+09:00</lastmod>
+    <lastmod>2016-10-16T01:03:50+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://golangkorea.github.io/post/gopher-academy/advent-2015/reducing-boilerplate-with-go-generate/</loc>
+    <lastmod>2016-10-16T01:03:50+09:00</lastmod>
+  </url>
+  
+  <url>
+    <loc>https://golangkorea.github.io/author/timo-boll/</loc>
+    <lastmod>2016-10-16T00:59:41+09:00</lastmod>
   </url>
   
   <url>

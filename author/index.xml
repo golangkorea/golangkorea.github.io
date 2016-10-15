@@ -1,13 +1,23 @@
 <?xml version="1.0" encoding="utf-8" standalone="yes" ?>
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
-    <title>Author-rsses on Golang Korean Community</title>
-    <link>https://golangkorea.github.io/author/index.xml</link>
-    <description>Recent content in Author-rsses on Golang Korean Community</description>
+    <title>Authors on Golang Korean Community</title>
+    <link>https://golangkorea.github.io/author/</link>
+    <description>Recent content in Authors on Golang Korean Community</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Fri, 26 Aug 2016 10:08:10 +0900</lastBuildDate>
+    <lastBuildDate>Sun, 16 Oct 2016 00:59:41 +0900</lastBuildDate>
     <atom:link href="https://golangkorea.github.io/author/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>JongMin Kim</title>
+      <link>https://golangkorea.github.io/author/timo-boll/</link>
+      <pubDate>Sun, 16 Oct 2016 00:59:41 +0900</pubDate>
+      
+      <guid>https://golangkorea.github.io/author/timo-boll/</guid>
+      <description>&lt;p&gt;This is a placehoder for personal profile of Timo Boll&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Kookheon Kwon</title>

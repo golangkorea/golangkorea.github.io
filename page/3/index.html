@@ -16,7 +16,7 @@
   
 
   
-  <title>ReadMe First</title>
+  <title>Golang Korean Community</title>
 
   
   
@@ -39,7 +39,7 @@
   
   
 
-  
+  <link href="https://golangkorea.github.io/index.xml" rel="alternate" type="application/rss+xml" title="Golang Korean Community" />
 
   <meta name="description" content="Golang 한국 사용자 모임입니다.">
   <meta name="keywords" content="Go,Golang,GolangKorea,Gopher">
@@ -115,134 +115,99 @@
 
 
 <div id="main">
-  <div id="content">
-    <div>
-      <article class="hentry" role="article">
+ <div id="content">
+  <div class="blog-index">
+    
+    
+    <article>
 
         
         
 
 <header>
     <h1 class="entry-title">
-         ReadMe First 
+        <a href="https://golangkorea.github.io/post/tdd-with-golang/">Golang 프로젝트에 TDD 도입하기</a>
     </h1>
-    <p class="meta">Aug 19, 2016
-         - 2 minute read 
-         - <a href="https://golangkorea.github.io/post/readme-first/#disqus_thread">Comments</a>
+    <p class="meta">Aug 20, 2016
+         - 14 minute read 
+         - <a href="https://golangkorea.github.io/post/tdd-with-golang/#disqus_thread">Comments</a>
 
         
         
         
-            - <a class="label" href="https://golangkorea.github.io/categories/how-to/">How to</a>
+            - <a class="label" href="https://golangkorea.github.io/categories/development/">Development</a><a class="label" href="https://golangkorea.github.io/categories/unittest/">UnitTest</a><a class="label" href="https://golangkorea.github.io/categories/tdd/">TDD</a>
         
     </p>
     <p>Posted by 
     
-        <a href="https://golangkorea.github.io/authors/jhonghee-park">Jhonghee Park</a>
+        <a href="https://golangkorea.github.io/authors/sangbae-yun">Sangbae Yun</a>
     
     </p>
     <p>
     <ul id="series">
+  
+    <li>Series: <a href="https://golangkorea.github.io/series/go-web-dev">Go Web Dev</a> </li>
   
 </ul>
     </p>    
 </header>
 
 
-        <div class="entry-content">
+        
+          <p>여기에서 사용한 테스트 코드는 Bitbucket 에서 다운로드 할 수 있다. TDD 클라우드와 MSA와 REST의 등장으로 TDD가 재조명 받고 있다. TDD를 제대로 적용하려면 상당히 많은 시간과 노력이 필요하다. 특히 여기 저기 연동되는 라이브러리나 소프트웨어가 많은 경우 테스트가 굉장히 복잡해지는데, 복잡해지는 만큼 테스트의 신뢰성도 함께 떨어진다. TDD는 유닛 테스트를 기본으로 하는데, 애플리케이션이 복잡해지면 유닛테스트에 간섭하는 객체들이 많아진다. 이렇게 늘어난 객체들에 대해서 테스트를 진행하다 보면 테스트를 위한 설계로 변질되는 경우가 있다. 데이터베이스, 소켓, UI가 서로 엉켜있는 소프트웨어를 테스트 한다고 생각해보라.</p>
+
           
+              <footer>
+                  <a href="https://golangkorea.github.io/post/tdd-with-golang/" rel="full-article">Read On &rarr;</a>
+              </footer>
           
-          
-          
 
-<h1 id="the-slow-hunch">The Slow Hunch</h1>
-
-<p><a href="https://www.amazon.com/Where-Good-Ideas-Come-Innovation/dp/1594487715">Where Good Ideas Come From: The Natural History of Innovation</a>의 저자 Steven B. Johnson에 따르면 인류의 역사를 바꾼 혁신들은 번뜩이는 아이디어에서 시작된 경우가 매우 드물다고 합니다. 대개는 개개인의 작은 아이디어들이 오랜 시간에 걸쳐 다른 사람이 갖고 있는 비슷하거나 전혀 다른 아이디어들과 충돌하고 결합하면서 커뮤니티의 지능으로 진화하고 어느 순간 돌이킬 수 없는 변화의 모멘텀을 형성하며 세상을 바꿉니다. 커뮤니티내에 공유되고 있는 지능이 다시 역으로 개개인에게 영감과 비젼을 제시하는 상호작용을 일으키게 되는데 그런 과정은 통해 아이디어의 생산을 가능케하는 현상을 slow hunch라고 부릅니다.</p>
-
-<p>새로 시작하는 Golang Korean 커뮤니티 웹사이트(이하 GoSudaWeb)은 프로그래밍 언어인 Go와 퉅들, 글로벌 개발자 커뮤니티내의 트랜드와 최선의 개발방식에 대한 소개를 블로그와 뉴스레터의 형식을 통해 공유하고자 첫발을 내딛었습니다. 지속적인 지식의 축적과 폭 넗은 공유가 이루어지는 웹사이트로 성장하여 미래의 킬러앱과 킬러 아이디어를 만들어내는 slow hunch에 기여할 수 있기를 기대해 봅니다. 많은 성원 부탁드립니다.</p>
-
-<h1 id="콘텐트-제작-및-웹사이트-개발-참여-신청">콘텐트 제작 및 웹사이트 개발 참여 신청</h1>
-
-<p>GosudaWeb은 <a href="https://pages.github.com/">Github Page</a>로 제작되고 모든 소스와 제작과정이 공개로 이루어 집니다: <a href="https://github.com/golangkorea">https://github.com/golangkorea</a>.</p>
-
-<p>사이트에 포스트하기를 원하시는 분들은 <a href="https://golangkorea.github.io/post/hugo-intro/how-to-contribute-content/">사이트에 블로그 올리는 방법</a>을 참조하시길 바랍니다.</p>
-
-<p>Hugo를 이용해 사이트 개발에 참여하거나 golangkorea Organization에 오픈소스 프로젝트를 시작하시고 싶으신 분들은 멤버 신청을 하실 수 있습니다. 멤버 신청은 <a href="mailto:golanginkorea@gmail.com">golanginkorea@gmail.com</a> 이나 <a href="https://gitter.im/golang-korean-community/Lobby?utm_source=share-link&amp;utm_medium=link&amp;utm_campaign=share-link">Golang Korean Community / Lobby</a>로 해 주시면 됩니다. 일단 멤버로 등록되면 <a href="https://github.com/orgs/golangkorea/teams/golangkorea-website">golangkorea-website team</a>을 통해 개발에 참여하실 수 있습니다.</p>
-
-<h1 id="토론방">토론방</h1>
-
-<p><a href="https://golangkorea.github.io">golangkorea.github.io</a> 개발, 유지 보수 및 지원에 대한 토론은 <a href="https://gitter.im/golang-korean-community/golangkorea.github.io?utm_source=share-link&amp;utm_medium=link&amp;utm_campaign=share-link">Gitter Room</a>을 통해 하고 있으니 많은 동참 바라겠습니다.</p>
-
-<p><br/>
-<br/></p>
-
-        </div>
         
 
-<footer>
-  <p class="meta">
-    <span class="byline author vcard">Posted by <span class="fn">
+    </article>
     
-        <a href="https://golangkorea.github.io/authors/jhonghee-park">Jhonghee Park</a>
     
-    </span></span>
     
-    <time>Aug 19, 2016</time>
+
+
+
+
+<div class="pagination">
+
     
-      <span class="categories">
-        Tags:
         
-          <a class="category" href="https://golangkorea.github.io/tags/community">Community</a>  <a class="category" href="https://golangkorea.github.io/tags/blog">Blog</a>  <a class="category" href="https://golangkorea.github.io/tags/hugo">Hugo</a>  
+        
+        
+        <a href="https://golangkorea.github.io/" aria-label="First" class="label-pagination"><i class="fa fa-angle-double-left fa-lg"></i></a>
     
-    </span>
+
     
-    <span class="edit-in-github">
-      <a class="label" href="https://github.com/golangkorea/golangkorea-hugo/blob/master/content/post/readme-first.md">Edit in GitHub</a>
-    </span>
     
-  </p>
+        <a href="https://golangkorea.github.io/page/2/" aria-label="Previous" class="label-pagination"><i class="fa fa-angle-left fa-lg"></i></a>
+    
+
+    
+        <a href="https://golangkorea.github.io/" class="label-pagination">1</a>
+    
+        <a href="https://golangkorea.github.io/page/2/" class="label-pagination">2</a>
+    
+        <a href="https://golangkorea.github.io/page/3/" class="label-pagination">3</a>
+    
+
+    
+
+    
+    
+        <a href="https://golangkorea.github.io/page/3/" aria-label="Last"><i class="fa fa-angle-double-right fa-lg"></i></a>
+    
+
+</div>
 
   
-  
+
+  </div>
 
   
-
-  <p class="meta">
-    
-        <a class="basic-alignment left" href="https://golangkorea.github.io/post/tdd-with-golang/" title="Golang 프로젝트에 TDD 도입하기">Golang 프로젝트에 TDD 도입하기</a>
-    
-
-    
-      <a class="basic-alignment right" href="https://golangkorea.github.io/post/vim-go/" title="vim-go를 이용한 go 개발 환경 구축">vim-go를 이용한 go 개발 환경 구축</a>
-    
-  </p>
-  
-    
-      <div id="disqus_thread"></div>
-<script type="text/javascript">
-
-(function() {
-    
-    
-    
-    
-
-    var dsq = document.createElement('script'); dsq.type = 'text/javascript'; dsq.async = true;
-    var disqus_shortname = 'UA-82835198-1';
-    dsq.src = '//' + disqus_shortname + '.disqus.com/embed.js';
-    (document.getElementsByTagName('head')[0] || document.getElementsByTagName('body')[0]).appendChild(dsq);
-})();
-</script>
-<noscript>Please enable JavaScript to view the <a href="http://disqus.com/?ref_noscript">comments powered by Disqus.</a></noscript>
-<a href="http://disqus.com/" class="dsq-brlink">comments powered by <span class="logo-disqus">Disqus</span></a>
-
-    
-  
-</footer>
-
-      </article>
-    </div>
-    
 
 
 <aside class="sidebar thirds">
@@ -409,8 +374,8 @@ $(document).ready(function() {
 });
 
 </script>
-
-  </div>
+    
+ </div>
 </div>
 
 <footer role="contentinfo">
@@ -423,4 +388,4 @@ $(document).ready(function() {
 
 </body>
 </html>
-
+   

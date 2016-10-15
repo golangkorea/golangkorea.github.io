@@ -2,12 +2,278 @@
 <rss version="2.0" xmlns:atom="http://www.w3.org/2005/Atom">
   <channel>
     <title>Golang Korean Community</title>
-    <link>https://golangkorea.github.io/index.xml</link>
+    <link>https://golangkorea.github.io/</link>
     <description>Recent content on Golang Korean Community</description>
     <generator>Hugo -- gohugo.io</generator>
     <language>en-us</language>
-    <lastBuildDate>Mon, 10 Oct 2016 21:11:16 +0900</lastBuildDate>
+    <lastBuildDate>Sun, 16 Oct 2016 01:03:50 +0900</lastBuildDate>
     <atom:link href="https://golangkorea.github.io/index.xml" rel="self" type="application/rss+xml" />
+    
+    <item>
+      <title>Reducing boilerplate with go generate</title>
+      <link>https://golangkorea.github.io/post/gopher-academy/advent-2015/reducing-boilerplate-with-go-generate/</link>
+      <pubDate>Sun, 16 Oct 2016 01:03:50 +0900</pubDate>
+      
+      <guid>https://golangkorea.github.io/post/gopher-academy/advent-2015/reducing-boilerplate-with-go-generate/</guid>
+      <description>
+
+&lt;blockquote&gt;
+&lt;p&gt;&lt;a href=&#34;https://blog.gopheracademy.com/advent-2015/reducing-boilerplate-with-go-generate/&#34;&gt;Reducing boilerplate with go generate&lt;/a&gt; 를 번역한 글입니다&lt;/p&gt;
+&lt;/blockquote&gt;
+
+&lt;p&gt;Go는 대단한 언어입니다. 단순하고, 파워풀하며, 훌륭한 도구들을 가지고 있고, 우리 중 많은
+이들은 매일 사용하는 것을 즐깁니다. 하지만 강한 타입의 언어들에서 일상적으로 발생하게 되는, 이것저것을 연결하기 위해서
+필수로 사용해야 하는 boilerplate를 쓰게 됩니다.&lt;/p&gt;
+
+&lt;p&gt;이 포스트에서 다음의 세가지 포인트를 다룰 것입니다:&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;코드 생성(code generation)을 사용하여 boilerplate를 줄이도록 도와주는 Go 도구들을 만들 수 있어야 하는 이유는 무엇입니까.&lt;/li&gt;
+&lt;li&gt;Go 코드 생성을 위한 블록 구성 요소는 무엇입니까.&lt;/li&gt;
+&lt;li&gt;코드 생성 도구를 배우기 위한 예제는 어디에서 찾을 수 있습니까.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h1 id=&#34;boilerplate를-줄이기-위해-코드-생성을-사용하는-이유는-무엇입니까&#34;&gt;boilerplate를 줄이기 위해 코드 생성을 사용하는 이유는 무엇입니까?&lt;/h1&gt;
+
+&lt;p&gt;때때로 우리는 reflection을 쓰고 &lt;code&gt;interface{}&lt;/code&gt;를 받아들이는 메서드들을 프로젝트에 채움으로 boilerplate를 줄이려고 노력합니다.
+그러나 메서드가 &lt;code&gt;interface{}&lt;/code&gt;를 받아들일 때마다, 우리는 type 안정성을 창밖으로 던져버립니다.
+type assertions와 reflection을 사용할 때, 컴파일러는 우리가 올바른 타입들을 패싱하는지 확인할 수 없으며, 런타임 panic에 더욱 노출됩니다.&lt;/p&gt;
+
+&lt;p&gt;우리가 만들어놓은 boilerplate 코드의 몇몇은 우리의 프로젝트에서 이미 가지고 있는 코드로 부터 추론될 수 있습니다.
+그로 인해, 우리는 프로젝트의 코드를 읽어서 relevant 코드를 생성하는 도구들을 제작할 수 있습니다.&lt;/p&gt;
+
+&lt;h1 id=&#34;코드-생성을-위한-building-blocks&#34;&gt;코드 생성을 위한 building blocks&lt;/h1&gt;
+
+&lt;h2 id=&#34;코드-읽어들이기&#34;&gt;코드 읽어들이기&lt;/h2&gt;
+
+&lt;p&gt;기본 라이브러리는 코드를 읽고 파싱할때 무거운 작업들을 들어올릴 준비가 되어 있는 훌륭한 패키지를 가지고 있습니다.&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;go/build&lt;/code&gt;: go 패키지에 대한 정보를 수집합니다. 패키지 이름이 주어지면, 소스코드를 포함하고 있는 디렉토리가 무엇인지,
+디렉토리안의 코드와 테스트 파일이 무엇인지, 의존성이 있는 다른 패키지는 무엇인지 등등.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;go/scanner&lt;/code&gt; &lt;code&gt;go/parser&lt;/code&gt;: 소스코드를 읽고 파싱하여 &lt;a href=&#34;https://en.wikipedia.org/wiki/Abstract_syntax_tree&#34;&gt;Abstract Syntax Tree&lt;/a&gt; (AST)를 생성합니다.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;go/ast&lt;/code&gt;: AST를 표현하는데 사용되는 타입들을 선언하고 tree를 동작하고 변경하는데 도움을 주는 메서드들을 포함합니다.&lt;/li&gt;
+&lt;li&gt;&lt;code&gt;go/types&lt;/code&gt;: 데이터 타입들을 선언하고 Go 패키지 타입 체킹을 위해 사용되는 알고리즘을 구현합니다.
+&lt;code&gt;go/ast&lt;/code&gt; 가 raw tree를 포함하고 있는데 비해 이 패키지는 AST를 프로세싱하기 위한 모든 작업을 수행하여 타입들에 대한 정보를 바로 얻을 수 있습니다.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h2 id=&#34;코드-생성하기&#34;&gt;코드 생성하기&lt;/h2&gt;
+
+&lt;p&gt;코드를 생성할 때, 대부분의 프로젝트들을 단지 좋은 옛 &lt;code&gt;text/template&lt;/code&gt; 에 의존하여 코드를 생성합니다.&lt;/p&gt;
+
+&lt;p&gt;자동으로 생성되는 파일에는 코드가 자동으로 생성되었으며, 생성한 도구가 무엇인지, 수작업으로 편집되지 않아야 함을 코멘트로 시작하는 것을 권장합니다.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;/*
+* CODE GENERATED AUTOMATICALLY WITH github.com/ernesto-jimenez/gogen/unmarshalmap
+* THIS FILE SHOULD NOT BE EDITED BY HAND
+*/
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;역시 &lt;code&gt;go/format&lt;/code&gt; 패키지를 이용하여 이를 쓰기 전에 코드를 format 할 수 있습니다.
+이 패키지는 &lt;code&gt;go fmt&lt;/code&gt;가 사용하는 로직을 포함하고 있습니다.&lt;/p&gt;
+
+&lt;h2 id=&#34;go-generate&#34;&gt;go generate&lt;/h2&gt;
+
+&lt;p&gt;프로그램을 위해 소스코드를 생성하는 도구를 작성하기 시작할 때, 두가지의 의문이 재빨리 나타납니다:
+우리의 개발 과정에서 코드를 생성하는 시점은 어느 정도입니까?
+생성된 코드를 최신 상태로 유지하려면 어떻게 해야 합니까?&lt;/p&gt;
+
+&lt;p&gt;1.4 때부터 go tool 은 &lt;code&gt;generate&lt;/code&gt; 커맨드를 제공합니다.
+이 도구를 사용하면 go tool 자체를 사용하여 코드 생성에 사용하는 도구들을 실행할 수 있습니다.&lt;/p&gt;
+
+&lt;p&gt;단지 아래의 포맷으로 코멘트를 작성해 주면 됩니다:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;//go:generate shell command
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;작성하고 나면, &lt;code&gt;go generate&lt;/code&gt; 는 실행시마다 항상 자동으로 &lt;code&gt;command&lt;/code&gt; 를 호출합니다.&lt;/p&gt;
+
+&lt;p&gt;기억해야할 중요한 두 포인트가 있습니다:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;code&gt;go generate&lt;/code&gt; 는 프로그램이나 패키지를 작성하는 개발자에 의해 실행하도록 의도되어집니다.
+이것은 &lt;code&gt;go get&lt;/code&gt;에 의해 결코 자동으로 호출되지 않습니다.&lt;/li&gt;
+&lt;li&gt;당신은 &lt;code&gt;go generate&lt;/code&gt;에 의해 실행되는 모든 도구들을 이미 설치하고 시스템 안에서 setup을 해두어야 합니다.
+어떤 도구를 사용하려고 하고 어디에서 다운로드 받을 수 있는지 문서화해야 합니다.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;p&gt;또한, 만약 당신의 코드 생성 도구가 동일한 repository에 들어 있다면, &lt;code&gt;go:generate&lt;/code&gt;로부터
+&lt;code&gt;go run&lt;/code&gt;을 호출하도록 권장합니다. 그러면 도구를 변경하려는 때마다 매번 수동으로 빌드하고 설치하는 작업 없이
+&lt;code&gt;generate&lt;/code&gt; 할 수 있습니다.&lt;/p&gt;
+
+&lt;h1 id=&#34;자신만의-도구를-만들기-시작하는-방법은-무엇입니까&#34;&gt;자신만의 도구를 만들기 시작하는 방법은 무엇입니까?&lt;/h1&gt;
+
+&lt;p&gt;stdlib 패키지로 코드를 분석하고 생성하는 것은 훌륭하지만, 해당 문서는 거대하고, 패키지를 어떻게 사용해야 할지에 대한
+노하우를 단지 문서로 부터 얻는 것은 꽤 벅찹니다.&lt;/p&gt;
+
+&lt;p&gt;코드 생성을 시작할 때 내가 했던 가장 좋은 방법은 이미 존재하는 몇 도구들을 배우는 것이었습니다.&lt;/p&gt;
+
+&lt;ol&gt;
+&lt;li&gt;빌드할 수 있는 그러한 종류의 도구들로부터 몇몇 영감을 얻을 것입니다.&lt;/li&gt;
+&lt;li&gt;그 도구들의 소스 코드로 부터 배울 수 있는 기회를 가질 것입니다.&lt;/li&gt;
+&lt;li&gt;You can find some of these tools really useful by themselves.&lt;/li&gt;
+&lt;li&gt;이러한 도구들 중에 스스로 유용한 도구들이 무엇인지 찾아낼 수 있습니다.&lt;/li&gt;
+&lt;/ol&gt;
+
+&lt;h1 id=&#34;배우기-위한-프로젝트들&#34;&gt;배우기 위한 프로젝트들&lt;/h1&gt;
+
+&lt;h2 id=&#34;인터페이스-구현을-위한-stubs-생성하기&#34;&gt;인터페이스 구현을 위한 stubs 생성하기&lt;/h2&gt;
+
+&lt;p&gt;구현하려는 인터페이스에 정의된 메서드 목록을 복사하고 붙여 넣은 자신을 발견한 적이 있습니까?&lt;/p&gt;
+
+&lt;p&gt;stubs를 자동으로 생성하기 위해 &lt;a href=&#34;https://github.com/josharian/impl&#34;&gt;&lt;code&gt;impl&lt;/code&gt;&lt;/a&gt;를 사용할 수 있습니다.
+인터페이스를 위해 stdlib 의 패키지를 이용하여 구현해야할 메서드를 출력합니다.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-bash&#34;&gt;$ impl &#39;f *File&#39; io.ReadWriteCloser
+func (f *File) Read(p []byte) (n int, err error) {
+    panic(&amp;quot;not implemented&amp;quot;)
+}
+
+func (f *File) Write(p []byte) (n int, err error) {
+    panic(&amp;quot;not implemented&amp;quot;)
+}
+
+func (f *File) Close() error {
+    panic(&amp;quot;not implemented&amp;quot;)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;h2 id=&#34;mockery로-mocks-자동-생성하기&#34;&gt;mockery로 mocks 자동 생성하기&lt;/h2&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/stretchr/testify&#34;&gt;testify&lt;/a&gt;는 유닛테스팅을 실행할 때 쉽게 의존성을 mock할 수 있는 &lt;a href=&#34;https://godoc.org/github.com/stretchr/testify/mock&#34;&gt;mock&lt;/a&gt; 패키지를 가지고 있습니다.&lt;/p&gt;
+
+&lt;p&gt;인터페이스들이 암시적으로 만족하기 때문에, 의존성들을 인터페이스들을 이용하여 특정화 할 수 있으며, 유닛 테스팅 중에 외부 의존성보다는 mock을 사용할 수 있습니다.&lt;/p&gt;
+
+&lt;p&gt;Here&amp;rsquo;s a very simplified example about how to mock a theoretical downcaser interface:&lt;/p&gt;
+
+&lt;p&gt;이론적인 downcaser 인터페이스를 mock 하는 방법에 대한 매우 간단한 예제:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package main
+
+import (
+  &amp;quot;testing&amp;quot;
+
+  &amp;quot;github.com/stretchr/testify/mock&amp;quot;
+)
+
+type downcaser interface {
+  Downcase(string) (string, error)
+}
+
+func TestMock(t *testing.T) {
+  m := &amp;amp;mockDowncaser{}
+  m.On(&amp;quot;Downcase&amp;quot;, &amp;quot;FOO&amp;quot;).Return(&amp;quot;foo&amp;quot;, nil)
+  m.Downcase(&amp;quot;FOO&amp;quot;)
+  m.AssertNumberOfCalls(t, &amp;quot;Downcase&amp;quot;, 1)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;mock 구현은 꽤 직관적입니다:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;type mockDowncaser struct {
+  mock.Mock
+}
+
+func (m *mockDowncaser) Downcase(a0 string) (string, error) {
+  ret := m.Called(a0)
+  return ret.Get(0).(string), ret.Error(1)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;실제적으로, 구현체로부터 볼 수 있는 것은, 꽤 직관적이어서 인터페이스 정의 자체가 mock을 자동으로 생성하기 위한 모든 정보를 가지고 있습니다.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/vektra/mockery&#34;&gt;&lt;code&gt;mockery&lt;/code&gt;&lt;/a&gt; 이 하는 것:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ mockery -inpkg -testonly -name=downcaser
+Generating mock for: downcaser
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;나는 항상 &lt;code&gt;go generate&lt;/code&gt; 를 사용하여 인터페이스들에 대한 mocks를 자동으로 생성합니다.
+우리는 이전 예제에 mock up 과 실행을 위해 단지 한 라인만 추가해 주면 됩니다.&lt;/p&gt;
+
+&lt;pre&gt;&lt;code class=&#34;language-go&#34;&gt;package main
+
+import (
+  &amp;quot;testing&amp;quot;
+)
+
+type downcaser interface {
+  Downcase(string) (string, error)
+}
+
+//go:generate mockery -inpkg -testonly -name=downcaser
+
+func TestMock(t *testing.T) {
+  m := &amp;amp;mockDowncaser{}
+  m.On(&amp;quot;Downcase&amp;quot;, &amp;quot;FOO&amp;quot;).Return(&amp;quot;foo&amp;quot;, nil)
+  m.Downcase(&amp;quot;FOO&amp;quot;)
+  m.AssertNumberOfCalls(t, &amp;quot;Downcase&amp;quot;, 1)
+}
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;go generatoe 를 실행했을 때 모든 것이 한번에 set up 되는 지 볼 수 있습니다:&lt;/p&gt;
+
+&lt;pre&gt;&lt;code&gt;$ go test
+# github.com/ernesto-jimenez/test
+./main_test.go:14: undefined: mockDowncaser
+FAIL    github.com/ernesto-jimenez/test [build failed]
+
+$ go generate
+Generating mock for: downcaser
+
+$ go test
+PASS
+ok      github.com/ernesto-jimenez/test 0.011s
+&lt;/code&gt;&lt;/pre&gt;
+
+&lt;p&gt;인터페이스 변경을 할 때 마다 &lt;code&gt;go generate&lt;/code&gt;를 실행하면 해당하는 mock이 업데이트 될 것입니다.&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://github.com/vektra/mockery&#34;&gt;&lt;code&gt;mockery&lt;/code&gt;&lt;/a&gt; 는 내가 &lt;a href=&#34;https://godoc.org/github.com/stretchr/testify/mock&#34;&gt;&lt;code&gt;testify/mock&lt;/code&gt;&lt;/a&gt;에 contribute를
+시작한 주된 이유이고 &lt;code&gt;testify&lt;/code&gt;의 maintainer가 되었습니다.
+그러지만, &lt;code&gt;go/types&lt;/code&gt; 가 1.5의 표준 라이브러리에 포함되기 이전에 개발되었기 때문에, 저 레벨 &lt;code&gt;go/ast&lt;/code&gt;을 이용하여 구현되었고,
+코드를 보기 어렵게 만들었으며 &lt;a href=&#34;https://github.com/vektra/mockery/issues/18&#34;&gt;failing to generate mocks from interfaces using
+composition&lt;/a&gt; 같은 버그가 나타났습니다.&lt;/p&gt;
+
+&lt;h2 id=&#34;gegen-실험&#34;&gt;gegen 실험&lt;/h2&gt;
+
+&lt;p&gt;나는 코드 생성에 대해 익히기 위해 &lt;a href=&#34;https://github.com/ernesto-jimenez/gogen&#34;&gt;&lt;code&gt;gogen&lt;/code&gt;&lt;/a&gt; 패키지에서 만들었던 코드 생성 도구들을 오픈소스화 했습니다.&lt;/p&gt;
+
+&lt;p&gt;아래의 세가지 도구들을 포함합니다:&lt;/p&gt;
+
+&lt;ul&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/ernesto-jimenez/gogen/tree/master/cmd/goautomock/main.go&#34;&gt;goautomock&lt;/a&gt;: mockery 와 유사하지만 &lt;code&gt;go/ast&lt;/code&gt;가 아닌 &lt;code&gt;go/types&lt;/code&gt;를 이용해 구현되었습니다.
+따라서 composed 인터페이스들에 대해서 역시 동작합니다. 역시 표준 라이브러리로부터 인터페이스를 mock 하기에 용이합니다.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/ernesto-jimenez/gogen/tree/master/cmd/gounmarshalmap&#34;&gt;gounmarshalmap&lt;/a&gt;: 구조체를 가져 map을 구조체로 디코딩하는 &lt;code&gt;UnmarshalMap(map[string]interface{})&lt;/code&gt; 함수를 생성합니다.
+reflection 보다는 &lt;a href=&#34;https://github.com/mitchellh/mapstructure&#34;&gt;&lt;code&gt;mapstructure&lt;/code&gt;&lt;/a&gt; 의 대안으로 코드 생성에 동작하도록 작성되었습니다.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/ernesto-jimenez/gogen/tree/master/cmd/gospecific&#34;&gt;gospecific&lt;/a&gt;: is a tiny experiment to generate specific
+packages from generic ones that rely on &lt;code&gt;interface{}&lt;/code&gt;. It reads the
+generic&amp;rsquo;s package source code and generates a new package using a
+specific type where the generic package used &lt;code&gt;interface{}&lt;/code&gt;.&lt;/li&gt;
+&lt;li&gt;&lt;a href=&#34;https://github.com/ernesto-jimenez/gogen/tree/master/cmd/gospecific&#34;&gt;gospecific&lt;/a&gt;: &lt;code&gt;interface{}&lt;/code&gt; 에 의존하는 제네릭으로부터 특정한 패키지를 생성하는 작은 실험입니다.
+제네릭의 패키지 소스코드를 읽어서 &lt;code&gt;interface{}&lt;/code&gt; 를 사용하는 제네릭 패키지에서 특정한 타입을 사용하는 새로운 패키지를 생성합니다.&lt;/li&gt;
+&lt;/ul&gt;
+
+&lt;h1 id=&#34;랩핑-업&#34;&gt;랩핑 업&lt;/h1&gt;
+
+&lt;p&gt;코드 생성은 대단합니다. 그것은 우리의 프로그램 타입을 안전하게 지키는 동시에 반복적인 코드를 쓸 수 있습니다.
+우리는 &lt;a href=&#34;https://slackline.io&#34;&gt;Slackline&lt;/a&gt;을 만들 때 폭넓게 사용하였고 곧 &lt;a href=&#34;https://github.com/stretchr/testify/pull/241&#34;&gt;testify&lt;/a&gt; 에도 사용할 것입니다.&lt;/p&gt;
+
+&lt;p&gt;그럼에도 스스로에게 질문하기를 기억하십시오: 이러한 도구를 작성하는 것이 시간을 아낍니까?&lt;/p&gt;
+
+&lt;p&gt;&lt;a href=&#34;https://xkcd.com/1205/&#34;&gt;xkcd&lt;/a&gt; 그 대답에 대답하는데 도움이 될 것입니다.
+&lt;a href=&#34;https://xkcd.com/1205/&#34;&gt;&lt;img src=&#34;http://imgs.xkcd.com/comics/is_it_worth_the_time.png&#34; alt=&#34;&#34; /&gt;&lt;/a&gt;&lt;/p&gt;
+</description>
+    </item>
+    
+    <item>
+      <title>JongMin Kim</title>
+      <link>https://golangkorea.github.io/author/timo-boll/</link>
+      <pubDate>Sun, 16 Oct 2016 00:59:41 +0900</pubDate>
+      
+      <guid>https://golangkorea.github.io/author/timo-boll/</guid>
+      <description>&lt;p&gt;This is a placehoder for personal profile of Timo Boll&lt;/p&gt;
+</description>
+    </item>
     
     <item>
       <title>Go에서 애플리케이션 설계하기</title>
@@ -3325,301 +3591,6 @@ git rebase upstream/master
 &lt;/code&gt;&lt;/pre&gt;
 
 &lt;p&gt;이제 새로운 포스트를 작성하십시요.&lt;/p&gt;
-
-&lt;p&gt;&lt;br/&gt;
-&lt;br/&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>시리즈 #4 - 분류(Taxonomy)기능 사용하기</title>
-      <link>https://golangkorea.github.io/post/hugo-intro/taxonomy-basic/</link>
-      <pubDate>Tue, 23 Aug 2016 23:25:44 -0400</pubDate>
-      
-      <guid>https://golangkorea.github.io/post/hugo-intro/taxonomy-basic/</guid>
-      <description>
-
-&lt;h1 id=&#34;분류-taxonomy-기능-사용하기&#34;&gt;분류(Taxonomy)기능 사용하기&lt;/h1&gt;
-
-&lt;p&gt;사이트에 컨텐트가 많아 질 수록 고민이 생깁니다. 비숫한 주제의 컨텐트를 한 곳에 나열해 주는 페이지를 만들수는 없는가? 순진한 저자는 자기가 포스트한 내용을 모두 한 포스트에 링크할 지도 모릅니다. 주제 별로 나열해 주는 포스트를 만들어 새로운 포스트가 올라올 때 마다 링크를 걸어 줄 수도 있겠죠. 손이 많이 가고 더군다나 다른 저자들의 비슷한 포스트는 포함되지 못하는 일도 허다할 겁니다.&lt;/p&gt;
-
-&lt;p&gt;Hugo는 이런 문제를 분류(taxonomy)라는 기능으로 간단히 햬결해 드립니다.&lt;a href=&#34;#footnote-1&#34;&gt;&lt;sup&gt;1&lt;/sup&gt;&lt;/a&gt; 기본적으로 Hugo에는 &lt;code&gt;tags&lt;/code&gt;와 &lt;code&gt;categories&lt;/code&gt;라는 분류변수를 지원합니다. 컨텐트 저자가 할 일은 단지 Front Matter에 명시해 주기만 하면 됩니다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;+++
-date = &amp;quot;2016-08-23T23:25:44-04:00&amp;quot;
-draft = false
-title = &amp;quot;시리즈 #4 - 분류(Taxonomy)기능 사용하기&amp;quot;
-
-tags = [&amp;quot;Blog&amp;quot;, &amp;quot;Hugo&amp;quot;]
-categories = [&amp;quot;How-to&amp;quot;]
-series = [&amp;quot;Hugo Introduction&amp;quot;]
-authors = [&amp;quot;Jhonghee Park&amp;quot;]
-
-toc = true
-+++
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;예를 들어 &lt;code&gt;How-to&lt;/code&gt; category의 경우 Hugo는 모든 컨텐트를 스캔하면서 해당 컨텐트들을 &lt;code&gt;/categories/how-to/index.html&lt;/code&gt;로 나열해 줍니다. 다시 말하면 taxonomy기능이 컨텐트내에 사용되면 taxonomy에 지정된 template을 이용해 Hugo는 모든 taxonomy페이지를 자동으로 만들고 사용된 term과 각 term을 사용한 컨텐트를 나열합니다.&lt;/p&gt;
-
-&lt;h1 id=&#34;taxonomy-용어-정리&#34;&gt;Taxonomy 용어 정리&lt;/h1&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;Taxonomy&lt;/strong&gt; 같은 카테고리의 컨텐트를 분류하는 방식 (예: tag, category, author 등)&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Term&lt;/strong&gt; taxonomy에 속하는 키워드 (author의 예를 들면 &lt;code&gt;Jhonghee Park&lt;/code&gt;, &lt;code&gt;Sangbae Yun&lt;/code&gt;, &lt;code&gt;Kookheon Kwon&lt;/code&gt;)&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Value&lt;/strong&gt; term이 사용된 컨텐트의 내용&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;h1 id=&#34;taxonomy-organization&#34;&gt;Taxonomy Organization&lt;/h1&gt;
-
-&lt;p&gt;Taxonomy의 관점에서 본 Organization은 다음과 같습니다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-ascii&#34;&gt;author                                     &amp;lt;-- Taxonomy
-    Jhonghee Park                          &amp;lt;-- Term
-        ReadMe First                       &amp;lt;-- Content
-        시리즈 #1 - Hugo 시작하기           &amp;lt;-- Content
-        시리즈 #2 - 컨텐츠 제작 기초         &amp;lt;-- Content
-        ...
-    Sangbae Yun                            &amp;lt;-- Term
-        Go언어 시작하기                    &amp;lt;-- Content
-        Golang 프로젝트에 TDD 도입하기      &amp;lt;-- Content
-        vim-go를 이용한 go 개발 환경 구축   &amp;lt;-- Content
-        ...
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;컨텐트의 관점에서 본 Organization은 다음과 같습니다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code class=&#34;language-ascii&#34;&gt;시리즈 #1 - Hugo 시작하기      &amp;lt;-- Content
-    author                    &amp;lt;-- Taxonomy
-        Jhonghee Park         &amp;lt;-- Term
-    series                    &amp;lt;-- Taxonomy
-        Hugo 입문             &amp;lt;-- Term
-Go언어 시작하기                &amp;lt;-- Content
-    author                    &amp;lt;-- Taxonomy
-        Sangbae Yun           &amp;lt;-- Term
-    series                    &amp;lt;-- Taxonomy
-        Go 시작하기            &amp;lt;-- Term
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&#34;분류변수-taxonomies-의-정의&#34;&gt;분류변수(taxonomies)의 정의&lt;/h1&gt;
-
-&lt;p&gt;분류변수는 사용하기 전에 사이트 configuration에 정의되어야 만 합니다. 단수형과 복수형을 사용해 다음과 같이 정의합니다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;[taxonomies]
-author = &amp;quot;authors&amp;quot;
-category = &amp;quot;categories&amp;quot;
-tag = &amp;quot;tags&amp;quot;
-series = &amp;quot;series&amp;quot;
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&#34;컨텐트에-분류변수-지정하기&#34;&gt;컨텐트에 분류변수 지정하기&lt;/h1&gt;
-
-&lt;p&gt;일단 분류변수가 사이트 레벨에 정의된 후에는 컨텐트 타입과 &lt;code&gt;section&lt;/code&gt;을 막론하고 어떤 컨텐트에도 사용 가능합니다. Front Matter에 복수형의 taxonomies를 써서 원하는 모든 Term을 나열하면 됩니다.&lt;/p&gt;
-
-&lt;h1 id=&#34;taxonomy-템플릿&#34;&gt;Taxonomy 템플릿&lt;/h1&gt;
-
-&lt;p&gt;Hugo는 일정한 규칙에 따라 Taxonomy 리스트 페이지를 만들어 냅니다. 주어진 Term의 모든 Taxonomy Value 리스트는 다음과 같은 URL 형식을 따릅니다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;/{{복수형 Taxonomy 이름}}/{{Term}}/
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;이때 Term은 다음과 같은 변환을 거칩니다&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;hyphenated&lt;/strong&gt; &lt;code&gt;How to&lt;/code&gt;는 &lt;code&gt;/categories/how-to&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;lower-cased&lt;/strong&gt; &lt;code&gt;Jhonghee Park&lt;/code&gt;는 &lt;code&gt;/authors/jhonghee-park&lt;/code&gt;&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;normalized&lt;/strong&gt; &lt;code&gt;Gérard Depardieu&lt;/code&gt;는 &lt;code&gt;/actors/gerard-depardieu&lt;/code&gt;&lt;a href=&#34;#footnote-2&#34;&gt;&lt;sup&gt;2&lt;/sup&gt;&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;Taxonomy 페이지를 렌더링하기 위해서는 해당 Taxonomy의 템플릿이 필요합니다. 템프릿의 위치는 다음의 규칙을 따릅니다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;/layouts/taxonomy/{{단수형 Taxonomy 이름}}
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;Taxonomy, &lt;code&gt;authors&lt;/code&gt;의 경우, 템플릿은 &lt;code&gt;/layouts/taxonomy/author.html&lt;/code&gt;에 위치하게 합니다.&lt;/p&gt;
-
-&lt;p&gt;&lt;br/&gt;
-&lt;hr/&gt;
-&lt;br/&gt;
-&lt;ol&gt;
-  &lt;li&gt;&lt;a id=&#34;footnote-1&#34;&gt;&lt;/a&gt;Hugo v0.11이전에는 taxonomies를 indexes로 불렀습니다. 그런 이유로 만들어 진지 오래된 테마의 taxonomies 템플릿들은 &lt;code&gt;layouts/indexes&lt;/code&gt;에 위치 할 수도 있습니다.&lt;/li&gt;
-  &lt;li&gt;Special Character를 보존하고자 하면 사이트 Configuraton에 &lt;code&gt;preserveTaxonomyNames = true&lt;/code&gt;를 지정해야 합니다.&lt;/li&gt;
-&lt;/ol&gt;
-&lt;br/&gt;
-&lt;br/&gt;&lt;/p&gt;
-</description>
-    </item>
-    
-    <item>
-      <title>시리즈 #3 - 사이트 테마 개발하기</title>
-      <link>https://golangkorea.github.io/post/hugo-intro/theme-customizing/</link>
-      <pubDate>Tue, 23 Aug 2016 23:25:30 -0400</pubDate>
-      
-      <guid>https://golangkorea.github.io/post/hugo-intro/theme-customizing/</guid>
-      <description>
-
-&lt;h1 id=&#34;사이트-테마-개발하기&#34;&gt;사이트 테마 개발하기&lt;/h1&gt;
-
-&lt;p&gt;&lt;a href=&#34;https://golangkorea.github.io/post/hugo-intro/getting-started&#34;&gt;시리즈 1&lt;/a&gt; 마지막에 &lt;a href=&#34;http://themes.gohugo.io/hugo-octopress/&#34;&gt;hugo-octopress&lt;/a&gt; 테마를 사용하여 처음으로 사이트를 구축한 기억을 하실 겁니다. 사이트를 구축하기 전에 Hugo에서 사용할 수 있는 테마가 어떤것 있는지 한번 살펴보고 생각하고 있는 사이트와 잘 맞는 테마를 선택하는 일도 중요합니다. Hugo의 테마 쇼케이스에서 한번 감상하시길 바랍니다.&lt;/p&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;a href=&#34;http://themes.gohugo.io/&#34;&gt;Hugo 테마 쇼케이스&lt;/a&gt;&lt;/li&gt;
-&lt;/ul&gt;
-
-&lt;p&gt;자신만의 테마를 개발하기 위한 첫걸음은 남이 개발해 놓은 테마를 사용하는 것에서 부터 시작합니다.&lt;/p&gt;
-
-&lt;h1 id=&#34;테마-설치하는-법&#34;&gt;테마 설치하는 법&lt;/h1&gt;
-
-&lt;p&gt;테마의 사용법은 대단히 간단합니다. &lt;code&gt;hugo new site&lt;/code&gt;명령으로 사이트 프로젝트를 초기화하면 &lt;code&gt;themes&lt;/code&gt; 폴더가 생기는 것을 이미 아실 것입니다. 사용하고자 하는 테마를 선택하고 난 뒤 &lt;code&gt;themes&lt;/code&gt; 폴더 밑에 다운로드 받은 테마 패키지를 설치해 주면 됩니다.&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;테마의 깃헙주소를 아는 경우&lt;/strong&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ cd themes
-$ git clone https://github.com/parsiya/Hugo-Octopress.git
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;strong&gt;테마 쇼케이스의 모든 테마를 설치하는 경우&lt;/strong&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ git clone --recursive https://github.com/spf13/hugoThemes.git themes
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h1 id=&#34;테마-사용법&#34;&gt;테마 사용법&lt;/h1&gt;
-
-&lt;p&gt;테마를 &lt;code&gt;themes&lt;/code&gt;에 설치하고 난 뒤 다음과 같이 선택한 테마로 사이트를 구축할 수 있습니다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ hugo -t ThemeName
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;ThemeName은 &lt;code&gt;themes&lt;/code&gt; 폴더내 설치된 테마의 디렉토리 이름과 일치하여야 합니다.&lt;/p&gt;
-
-&lt;h1 id=&#34;테마-커스터마이징&#34;&gt;테마 커스터마이징&lt;/h1&gt;
-
-&lt;p&gt;설치된 테마를 사용하다 보면 맘에 들지 않는 부분이 생기거나 부족한 부분을 발견할 지도 모릅니다. &lt;strong&gt;&lt;em&gt;어떤 경우가 생기더라도 &lt;code&gt;themes&lt;/code&gt;밑에 설치된 테마에 속한 파일들을 직접 편집하지 마십시요&lt;/em&gt;&lt;/strong&gt;. Hugo는 이러한 경우가 생길때 보충하거나 기존의 템플릿을 오버라이드할 수 있도록 허락합니다. 설치된 테마의 구조를 살펴보시면 힌트를 얻을 수 있습니다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;.
-└── Hugo-Octopress
-    ├── LICENSE.md
-    ├── README.md
-    ├── images
-    │   ├── Thumbs.db
-    │   ├── codecaption1.png
-    │   ├── screenshot.png
-    │   └── tn.png
-    ├── layouts
-    │   ├── 404.html
-    │   ├── _default
-    │   │   ├── list.html
-    │   │   ├── single.html
-    │   │   └── terms.html
-    │   ├── index.html
-    │   ├── indexes
-    │   │   ├── category.html
-    │   │   └── tag.html
-    │   ├── license
-    │   │   └── single.html
-    │   ├── partials
-    │   │   ├── disqus.html
-    │   │   ├── footer.html
-    │   │   ├── header.html
-    │   │   ├── navigation.html
-    │   │   ├── octo-header.html
-    │   │   ├── pagination.html
-    │   │   ├── post_footer.html
-    │   │   ├── post_header.html
-    │   │   └── sidebar.html
-    │   ├── post
-    │   │   └── single.html
-    │   └── shortcodes
-    │       ├── codecaption.html
-    │       └── imgcap.html
-    ├── sample-config.toml
-    ├── static
-    │   ├── css
-    │   │   └── hugo-octopress.css
-    │   └── favicon.png
-    └── theme.toml
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;지금 개발하고 있는 사이트 프로젝트 폴더 밑으로 &lt;code&gt;layouts&lt;/code&gt;, &lt;code&gt;static&lt;/code&gt;, &lt;code&gt;archetypes&lt;/code&gt;가 있듯이 테마도 같은 구조를 가지고 있습니다.&lt;/p&gt;
-
-&lt;h2 id=&#34;정적-리소스를-교체하는-법&#34;&gt;정적 리소스를 교체하는 법&lt;/h2&gt;
-
-&lt;p&gt;테마에 따라온 jQuery버전이 맘에 안 드시나요? 교체하는 법은 기존의 것은 그대로 두고 새로운 jQuery버전을 다운로드 받아 테마에 위치한 장소와 같은 상대적 경로에 배치하면 Hugo는 테마의 jQuery를 사용하지 않고 프로젝트에 배치된 것을 사용해서 사이트를 구축합니다.&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;테마 밑&lt;/strong&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;/themes/themename/static/js/jquery.min.js
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;strong&gt;프로젝트 Root&lt;/strong&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;/static/js/jquery.min.js
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;h2 id=&#34;템플릿-교체하는-법&#34;&gt;템플릿 교체하는 법&lt;/h2&gt;
-
-&lt;p&gt;Hugo는 탬플릿을 찾을 때 항상 프로젝트 밑 &lt;code&gt;layouts&lt;/code&gt;폴더를 먼저 검색하고 없으면 테마의 &lt;code&gt;layouts&lt;/code&gt;을 찾아봅니다. 이런 Hugo의 특성을 이용하여 테마의 템프렛을 수정해야 할 필요가 생길 때 &lt;code&gt;layouts&lt;/code&gt;폴더 밑으로 같은 경로와 이름의 템플릿으로 교체하면 됩니다.&lt;/p&gt;
-
-&lt;p&gt;&lt;strong&gt;테마 밑&lt;/strong&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;/themes/themename/layouts/_default/single.html
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;&lt;strong&gt;프로젝트 Root&lt;/strong&gt;&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;/layouts/_default/single.html
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;특히 부분 템플릿(partial template)을 잘 활용한 테마의 경우 이런 교체법은 사이트의 보수유지를 최소화하고 미래에도 호환성을 보장하게 해 주는 장점을 가지고 있습니다.&lt;/p&gt;
-
-&lt;h2 id=&#34;archetype-교체하는-법&#34;&gt;archetype 교체하는 법&lt;/h2&gt;
-
-&lt;p&gt;Archetype을 제공하는 테마의 경우 &lt;code&gt;archetypes&lt;/code&gt;폴더로 교체하고자 하는 archetype 파일을 복사한 다음 필요에 맞게 수정하면 됩니다.&lt;/p&gt;
-
-&lt;h2 id=&#34;default-템플릿-사용-주의&#34;&gt;Default 템플릿 사용 주의&lt;/h2&gt;
-
-&lt;p&gt;&lt;code&gt;layouts/_default&lt;/code&gt;폴더내의 템플릿들은 테마에 비슷한 파일들을 가리지 않고 교체하는 효과가 있어 사용을 자제해야 합니다. 항상 default 템플릿을 사용하기 보다는 특정한 템플릿 교체가 더 낫다는 사실을 명심하십시요.&lt;/p&gt;
-
-&lt;h1 id=&#34;새-테마-만들기&#34;&gt;새 테마 만들기&lt;/h1&gt;
-
-&lt;p&gt;새로 테마를 만들기 위한 명령어는 다음과 같습니다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;$ hugo new theme golangkorea
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;이 명령은 &lt;code&gt;themes&lt;/code&gt;폴더 안에 다음과 같이 테마구조를 발생시킵니다.&lt;/p&gt;
-
-&lt;pre&gt;&lt;code&gt;golangkorea
-├── LICENSE.md
-├── archetypes
-│   └── default.md
-├── layouts
-│   ├── 404.html
-│   ├── _default
-│   │   ├── list.html
-│   │   └── single.html
-│   ├── index.html
-│   └── partials
-│       ├── footer.html
-│       └── header.html
-├── static
-│   ├── css
-│   └── js
-└── theme.toml
-&lt;/code&gt;&lt;/pre&gt;
-
-&lt;p&gt;템플릿은 Go의 템플릿 언어로 만들어 집니다. &lt;a href=&#34;https://gohugo.io/layout/go-templates/&#34;&gt;Go template primer&lt;/a&gt;은 Go 템플릿 언어를 숙지하기 위한 좋은 출발점입니다.&lt;/p&gt;
-
-&lt;h2 id=&#34;테마-콤퍼넌트&#34;&gt;테마 콤퍼넌트&lt;/h2&gt;
-
-&lt;ul&gt;
-&lt;li&gt;&lt;strong&gt;Layouts&lt;/strong&gt; 근본적으로 웹사이트는 두가지 형식의 페이지를 통해 컨텐트를 제공합니다: 컨텐트 자체가 하나의 페이지인 경우와 여러 항목을 나열해 놓은 페이지. Hugo의 테마는 이 두가지 페이지를 처리하는 기본(default) 템플릿에서 시작해서 컨텐트 타입(type)과 section을 통해 추가로 layout을 제공하는 템플릿을 준비합니다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Single Content&lt;/strong&gt; 기본 템플릿은 &lt;code&gt;layouts/_default/single.html&lt;/code&gt;에 위치합니다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;List of Contents&lt;/strong&gt; 기본 템플릿은 &lt;code&gt;layouts/_default/list.html&lt;/code&gt;에 위치합니다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Partial Templates&lt;/strong&gt; 부분 템플릿은 테마 제작에 있어 매우 중요한 요소입니다. 부분 템플릿을 통해 코드 재사용이 가능하고 아주 작은 부분만 교체하거나 삽입할 수 있게 해 주는 메카니즘이어서 테마의 유지보수가 간단해 지고 미래의 호환성을 보장해 줍니다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Static&lt;/strong&gt; 테마내 정정 리소스의 구조는 전적으로 개발자에게 달려 있습니다. 보통은 &lt;code&gt;/css&lt;/code&gt;, &lt;code&gt;js&lt;/code&gt;, &lt;code&gt;img&lt;/code&gt;와 같은 폴더를 이용해 정적 자원을 관리합니다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Archetypes&lt;/strong&gt; 특정한 컨텐트 타입의 정면 변수를 정의하는 archetype을 테마에 포함시킬 수 있습니다. 자세한 내용은 &lt;a href=&#34;https://gohugo.io/content/archetypes/&#34;&gt;Archetype Guideline&lt;/a&gt;을 확인할 수 있습니다.&lt;/li&gt;
-&lt;li&gt;&lt;strong&gt;Generator meta tag&lt;/strong&gt; 테마 개발자들에게 HTML의 &lt;code&gt;&amp;lt;head&amp;gt;&lt;/code&gt;에 Generator meta tag, &lt;code&gt;.Hugo.Generator&lt;/code&gt;을 포함시킬 것을 권유합니다. Hugo의 사용과 인기도를 가늠하는데 도움을 줍니다.&lt;/li&gt;
-&lt;/ul&gt;
 
 &lt;p&gt;&lt;br/&gt;
 &lt;br/&gt;&lt;/p&gt;
